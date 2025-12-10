@@ -15,7 +15,10 @@
 
 # next.js
 /.next/
+/.next/cache/
+/.next/trace
 /out/
+/.swc/
 
 # production
 /build

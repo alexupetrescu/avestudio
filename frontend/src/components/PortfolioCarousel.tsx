@@ -67,7 +67,7 @@ export default function PortfolioCarousel({ items }: PortfolioCarouselProps) {
                             <div className="absolute inset-0">
                                 <img
                                     src={story.image}
-                                    alt={story.familyName}
+                                    alt={story.name}
                                     className="w-full h-full object-cover"
                                 />
                             </div>
