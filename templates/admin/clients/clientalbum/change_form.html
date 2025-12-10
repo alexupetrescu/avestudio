@@ -1,0 +1,19 @@
+{% extends "admin/change_form.html" %}
+{% load i18n admin_urls static %}
+
+{% block submit_buttons_bottom %}
+{{ block.super }}
+{% if original.pk %}
+<div class="submit-row" style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 4px;">
+    <a href="{% url 'admin:clients_clientalbum_upload_multiple' original.pk %}" 
+       class="button" 
+       style="background: #417690; color: white; padding: 10px 20px; text-decoration: none; display: inline-block; border-radius: 4px; font-weight: bold;">
+        📤 Upload Multiple Images
+    </a>
+    <p style="margin: 10px 0 0 0; color: #666; font-size: 12px;">
+        Click to upload multiple images at once to this album. You can select multiple files from your computer.
+    </p>
+</div>
+{% endif %}
+{% endblock %}
+
