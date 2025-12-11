@@ -15,12 +15,12 @@ export default function Footer() {
     const alexEmail = process.env.NEXT_PUBLIC_CONTACT_ALEX_EMAIL || 'alexupetrescu@pm.me';
 
     return (
-        <footer className="bg-white border-t border-black/10">
+        <footer className="bg-white border-t border-black/10 relative">
             <div className="max-w-7xl mx-auto px-8 lg:px-16 py-16">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
                     {/* Brand Section */}
                     <div className="md:col-span-2">
-                        <div className="mb-4">
+                        <div className="mb-4 transform hover:scale-105 transition-transform duration-300 inline-block">
                             <Image
                                 src="/logo/avephotostudio.svg"
                                 alt="AveStudio"
@@ -30,14 +30,14 @@ export default function Footer() {
                             />
                         </div>
                         <p className="text-black/60 text-sm leading-relaxed max-w-md mb-6">
-                            Capturând cele mai prețioase momente ale vieții cu artă și precizie.
+                           Momente prețioase ale vieții cu artă și precizie.
                         </p>
                         <div className="flex space-x-4">
                             <a 
                                 href={instagramUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-black/40 hover:text-black transition-colors duration-300"
+                                className="text-black/40 hover:text-black transition-all duration-300 transform hover:scale-110 hover:-translate-y-1"
                                 aria-label="Instagram"
                             >
                                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -48,7 +48,7 @@ export default function Footer() {
                                 href={facebookUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-black/40 hover:text-black transition-colors duration-300"
+                                className="text-black/40 hover:text-black transition-all duration-300 transform hover:scale-110 hover:-translate-y-1"
                                 aria-label="Facebook"
                             >
                                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -65,12 +65,12 @@ export default function Footer() {
                         </h4>
                         <ul className="space-y-3">
                             <li>
-                                <Link href="/" className="text-black/60 hover:text-black transition-colors duration-300 text-sm">
+                                <Link href="/" className="text-black/60 hover:text-black transition-all duration-300 text-sm inline-block transform hover:translate-x-1">
                                     Acasă
                                 </Link>
                             </li>
                             <li>
-                                <Link href="/portfolio" className="text-black/60 hover:text-black transition-colors duration-300 text-sm">
+                                <Link href="/portfolio" className="text-black/60 hover:text-black transition-all duration-300 text-sm inline-block transform hover:translate-x-1">
                                     Portofoliu
                                 </Link>
                             </li>
@@ -94,15 +94,15 @@ export default function Footer() {
                             Contact
                         </h4>
                         <div className="space-y-4 text-black/60 text-sm">
-                            <div>
+                            <div className="group">
                                 <p className="font-semibold text-black mb-1">{adinaName}</p>
-                                <a href={`tel:${adinaPhone}`} className="hover:text-black transition-colors duration-300 block">{adinaPhone}</a>
-                                <a href={`mailto:${adinaEmail}`} className="hover:text-black transition-colors duration-300">{adinaEmail}</a>
+                                <a href={`tel:${adinaPhone}`} className="hover:text-black transition-all duration-300 block transform hover:translate-x-1">{adinaPhone}</a>
+                                <a href={`mailto:${adinaEmail}`} className="hover:text-black transition-all duration-300 block transform hover:translate-x-1">{adinaEmail}</a>
                             </div>
-                            <div>
+                            <div className="group">
                                 <p className="font-semibold text-black mb-1">{alexName}</p>
-                                <a href={`tel:${alexPhone}`} className="hover:text-black transition-colors duration-300 block">{alexPhone}</a>
-                                <a href={`mailto:${alexEmail}`} className="hover:text-black transition-colors duration-300">{alexEmail}</a>
+                                <a href={`tel:${alexPhone}`} className="hover:text-black transition-all duration-300 block transform hover:translate-x-1">{alexPhone}</a>
+                                <a href={`mailto:${alexEmail}`} className="hover:text-black transition-all duration-300 block transform hover:translate-x-1">{alexEmail}</a>
                             </div>
                         </div>
                     </div>
@@ -115,8 +115,8 @@ export default function Footer() {
                             &copy; {currentYear} AveStudio. Toate drepturile rezervate.
                         </p>
                         <div className="flex space-x-6 text-xs">
-                            <a href="#" className="hover:text-black transition-colors duration-300">Confidențialitate</a>
-                            <a href="#" className="hover:text-black transition-colors duration-300">Termeni</a>
+                            <a href="#" className="hover:text-black transition-all duration-300 transform hover:translate-y-[-2px]">Confidențialitate</a>
+                            <a href="#" className="hover:text-black transition-all duration-300 transform hover:translate-y-[-2px]">Termeni</a>
                         </div>
                     </div>
                 </div>

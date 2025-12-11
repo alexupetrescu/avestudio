@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState, use } from 'react';
-import { fetchAlbum, verifyPin } from '@/lib/api';
+import { fetchAlbum, verifyPin, downloadAlbum } from '@/lib/api';
+import Lightbox from '@/components/Lightbox';
 
 interface AlbumImage {
     id: number;
@@ -22,6 +23,9 @@ export default function AlbumPage({ params }: { params: Promise<{ id: string }> 
     const [pin, setPin] = useState('');
     const [error, setError] = useState('');
     const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [lightboxOpen, setLightboxOpen] = useState(false);
+    const [lightboxIndex, setLightboxIndex] = useState(0);
+    const [downloading, setDownloading] = useState(false);
 
     useEffect(() => {
         const storedPin = localStorage.getItem(`album_pin_${id}`);
@@ -70,6 +74,32 @@ export default function AlbumPage({ params }: { params: Promise<{ id: string }> 
         }
     };
 
+    const handleDownloadAll = async () => {
+        if (!album) return;
+        
+        const storedPin = localStorage.getItem(`album_pin_${id}`);
+        if (!storedPin) {
+            setError('PIN-ul nu este disponibil. Vă rugăm să reintroduceți PIN-ul.');
+            return;
+        }
+
+        setDownloading(true);
+        setError('');
+        
+        try {
+            await downloadAlbum(id, storedPin);
+        } catch (err: any) {
+            setError(err.message || 'Eroare la descărcarea albumului');
+        } finally {
+            setDownloading(false);
+        }
+    };
+
+    const openLightbox = (index: number) => {
+        setLightboxIndex(index);
+        setLightboxOpen(true);
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen bg-white flex items-center justify-center">
@@ -96,7 +126,8 @@ export default function AlbumPage({ params }: { params: Promise<{ id: string }> 
                                     Introduceți PIN-ul de 4 cifre
                                 </label>
                                 <input
-                                    type="text"
+                                    type="tel"
+                                    inputMode="numeric"
                                     id="pin"
                                     value={pin}
                                     onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
@@ -140,7 +171,23 @@ export default function AlbumPage({ params }: { params: Promise<{ id: string }> 
                     <h1 className="text-5xl md:text-6xl font-bold text-black mb-4 tracking-tight">
                         {album.title}
                     </h1>
-                    <p className="text-black/60 text-sm">{album.images.length} Fotografii</p>
+                    <div className="flex items-center justify-between flex-wrap gap-4">
+                        <p className="text-black/60 text-sm">{album.images.length} Fotografii</p>
+                        {album.images.length > 0 && (
+                            <button
+                                onClick={handleDownloadAll}
+                                disabled={downloading}
+                                className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {downloading ? 'Se descarcă...' : 'Descarcă toate pozele din album'}
+                            </button>
+                        )}
+                    </div>
+                    {error && (
+                        <div className="mt-4 text-red-600 text-sm bg-red-50 py-3 px-4 border border-red-200 rounded">
+                            {error}
+                        </div>
+                    )}
                 </div>
             </section>
 
@@ -149,8 +196,12 @@ export default function AlbumPage({ params }: { params: Promise<{ id: string }> 
                 <div className="max-w-7xl mx-auto">
                     {album.images.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                            {album.images.map((img) => (
-                                <div key={img.id} className="group relative aspect-square overflow-hidden bg-gray-100 card-hover">
+                            {album.images.map((img, index) => (
+                                <div
+                                    key={img.id}
+                                    className="group relative aspect-square overflow-hidden bg-gray-100 card-hover cursor-pointer"
+                                    onClick={() => openLightbox(index)}
+                                >
                                     <img
                                         src={img.image}
                                         alt={`Fotografie din ${album.title}`}
@@ -168,6 +219,16 @@ export default function AlbumPage({ params }: { params: Promise<{ id: string }> 
                     )}
                 </div>
             </section>
+
+            {/* Lightbox */}
+            {lightboxOpen && album && (
+                <Lightbox
+                    images={album.images}
+                    currentIndex={lightboxIndex}
+                    onClose={() => setLightboxOpen(false)}
+                    onNavigate={setLightboxIndex}
+                />
+            )}
         </div>
     );
 }

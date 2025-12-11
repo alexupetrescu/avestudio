@@ -33,7 +33,8 @@ export default function PinEntryForm() {
                         Introduceți PIN-ul de 4 cifre
                     </label>
                     <input
-                        type="text"
+                        type="tel"
+                        inputMode="numeric"
                         id="pin"
                         value={pin}
                         onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}

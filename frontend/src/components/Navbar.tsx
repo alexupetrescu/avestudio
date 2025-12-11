@@ -32,21 +32,21 @@ export default function Navbar() {
         : 'text-black';
 
     return (
-        <nav className={`fixed w-full z-50 transition-all duration-300 ${navBg}`}>
+        <nav className={`fixed w-full z-50 transition-all duration-500 ease-out ${navBg}`}>
             <div className="max-w-7xl mx-auto px-8 lg:px-16">
                 <div className="flex items-center justify-between h-20">
                     {/* Logo - Hidden when not scrolled on home page, always visible on other pages */}
                     {showLogo && (
                         <Link 
                             href="/" 
-                            className="hover:opacity-70 transition-opacity duration-300"
+                            className="hover:opacity-80 transition-all duration-300 transform hover:scale-105"
                         >
                             <Image
                                 src="/logo/avephotostudio.svg"
                                 alt="AveStudio"
                                 width={300}
                                 height={80}
-                                className="h-16 w-auto"
+                                className="h-16 w-auto transition-all duration-300"
                                 priority
                             />
                         </Link>
@@ -56,7 +56,7 @@ export default function Navbar() {
                     <div className="hidden md:flex items-center space-x-12">
                         <Link 
                             href="/" 
-                            className={`text-sm font-medium transition-colors duration-300 ${
+                            className={`text-sm font-medium transition-all duration-300 relative group ${
                                 isHomePage
                                     ? (scrolled
                                         ? (isActive('/') ? 'text-black' : 'text-black/60 hover:text-black')
@@ -64,11 +64,15 @@ export default function Navbar() {
                                     : (isActive('/') ? 'text-black' : 'text-black/60 hover:text-black')
                             }`}
                         >
-                            Acasă
+                            <span className="relative z-10">Acasă</span>
+                            {isActive('/') && (
+                                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-current transition-all duration-300"></span>
+                            )}
+                            <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-current group-hover:w-full transition-all duration-300"></span>
                         </Link>
                         <Link 
                             href="/portfolio" 
-                            className={`text-sm font-medium transition-colors duration-300 ${
+                            className={`text-sm font-medium transition-all duration-300 relative group ${
                                 isHomePage
                                     ? (scrolled
                                         ? (isActive('/portfolio') ? 'text-black' : 'text-black/60 hover:text-black')
@@ -76,7 +80,11 @@ export default function Navbar() {
                                     : (isActive('/portfolio') ? 'text-black' : 'text-black/60 hover:text-black')
                             }`}
                         >
-                            Portofoliu
+                            <span className="relative z-10">Portofoliu</span>
+                            {isActive('/portfolio') && (
+                                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-current transition-all duration-300"></span>
+                            )}
+                            <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-current group-hover:w-full transition-all duration-300"></span>
                         </Link>
                         {/* Hidden from menu - but page still accessible */}
                         {/* <Link 
@@ -99,14 +107,14 @@ export default function Navbar() {
 
                     {/* Mobile Menu Button */}
                     <button
-                        className={`md:hidden focus:outline-none transition-colors duration-300 ${
+                        className={`md:hidden focus:outline-none transition-all duration-300 transform hover:scale-110 active:scale-95 ${
                             isHomePage ? (scrolled ? 'text-black' : 'text-white') : 'text-black'
                         }`}
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
                         aria-label="Comutare meniu"
                     >
                         <svg
-                            className="w-6 h-6"
+                            className={`w-6 h-6 transition-transform duration-300 ${isMenuOpen ? 'rotate-90' : ''}`}
                             fill="none"
                             strokeLinecap="round"
                             strokeLinejoin="round"
@@ -125,18 +133,18 @@ export default function Navbar() {
 
                 {/* Mobile Menu */}
                 {isMenuOpen && (
-                    <div className={`md:hidden py-6 border-t animate-fade-in ${
+                    <div className={`md:hidden py-6 border-t animate-slide-down ${
                         isHomePage ? (scrolled ? 'border-black/10' : 'border-white/20') : 'border-black/10'
                     }`}>
                         <div className="flex flex-col space-y-4">
                             <Link 
                                 href="/" 
-                                className={`text-sm font-medium transition-colors ${
+                                className={`text-sm font-medium transition-all duration-300 transform hover:translate-x-2 ${
                                     isHomePage
                                         ? (scrolled
-                                            ? (isActive('/') ? 'text-black' : 'text-black/60')
-                                            : (isActive('/') ? 'text-white' : 'text-white/80'))
-                                        : (isActive('/') ? 'text-black' : 'text-black/60')
+                                            ? (isActive('/') ? 'text-black' : 'text-black/60 hover:text-black')
+                                            : (isActive('/') ? 'text-white' : 'text-white/80 hover:text-white'))
+                                        : (isActive('/') ? 'text-black' : 'text-black/60 hover:text-black')
                                 }`}
                                 onClick={() => setIsMenuOpen(false)}
                             >
@@ -144,12 +152,12 @@ export default function Navbar() {
                             </Link>
                             <Link 
                                 href="/portfolio" 
-                                className={`text-sm font-medium transition-colors ${
+                                className={`text-sm font-medium transition-all duration-300 transform hover:translate-x-2 ${
                                     isHomePage
                                         ? (scrolled
-                                            ? (isActive('/portfolio') ? 'text-black' : 'text-black/60')
-                                            : (isActive('/portfolio') ? 'text-white' : 'text-white/80'))
-                                        : (isActive('/portfolio') ? 'text-black' : 'text-black/60')
+                                            ? (isActive('/portfolio') ? 'text-black' : 'text-black/60 hover:text-black')
+                                            : (isActive('/portfolio') ? 'text-white' : 'text-white/80 hover:text-white'))
+                                        : (isActive('/portfolio') ? 'text-black' : 'text-black/60 hover:text-black')
                                 }`}
                                 onClick={() => setIsMenuOpen(false)}
                             >

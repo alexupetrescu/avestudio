@@ -35,3 +35,50 @@ export async function fetchAlbum(id: string) {
     if (!res.ok) throw new Error('Failed to fetch album');
     return res.json();
 }
+
+export async function downloadAlbum(id: string, pin: string) {
+    const res = await fetch(`${API_URL}/download-album/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ album_id: id, pin }),
+    });
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to download album');
+    }
+    
+    // Extract filename from Content-Disposition header
+    const contentDisposition = res.headers.get('Content-Disposition');
+    let filename = `album_${id}.zip`; // fallback
+    
+    if (contentDisposition) {
+        // Try multiple patterns to extract filename
+        // Pattern 1: filename="value" (quoted)
+        let match = contentDisposition.match(/filename="([^"]+)"/i);
+        if (match && match[1]) {
+            filename = match[1];
+        } else {
+            // Pattern 2: filename*=UTF-8''value (RFC 5987)
+            match = contentDisposition.match(/filename\*=UTF-8''([^;\r\n]+)/i);
+            if (match && match[1]) {
+                filename = decodeURIComponent(match[1]);
+            } else {
+                // Pattern 3: filename=value (unquoted)
+                match = contentDisposition.match(/filename=([^;\r\n"']+)/i);
+                if (match && match[1]) {
+                    filename = match[1].trim();
+                }
+            }
+        }
+    }
+    
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+}

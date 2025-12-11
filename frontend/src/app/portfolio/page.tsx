@@ -1,5 +1,6 @@
 import { fetchPortfolio, fetchCategories } from '@/lib/api';
 import PortfolioMasonry from '@/components/PortfolioMasonry';
+import ScrollReveal from '@/components/ScrollReveal';
 
 interface Category {
     id: number;
@@ -30,19 +31,22 @@ export default async function PortfolioPage({
     // Handle paginated response
     const portfolio: PortfolioImage[] = portfolioData.results || portfolioData || [];
     const categories: Category[] = categoriesData || [];
+    const hasNextPage = portfolioData.next !== null && portfolioData.next !== undefined;
 
     return (
         <div className="min-h-screen bg-white">
             {/* Hero Section - Minimal */}
             <section className="pt-32 pb-12 px-8 lg:px-16">
-                <div className="max-w-7xl mx-auto text-center">
-                    <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-black mb-4 tracking-tight">
-                        Momente Care Rămân
-                    </h1>
-                    <p className="text-lg md:text-xl text-black/60 max-w-3xl mx-auto leading-relaxed">
-                        Fiecare fotografie spune o poveste despre dragoste, creștere și timpul care trece prea repede
-                    </p>
-                </div>
+                <ScrollReveal>
+                    <div className="max-w-7xl mx-auto text-center">
+                        <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-black mb-4 tracking-tight">
+                            Momente Care Rămân
+                        </h1>
+                        <p className="text-lg md:text-xl text-black/60 max-w-3xl mx-auto leading-relaxed">
+                            Fiecare fotografie spune o poveste despre dragoste, creștere și timpul care trece prea repede
+                        </p>
+                    </div>
+                </ScrollReveal>
             </section>
 
             {/* Filter Tabs - Subtle, Top */}
@@ -84,6 +88,7 @@ export default async function PortfolioPage({
                     initialItems={portfolio} 
                     category={category}
                     categories={categories}
+                    hasNextPage={hasNextPage}
                 />
             ) : (
                 <section className="py-32 px-8 lg:px-16">
