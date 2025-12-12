@@ -154,5 +154,8 @@ if not CORS_ALLOW_ALL_ORIGINS and os.getenv('CORS_ALLOWED_ORIGINS'):
         origin.strip() for origin in os.getenv('CORS_ALLOWED_ORIGINS', '').split(',')
     ]
 
+# Expose Content-Disposition header so frontend can read the filename
+CORS_EXPOSE_HEADERS = ['Content-Disposition']
+
 # Frontend URL for generating client album links
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000')

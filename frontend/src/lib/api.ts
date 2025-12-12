@@ -43,8 +43,25 @@ export async function downloadAlbum(id: string, pin: string) {
         body: JSON.stringify({ album_id: id, pin }),
     });
     if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || 'Failed to download album');
+        // Try to parse as JSON, but handle HTML error pages
+        let errorMessage = 'Failed to download album';
+        const contentType = res.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+            try {
+                const error = await res.json();
+                errorMessage = error.error || errorMessage;
+            } catch (e) {
+                // If JSON parsing fails, use default message
+            }
+        } else {
+            // If it's an HTML error page (like 404), provide a more helpful message
+            if (res.status === 404) {
+                errorMessage = 'Download endpoint not found. Please contact support.';
+            } else {
+                errorMessage = `Server error (${res.status}). Please try again later.`;
+            }
+        }
+        throw new Error(errorMessage);
     }
     
     // Extract filename from Content-Disposition header
