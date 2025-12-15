@@ -1,0 +1,251 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static admin_modify %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
+&rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+&rsaquo; <a href="{% url 'admin:clients_clientalbum_changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+&rsaquo; {% translate 'Bulk Upload with Auto Album Creation' %}
+</div>
+{% endblock %}
+
+{% block content %}
+<h1>Bulk Upload Images with Auto Album Creation</h1>
+
+<div id="content-main">
+    <div style="margin-bottom: 20px; padding: 15px; background: #e7f3ff; border-left: 4px solid #2196F3; border-radius: 4px;">
+        <h3 style="margin-top: 0;">How it works:</h3>
+        <ul style="margin: 10px 0; padding-left: 20px;">
+            <li>Upload multiple images at once</li>
+            <li>Albums are automatically created based on filenames</li>
+            <li>Files like "andrew (1)", "andrew (3)", "andrew (x)" will create an album named "Andrew"</li>
+            <li>If you fill in the "Scoala" field, it will be appended to the album name: "Andrew (Scoala numarul 8)"</li>
+            <li>If an album with the same name already exists, a number will be appended automatically</li>
+        </ul>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" id="upload-form">
+        {% csrf_token %}
+        
+        <fieldset class="module aligned">
+            <div class="form-row">
+                <div>
+                    <label for="id_scoala" style="font-weight: bold; margin-bottom: 10px; display: block;">
+                        Scoala (Optional):
+                    </label>
+                    <input 
+                        type="text" 
+                        name="scoala" 
+                        id="id_scoala" 
+                        maxlength="200"
+                        placeholder="e.g., Scoala numarul 8"
+                        style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; width: 100%; max-width: 500px; font-size: 14px;"
+                    />
+                    <p class="help" style="margin-top: 10px; color: #666;">
+                        This value will be appended to album names in parentheses. Leave empty if not needed.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="form-row" style="margin-top: 20px;">
+                <div>
+                    <label for="id_images" style="font-weight: bold; margin-bottom: 10px; display: block;">
+                        Select Multiple Images:
+                    </label>
+                    <input 
+                        type="file" 
+                        name="images" 
+                        id="id_images" 
+                        multiple 
+                        accept="image/*"
+                        required
+                        style="padding: 10px; border: 2px dashed #ccc; border-radius: 4px; width: 100%; cursor: pointer;"
+                        onchange="updateFileList(this.files)"
+                    />
+                    <p class="help" style="margin-top: 10px; color: #666;">
+                        You can select multiple images at once by holding Ctrl (Windows) or Cmd (Mac) while clicking, 
+                        or by dragging and dropping files into the input area.
+                    </p>
+                </div>
+            </div>
+            
+            <div id="file-list" style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 4px; display: none;">
+                <h3 style="margin-top: 0;">Selected Files:</h3>
+                <div id="file-preview" style="margin-top: 10px;">
+                    <div id="grouped-preview" style="display: none;">
+                        <h4 style="margin-top: 15px; margin-bottom: 10px; color: #417690;">Files grouped by album:</h4>
+                        <div id="groups-container"></div>
+                    </div>
+                    <ul id="file-list-items" style="list-style: none; padding: 0;"></ul>
+                </div>
+            </div>
+        </fieldset>
+        
+        <div class="submit-row" style="margin-top: 20px;">
+            <input type="submit" value="Upload Images and Create Albums" class="default" style="padding: 10px 20px; font-size: 14px; font-weight: bold;" />
+            <a href="{% url 'admin:clients_clientalbum_changelist' %}" class="button" style="padding: 10px 20px; margin-left: 10px; text-decoration: none; display: inline-block;">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<script>
+function extractBaseName(filename) {
+    // Remove file extension
+    const nameWithoutExt = filename.replace(/\.[^.]+$/, '');
+    // Match pattern like "name (number)" or "name (x)"
+    const match = nameWithoutExt.match(/^(.+?)\s*\([^)]+\)\s*$/i);
+    if (match) {
+        return match[1].trim();
+    }
+    return nameWithoutExt.trim();
+}
+
+function capitalizeFirst(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+function updateFileList(files) {
+    const fileListDiv = document.getElementById('file-list');
+    const fileListItems = document.getElementById('file-list-items');
+    const groupedPreview = document.getElementById('grouped-preview');
+    const groupsContainer = document.getElementById('groups-container');
+    
+    if (files.length === 0) {
+        fileListDiv.style.display = 'none';
+        return;
+    }
+    
+    fileListDiv.style.display = 'block';
+    fileListItems.innerHTML = '';
+    groupsContainer.innerHTML = '';
+    
+    // Group files by base name
+    const grouped = {};
+    Array.from(files).forEach((file) => {
+        const baseName = extractBaseName(file.name);
+        const capitalizedName = baseName ? capitalizeFirst(baseName) : 'Untitled';
+        if (!grouped[capitalizedName]) {
+            grouped[capitalizedName] = [];
+        }
+        grouped[capitalizedName].push(file);
+    });
+    
+    // Show grouped preview
+    if (Object.keys(grouped).length > 0) {
+        groupedPreview.style.display = 'block';
+        Object.keys(grouped).sort().forEach((groupName) => {
+            const groupDiv = document.createElement('div');
+            groupDiv.style.marginBottom = '15px';
+            groupDiv.style.padding = '10px';
+            groupDiv.style.background = 'white';
+            groupDiv.style.borderRadius = '4px';
+            groupDiv.style.borderLeft = '3px solid #417690';
+            
+            const groupTitle = document.createElement('div');
+            groupTitle.style.fontWeight = 'bold';
+            groupTitle.style.marginBottom = '8px';
+            groupTitle.style.color = '#417690';
+            const scoalaValue = document.getElementById('id_scoala').value.trim();
+            if (scoalaValue) {
+                groupTitle.textContent = `Album: ${groupName} (${scoalaValue})`;
+            } else {
+                groupTitle.textContent = `Album: ${groupName}`;
+            }
+            
+            const fileCount = document.createElement('div');
+            fileCount.style.fontSize = '12px';
+            fileCount.style.color = '#666';
+            fileCount.textContent = `${grouped[groupName].length} file(s)`;
+            
+            groupDiv.appendChild(groupTitle);
+            groupDiv.appendChild(fileCount);
+            groupsContainer.appendChild(groupDiv);
+        });
+    }
+    
+    // Also show individual file list
+    Array.from(files).forEach((file, index) => {
+        const li = document.createElement('li');
+        li.style.padding = '8px';
+        li.style.marginBottom = '5px';
+        li.style.background = 'white';
+        li.style.borderRadius = '3px';
+        li.style.display = 'flex';
+        li.style.justifyContent = 'space-between';
+        li.style.alignItems = 'center';
+        
+        const fileInfo = document.createElement('span');
+        fileInfo.textContent = `${index + 1}. ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+        fileInfo.style.flex = '1';
+        
+        li.appendChild(fileInfo);
+        fileListItems.appendChild(li);
+    });
+    
+    // Update preview when scoala changes
+    const scoalaInput = document.getElementById('id_scoala');
+    scoalaInput.addEventListener('input', function() {
+        if (files.length > 0) {
+            updateFileList(files);
+        }
+    });
+}
+
+// Add drag and drop functionality
+const fileInput = document.getElementById('id_images');
+const form = document.getElementById('upload-form');
+
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    form.addEventListener(eventName, preventDefaults, false);
+});
+
+function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+}
+
+['dragenter', 'dragover'].forEach(eventName => {
+    form.addEventListener(eventName, highlight, false);
+});
+
+['dragleave', 'drop'].forEach(eventName => {
+    form.addEventListener(eventName, unhighlight, false);
+});
+
+function highlight(e) {
+    fileInput.style.borderColor = '#2196F3';
+    fileInput.style.background = '#e3f2fd';
+}
+
+function unhighlight(e) {
+    fileInput.style.borderColor = '#ccc';
+    fileInput.style.background = '';
+}
+
+form.addEventListener('drop', handleDrop, false);
+
+function handleDrop(e) {
+    const dt = e.dataTransfer;
+    const files = dt.files;
+    fileInput.files = files;
+    updateFileList(files);
+}
+</script>
+
+<style>
+#upload-form {
+    max-width: 900px;
+}
+.form-row {
+    margin-bottom: 20px;
+}
+.help {
+    font-size: 12px;
+    color: #666;
+}
+</style>
+{% endblock %}
+

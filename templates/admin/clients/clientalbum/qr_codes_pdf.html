@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Codes - AVE Studio</title>
+    <style>
+        @media print {
+            @page {
+                size: A4;
+                margin: 10mm;
+            }
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            color: #292929;
+            line-height: 1.4;
+            background: white;
+            padding: 10px;
+        }
+        
+        .qr-card {
+            display: table;
+            width: 100%;
+            border: 1.5px solid #e0e0e0;
+            margin-bottom: 8mm;
+            page-break-inside: avoid;
+            background: white;
+            min-height: 0;
+        }
+        
+        .column {
+            display: table-cell;
+            vertical-align: middle;
+            padding: 15px 12px;
+        }
+        
+        .column-logo {
+            width: 25%;
+            background: #f8f9fa;
+            border-right: 1.5px solid #e0e0e0;
+            text-align: center;
+        }
+        
+        .column-text {
+            width: 35%;
+            background: white;
+            border-right: 1.5px solid #e0e0e0;
+            text-align: center;
+        }
+        
+        .column-qr {
+            width: 40%;
+            background: #f8f9fa;
+            text-align: center;
+        }
+        
+        .logo-container {
+            width: 100%;
+            max-width: 100px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .logo-container img {
+            width: 100%;
+            height: auto;
+            max-width: 100px;
+            max-height: 100px;
+            display: block;
+        }
+        
+        .instruction-text {
+            font-size: 12px;
+            color: #292929;
+            margin-bottom: 12px;
+            line-height: 1.4;
+            text-align: center;
+        }
+        
+        .site-url {
+            font-size: 18px;
+            font-weight: bold;
+            color: #71997c;
+            margin-top: 8px;
+            text-align: center;
+        }
+        
+        .album-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: #292929;
+            margin-bottom: 12px;
+            text-align: center;
+            word-wrap: break-word;
+            padding: 0 8px;
+        }
+        
+        .pin-label {
+            font-size: 10px;
+            color: #666;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+        
+        .pin-value {
+            font-size: 22px;
+            font-weight: bold;
+            color: #71997c;
+            margin-bottom: 12px;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 3px;
+        }
+        
+        .qr-code-container {
+            width: 100%;
+            max-width: 120px;
+            margin: 0 auto;
+        }
+        
+        .qr-code-container img {
+            width: 100%;
+            height: auto;
+            display: block;
+            border: 1.5px solid #e0e0e0;
+            border-radius: 3px;
+        }
+        
+        @media print {
+            .qr-card {
+                page-break-inside: avoid;
+                margin-bottom: 6mm;
+            }
+            body {
+                padding: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    {% for item in albums_data %}
+    <div class="qr-card">
+        <!-- Column 1: Logo -->
+        <div class="column column-logo">
+            <div class="logo-container">
+                <img src="https://avestudio.ro/logo/avephotostudio.svg" alt="AVE Studio Logo" style="width: 100%; height: auto; max-width: 150px; max-height: 150px;" />
+            </div>
+        </div>
+        
+        <!-- Column 2: Instructions -->
+        <div class="column column-text">
+            <p class="instruction-text">
+                Scanați codul QR cu camera telefonului, iar după ce se încarcă pagina introduceți codul PIN pentru accesarea albumului cu poze.
+            </p>
+            <p class="site-url">{{ site_url }}</p>
+        </div>
+        
+        <!-- Column 3: Album Info & QR Code -->
+        <div class="column column-qr">
+            <div class="album-name">{{ item.name_without_parentheses }}</div>
+            
+            <div class="pin-label">PIN</div>
+            <div class="pin-value">{{ item.pin }}</div>
+            
+            {% if item.qr_code_url %}
+            <div class="qr-code-container">
+                <img src="{{ item.qr_code_url }}" alt="QR Code" />
+            </div>
+            {% else %}
+            <div class="qr-code-container">
+                <p>QR Code not available</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</body>
+</html>
