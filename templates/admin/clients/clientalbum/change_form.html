@@ -4,13 +4,13 @@
 {% block submit_buttons_bottom %}
 {{ block.super }}
 {% if original.pk %}
-<div class="submit-row" style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 4px;">
+<div class="submit-row" style="margin-top: 20px; padding: 20px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e0e0e0;">
     <a href="{% url 'admin:clients_clientalbum_upload_multiple' original.pk %}" 
        class="button" 
-       style="background: #417690; color: white; padding: 10px 20px; text-decoration: none; display: inline-block; border-radius: 4px; font-weight: bold;">
+       style="background: #FF8C42; color: white; padding: 12px 24px; text-decoration: none; display: inline-block; border-radius: 4px; font-weight: 600; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
         📤 Upload Multiple Images
     </a>
-    <p style="margin: 10px 0 0 0; color: #666; font-size: 12px;">
+    <p style="margin: 12px 0 0 0; color: #666; font-size: 13px;">
         Click to upload multiple images at once to this album. You can select multiple files from your computer.
     </p>
 </div>

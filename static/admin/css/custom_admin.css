@@ -1,0 +1,762 @@
+/* Modern Admin Design - AVE Studio */
+/* Color Palette: White, #71997d (green), #292929 (dark gray), #FF8C42 (orange accent) */
+/* COMPREHENSIVE OVERRIDE - All Admin Styling */
+
+:root {
+    --primary-green: #71997d;
+    --primary-green-dark: #5a7a64;
+    --primary-green-light: #8fb39a;
+    --dark-gray: #292929;
+    --dark-gray-light: #3a3a3a;
+    --orange-accent: #FF8C42;
+    --orange-accent-light: #ffa366;
+    --white: #ffffff;
+    --bg-light: #f8f9fa;
+    --border-color: #e0e0e0;
+    --text-primary: #292929;
+    --text-secondary: #666666;
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.15);
+    --radius: 8px;
+    --radius-sm: 4px;
+}
+
+/* ============================================
+   GLOBAL OVERRIDES
+   ============================================ */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+    color: var(--text-primary) !important;
+    background: var(--white) !important;
+}
+
+/* ============================================
+   HEADER - TOP BAR
+   ============================================ */
+#header {
+    background: var(--primary-green) !important;
+    color: var(--white) !important;
+    box-shadow: var(--shadow-md) !important;
+    border-bottom: none !important;
+    padding: 0 !important;
+    height: auto !important;
+}
+
+#header #branding {
+    background: var(--primary-green) !important;
+}
+
+#header #site-name {
+    padding: 15px 20px !important;
+    background: var(--primary-green) !important;
+}
+
+#header #site-name a {
+    color: var(--white) !important;
+    font-weight: 600 !important;
+    font-size: 18px !important;
+    text-decoration: none !important;
+}
+
+#header #user-tools {
+    padding: 15px 20px !important;
+    background: var(--primary-green) !important;
+    color: var(--white) !important;
+}
+
+#header #user-tools,
+#header #user-tools strong {
+    color: var(--white) !important;
+}
+
+#header #user-tools a {
+    color: var(--white) !important;
+    font-weight: 500 !important;
+    text-decoration: none !important;
+    padding: 5px 10px !important;
+    border-radius: var(--radius-sm) !important;
+    transition: background-color 0.2s !important;
+}
+
+#header #user-tools a:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+    color: var(--white) !important;
+}
+
+/* ============================================
+   BREADCRUMBS
+   ============================================ */
+.breadcrumbs {
+    background: var(--dark-gray) !important;
+    padding: 12px 20px !important;
+    border-bottom: none !important;
+    color: var(--white) !important;
+}
+
+.breadcrumbs a {
+    color: var(--white) !important;
+    text-decoration: none !important;
+}
+
+.breadcrumbs a:hover {
+    color: var(--orange-accent-light) !important;
+}
+
+.breadcrumbs,
+.breadcrumbs a,
+.breadcrumbs a:link,
+.breadcrumbs a:visited {
+    color: var(--white) !important;
+}
+
+/* ============================================
+   SIDEBAR NAVIGATION - COMPLETE OVERRIDE
+   ============================================ */
+#nav-sidebar {
+    background: var(--white) !important;
+    border-right: 1px solid var(--border-color) !important;
+    box-shadow: var(--shadow-sm) !important;
+    width: 250px !important;
+}
+
+#nav-sidebar .sticky {
+    background: var(--white) !important;
+}
+
+#nav-sidebar .module {
+    background: transparent !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+#nav-sidebar .module h2 {
+    color: var(--dark-gray) !important;
+    font-weight: 600 !important;
+    font-size: 13px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    padding: 15px 20px 10px !important;
+    margin: 0 !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    background: transparent !important;
+}
+
+#nav-sidebar .module ul {
+    margin: 0 !important;
+    padding: 0 !important;
+    list-style: none !important;
+}
+
+#nav-sidebar .module li {
+    margin: 0 !important;
+    border-bottom: 1px solid var(--bg-light) !important;
+    list-style: none !important;
+}
+
+#nav-sidebar .module li a {
+    color: var(--text-primary) !important;
+    padding: 12px 20px !important;
+    display: block !important;
+    text-decoration: none !important;
+    transition: all 0.2s !important;
+    font-weight: 500 !important;
+    background: transparent !important;
+}
+
+#nav-sidebar .module li a:hover {
+    background: var(--bg-light) !important;
+    color: var(--primary-green) !important;
+    padding-left: 25px !important;
+}
+
+#nav-sidebar .module li.selected a,
+#nav-sidebar .module li.selected a:link,
+#nav-sidebar .module li.selected a:visited {
+    background: var(--primary-green) !important;
+    color: var(--white) !important;
+    font-weight: 600 !important;
+}
+
+/* Dashboard/Index Page App List */
+#content-main .app-list .app {
+    background: var(--white) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: var(--radius) !important;
+    margin-bottom: 20px !important;
+    box-shadow: var(--shadow-sm) !important;
+    overflow: hidden !important;
+}
+
+#content-main .app-list .app .section {
+    background: var(--primary-green) !important;
+    color: var(--white) !important;
+    padding: 12px 15px !important;
+    margin: 0 !important;
+    font-weight: 600 !important;
+    font-size: 14px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+#content-main .app-list .app .model {
+    border-bottom: 1px solid var(--bg-light) !important;
+}
+
+#content-main .app-list .app .model a {
+    color: var(--text-primary) !important;
+    padding: 12px 20px !important;
+    display: block !important;
+    text-decoration: none !important;
+    transition: all 0.2s !important;
+    font-weight: 500 !important;
+}
+
+#content-main .app-list .app .model a:hover {
+    background: var(--bg-light) !important;
+    color: var(--primary-green) !important;
+    padding-left: 25px !important;
+}
+
+#content-main .app-list .app .model.addlink a {
+    color: var(--primary-green) !important;
+    font-weight: 600 !important;
+}
+
+#content-main .app-list .app .model.addlink a:hover {
+    color: var(--primary-green-dark) !important;
+}
+
+/* ============================================
+   MAIN CONTENT AREA
+   ============================================ */
+#content {
+    padding: 25px 30px !important;
+    background: var(--white) !important;
+}
+
+#content h1 {
+    color: var(--dark-gray) !important;
+    font-weight: 600 !important;
+    font-size: 24px !important;
+    margin-bottom: 20px !important;
+    padding-bottom: 15px !important;
+    border-bottom: 2px solid var(--primary-green) !important;
+}
+
+/* ============================================
+   ALL CHECKBOXES - BIGGER EVERYWHERE
+   ============================================ */
+input[type="checkbox"] {
+    width: 22px !important;
+    height: 22px !important;
+    cursor: pointer !important;
+    accent-color: var(--primary-green) !important;
+    transform: scale(1.2) !important;
+    margin: 0 !important;
+}
+
+input[type="checkbox"]:hover {
+    transform: scale(1.3) !important;
+}
+
+/* Table checkboxes */
+#result_list input[type="checkbox"],
+#changelist input[type="checkbox"],
+table input[type="checkbox"],
+.inline-group input[type="checkbox"],
+.form-row input[type="checkbox"] {
+    width: 24px !important;
+    height: 24px !important;
+    transform: scale(1.25) !important;
+}
+
+#result_list input[type="checkbox"]:hover,
+#changelist input[type="checkbox"]:hover,
+table input[type="checkbox"]:hover {
+    transform: scale(1.35) !important;
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
+.button,
+input[type="submit"],
+input[type="button"],
+.submit-row input,
+a.button,
+button {
+    background: var(--primary-green) !important;
+    color: var(--white) !important;
+    border: none !important;
+    padding: 10px 20px !important;
+    border-radius: var(--radius-sm) !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    transition: all 0.2s !important;
+    text-decoration: none !important;
+    display: inline-block !important;
+}
+
+.button:hover,
+input[type="submit"]:hover,
+input[type="button"]:hover,
+a.button:hover,
+button:hover {
+    background: var(--primary-green-dark) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: var(--shadow-md) !important;
+    color: var(--white) !important;
+}
+
+.button.default,
+input[type="submit"].default,
+.submit-row input.default {
+    background: var(--orange-accent) !important;
+}
+
+.button.default:hover,
+input[type="submit"].default:hover {
+    background: var(--orange-accent-light) !important;
+}
+
+/* Object Tools */
+.object-tools {
+    margin-bottom: 20px !important;
+}
+
+.object-tools li {
+    margin-left: 10px !important;
+}
+
+.object-tools a {
+    background: var(--primary-green) !important;
+    color: var(--white) !important;
+    padding: 12px 20px !important;
+    border-radius: var(--radius-sm) !important;
+    font-weight: 500 !important;
+    text-decoration: none !important;
+    transition: all 0.2s !important;
+    box-shadow: var(--shadow-sm) !important;
+}
+
+.object-tools a:hover {
+    background: var(--primary-green-dark) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: var(--shadow-md) !important;
+    color: var(--white) !important;
+}
+
+.object-tools a.addlink {
+    background: var(--orange-accent) !important;
+}
+
+.object-tools a.addlink:hover {
+    background: var(--orange-accent-light) !important;
+}
+
+/* ============================================
+   CHANGE LIST TABLE
+   ============================================ */
+#changelist {
+    background: var(--white) !important;
+}
+
+#changelist-filter {
+    background: var(--bg-light) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: var(--radius) !important;
+    padding: 15px !important;
+    margin-left: 20px !important;
+}
+
+#changelist-filter h2 {
+    color: var(--dark-gray) !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    margin-bottom: 15px !important;
+    padding-bottom: 10px !important;
+    border-bottom: 2px solid var(--primary-green) !important;
+}
+
+#changelist-filter h3 {
+    color: var(--text-secondary) !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    margin-top: 15px !important;
+    margin-bottom: 8px !important;
+}
+
+#changelist-filter ul {
+    margin: 0 !important;
+    padding: 0 !important;
+    list-style: none !important;
+}
+
+#changelist-filter li {
+    margin: 5px 0 !important;
+}
+
+#changelist-filter a {
+    color: var(--text-primary) !important;
+    text-decoration: none !important;
+    padding: 6px 10px !important;
+    display: block !important;
+    border-radius: var(--radius-sm) !important;
+    transition: all 0.2s !important;
+}
+
+#changelist-filter a:hover {
+    background: var(--primary-green) !important;
+    color: var(--white) !important;
+}
+
+#changelist-filter li.selected a {
+    background: var(--primary-green) !important;
+    color: var(--white) !important;
+    font-weight: 600 !important;
+}
+
+/* Table Styling - Compact Rows */
+#result_list {
+    width: 100% !important;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    background: var(--white) !important;
+    border-radius: var(--radius) !important;
+    overflow: hidden !important;
+    box-shadow: var(--shadow-sm) !important;
+}
+
+#result_list thead th {
+    background: var(--primary-green) !important;
+    color: var(--white) !important;
+    font-weight: 600 !important;
+    padding: 14px 15px !important;
+    text-align: left !important;
+    border: none !important;
+    font-size: 13px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+#result_list thead th.action-checkbox-column {
+    width: 70px !important;
+    text-align: center !important;
+    padding: 14px 20px !important;
+}
+
+#result_list tbody tr {
+    background: var(--white) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    transition: all 0.2s !important;
+    height: 65px !important;
+}
+
+#result_list tbody tr:hover {
+    background: var(--bg-light) !important;
+    transform: translateX(2px) !important;
+}
+
+#result_list tbody tr.selected {
+    background: rgba(113, 153, 125, 0.15) !important;
+    border-left: 3px solid var(--primary-green) !important;
+}
+
+#result_list tbody td {
+    padding: 8px 15px !important;
+    vertical-align: middle !important;
+    border: none !important;
+    font-size: 14px !important;
+}
+
+#result_list tbody td.action-checkbox-column {
+    padding: 15px 20px !important;
+    text-align: center !important;
+    width: 70px !important;
+}
+
+/* QR Code Display in Table */
+#result_list tbody td img {
+    max-width: 60px !important;
+    max-height: 60px !important;
+    border-radius: var(--radius-sm) !important;
+    box-shadow: var(--shadow-sm) !important;
+}
+
+/* Search Bar */
+#changelist-search {
+    margin-bottom: 20px !important;
+}
+
+#changelist-search input[type="text"] {
+    padding: 10px 15px !important;
+    border: 2px solid var(--border-color) !important;
+    border-radius: var(--radius-sm) !important;
+    font-size: 14px !important;
+    width: 300px !important;
+    transition: all 0.2s !important;
+}
+
+#changelist-search input[type="text"]:focus {
+    outline: none !important;
+    border-color: var(--primary-green) !important;
+    box-shadow: 0 0 0 3px rgba(113, 153, 125, 0.1) !important;
+}
+
+#changelist-search input[type="submit"] {
+    margin-left: 10px !important;
+    padding: 10px 20px !important;
+}
+
+/* Action Bar */
+#changelist-actions {
+    margin-bottom: 20px !important;
+    padding: 15px !important;
+    background: var(--bg-light) !important;
+    border-radius: var(--radius) !important;
+    border: 1px solid var(--border-color) !important;
+}
+
+#changelist-actions select {
+    padding: 8px 12px !important;
+    border: 2px solid var(--border-color) !important;
+    border-radius: var(--radius-sm) !important;
+    font-size: 14px !important;
+    margin-right: 10px !important;
+}
+
+#changelist-actions button {
+    background: var(--orange-accent) !important;
+    color: var(--white) !important;
+    border: none !important;
+    padding: 8px 20px !important;
+    border-radius: var(--radius-sm) !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    transition: all 0.2s !important;
+}
+
+#changelist-actions button:hover {
+    background: var(--orange-accent-light) !important;
+}
+
+/* ============================================
+   MESSAGES
+   ============================================ */
+.messagelist {
+    margin: 0 0 20px 0 !important;
+    padding: 0 !important;
+    list-style: none !important;
+}
+
+.messagelist li {
+    padding: 12px 20px !important;
+    margin-bottom: 10px !important;
+    border-radius: var(--radius-sm) !important;
+    font-weight: 500 !important;
+}
+
+.messagelist li.success {
+    background: rgba(113, 153, 125, 0.1) !important;
+    color: var(--primary-green-dark) !important;
+    border-left: 4px solid var(--primary-green) !important;
+}
+
+.messagelist li.error {
+    background: rgba(255, 140, 66, 0.1) !important;
+    color: #d32f2f !important;
+    border-left: 4px solid #d32f2f !important;
+}
+
+.messagelist li.info {
+    background: rgba(41, 41, 41, 0.05) !important;
+    color: var(--dark-gray) !important;
+    border-left: 4px solid var(--dark-gray) !important;
+}
+
+/* ============================================
+   FORMS
+   ============================================ */
+.form-row {
+    margin-bottom: 20px !important;
+    padding: 15px !important;
+    background: var(--bg-light) !important;
+    border-radius: var(--radius) !important;
+    border: 1px solid var(--border-color) !important;
+}
+
+.form-row label {
+    color: var(--dark-gray) !important;
+    font-weight: 600 !important;
+    margin-bottom: 8px !important;
+    display: block !important;
+}
+
+.form-row input[type="text"],
+.form-row input[type="number"],
+.form-row input[type="email"],
+.form-row input[type="password"],
+.form-row textarea,
+.form-row select {
+    width: 100% !important;
+    padding: 10px 15px !important;
+    border: 2px solid var(--border-color) !important;
+    border-radius: var(--radius-sm) !important;
+    font-size: 14px !important;
+    transition: all 0.2s !important;
+}
+
+.form-row input:focus,
+.form-row textarea:focus,
+.form-row select:focus {
+    outline: none !important;
+    border-color: var(--primary-green) !important;
+    box-shadow: 0 0 0 3px rgba(113, 153, 125, 0.1) !important;
+}
+
+/* Submit Row */
+.submit-row {
+    padding: 20px !important;
+    background: var(--bg-light) !important;
+    border-radius: var(--radius) !important;
+    border: 1px solid var(--border-color) !important;
+    margin-top: 20px !important;
+}
+
+/* Inline Forms */
+.inline-group {
+    border: 1px solid var(--border-color) !important;
+    border-radius: var(--radius) !important;
+    overflow: hidden !important;
+    margin-bottom: 20px !important;
+}
+
+.inline-group h2 {
+    background: var(--primary-green) !important;
+    color: var(--white) !important;
+    padding: 12px 15px !important;
+    margin: 0 !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+}
+
+.inline-group .tabular {
+    background: var(--white) !important;
+}
+
+.inline-group .tabular thead th {
+    background: var(--bg-light) !important;
+    color: var(--dark-gray) !important;
+    padding: 10px 15px !important;
+    font-weight: 600 !important;
+    font-size: 13px !important;
+}
+
+.inline-group .tabular tbody tr {
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+.inline-group .tabular tbody td {
+    padding: 10px 15px !important;
+}
+
+/* ============================================
+   MODULES
+   ============================================ */
+.module {
+    background: var(--white) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: var(--radius) !important;
+    margin-bottom: 20px !important;
+    box-shadow: var(--shadow-sm) !important;
+}
+
+.module h2 {
+    background: var(--primary-green) !important;
+    color: var(--white) !important;
+    padding: 12px 15px !important;
+    margin: 0 !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    border-radius: var(--radius) var(--radius) 0 0 !important;
+}
+
+.module table {
+    width: 100% !important;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 768px) {
+    #content {
+        padding: 15px !important;
+    }
+    
+    #changelist-filter {
+        margin-left: 0 !important;
+        margin-top: 20px !important;
+    }
+    
+    #result_list {
+        font-size: 12px !important;
+    }
+    
+    #result_list tbody td {
+        padding: 8px 10px !important;
+    }
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+a:focus,
+button:focus,
+input:focus,
+select:focus,
+textarea:focus {
+    outline: 2px solid var(--orange-accent) !important;
+    outline-offset: 2px !important;
+}
+
+/* ============================================
+   OVERRIDE DJANGO DEFAULTS - AGGRESSIVE
+   ============================================ */
+#header,
+#header * {
+    background-color: var(--primary-green) !important;
+}
+
+#branding h1,
+#branding h1 a,
+#branding h1 a:link,
+#branding h1 a:visited {
+    color: var(--white) !important;
+}
+
+/* Remove default Django blue colors */
+a:link,
+a:visited {
+    color: var(--primary-green) !important;
+}
+
+a:hover {
+    color: var(--primary-green-dark) !important;
+}
+
+/* Override any remaining default styles */
+#container {
+    background: var(--white) !important;
+}
+
+.main {
+    background: var(--white) !important;
+}
+
+.content {
+    background: var(--white) !important;
+}

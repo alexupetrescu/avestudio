@@ -141,6 +141,9 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -159,3 +162,11 @@ CORS_EXPOSE_HEADERS = ['Content-Disposition']
 
 # Frontend URL for generating client album links
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000')
+
+# File upload settings
+# Allow up to 500 files in a single request
+DATA_UPLOAD_MAX_NUMBER_FILES = 500
+# Increase memory size to handle large bulk uploads (default is 2.5MB, set to 100MB)
+DATA_UPLOAD_MAX_MEMORY_SIZE = 100 * 1024 * 1024  # 100 MB
+# Increase file upload max size (default is 2.5MB, set to 50MB per file)
+FILE_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024  # 50 MB
