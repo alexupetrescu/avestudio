@@ -191,25 +191,55 @@ export default function AlbumPage({ params }: { params: Promise<{ id: string }> 
                 </div>
             </section>
 
-            {/* Images Grid */}
+            {/* Images Masonry */}
             <section className="py-12 px-8 lg:px-16">
                 <div className="max-w-7xl mx-auto">
                     {album.images.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                            {album.images.map((img, index) => (
-                                <div
-                                    key={img.id}
-                                    className="group relative aspect-square overflow-hidden bg-gray-100 card-hover cursor-pointer"
-                                    onClick={() => openLightbox(index)}
-                                >
-                                    <img
-                                        src={img.image}
-                                        alt={`Fotografie din ${album.title}`}
-                                        className="w-full h-full object-cover image-zoom"
-                                    />
-                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-500" />
-                                </div>
-                            ))}
+                        <div className="columns-1 md:columns-2 lg:columns-3 xl:columns-4 gap-4 md:gap-6">
+                            {album.images.map((img, index) => {
+                                // Generate varied heights for masonry effect
+                                const heights = [300, 400, 350, 450, 380, 320, 360, 420];
+                                const imageHeight = heights[index % heights.length];
+                                const staggerDelay = (index % 6) * 0.1;
+                                
+                                return (
+                                    <div
+                                        key={img.id}
+                                        className="break-inside-avoid mb-4 md:mb-6 group cursor-pointer relative overflow-hidden rounded-xl bg-gray-100 shadow-sm hover:shadow-2xl transition-all duration-500"
+                                        onClick={() => openLightbox(index)}
+                                        style={{
+                                            animation: `fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) ${staggerDelay}s both`
+                                        }}
+                                    >
+                                        <div className="relative w-full" style={{ height: `${imageHeight}px` }}>
+                                            <img
+                                                src={img.image}
+                                                alt={`Fotografie din ${album.title}`}
+                                                className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                                                loading="lazy"
+                                                decoding="async"
+                                            />
+                                            
+                                            {/* Gradient overlay on hover */}
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                            
+                                            {/* Hover overlay */}
+                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all duration-500 flex flex-col justify-end p-4 md:p-6">
+                                                <div className="transform translate-y-6 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-500 ease-out">
+                                                    <p className="text-white/95 text-sm md:text-base drop-shadow-md">
+                                                        Fotografie {index + 1}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            
+                                            {/* Subtle shine effect on hover */}
+                                            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700">
+                                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
                     ) : (
                         <div className="text-center py-32">
