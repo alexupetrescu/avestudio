@@ -34,6 +34,7 @@ This project uses environment variables to manage configuration settings. Follow
 2. **Add the following variables to `frontend/.env.local`:**
    ```env
    NEXT_PUBLIC_API_URL=http://localhost:8000/api
+   NEXT_PUBLIC_SITE_URL=http://localhost:3000
    NEXT_PUBLIC_INSTAGRAM_URL=https://www.instagram.com/avephoto.studio/
    NEXT_PUBLIC_FACEBOOK_URL=https://www.facebook.com/profile.php?id=61578330532230
    NEXT_PUBLIC_CONTACT_ADINA_NAME=Adina
@@ -46,6 +47,7 @@ This project uses environment variables to manage configuration settings. Follow
 
 3. **For production, update:**
    - `NEXT_PUBLIC_API_URL`: Your production API URL (e.g., `https://api.yourdomain.com/api`)
+   - `NEXT_PUBLIC_SITE_URL`: Your production site URL (e.g., `https://avestudio.ro`)
    - Update contact information and social media links as needed
 
 ## Important Notes

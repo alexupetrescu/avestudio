@@ -1,9 +1,25 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import type { Metadata } from 'next';
 import { fetchPortfolio, fetchCategories } from '@/lib/api';
 import PortfolioCarousel from '@/components/PortfolioCarousel';
 import ScrollReveal from '@/components/ScrollReveal';
 import HeroParallax from '@/components/HeroParallax';
+import { generateMetadata as generateSEOMetadata, extractFirstImage, SITE_URL } from '@/lib/seo';
+
+export async function generateMetadata(): Promise<Metadata> {
+  const portfolioData = await fetchPortfolio().catch(() => ({ results: [], next: null }));
+  const portfolioArray = portfolioData.results || portfolioData || [];
+  const firstImage = extractFirstImage(portfolioArray);
+
+  return generateSEOMetadata({
+    title: 'AVE Studio - Fotografie Profesională | Capturând Momente, Creând Amintiri',
+    description: 'Fotografie profesională pentru evenimente speciale. Capturăm momentele care nu se mai întorc - nunti, botezuri, evenimente corporative. Oferim servicii complete de fotografie în România.',
+    images: [{ url: firstImage, width: 1200, height: 630, alt: 'AVE Studio - Fotografie Profesională' }],
+    url: SITE_URL,
+    type: 'website',
+  });
+}
 
 export default async function Home() {
   const [portfolioData, categoriesData] = await Promise.all([

@@ -1,4 +1,13 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
+import { generateMetadata as generateSEOMetadata, SITE_URL } from '@/lib/seo';
+
+export const metadata: Metadata = generateSEOMetadata({
+  title: 'Portal Client - AVE Studio | Acces Album Privat',
+  description: 'Accesați albumul dvs. privat de fotografii de la AVE Studio. Introduceți PIN-ul furnizat pentru a vizualiza pozele dvs.',
+  url: `${SITE_URL}/client`,
+  type: 'website',
+});
 
 export default function ClientLoginPage() {
     return (

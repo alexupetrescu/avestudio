@@ -1,6 +1,8 @@
+import type { Metadata } from 'next';
 import { fetchPortfolio, fetchCategories } from '@/lib/api';
 import PortfolioMasonry from '@/components/PortfolioMasonry';
 import ScrollReveal from '@/components/ScrollReveal';
+import { generateMetadata as generateSEOMetadata, extractFirstImage, SITE_URL } from '@/lib/seo';
 
 interface Category {
     id: number;
@@ -14,6 +16,43 @@ interface PortfolioImage {
     image: string;
     description?: string | null;
     category: Category;
+}
+
+export async function generateMetadata({
+    searchParams,
+}: {
+    searchParams: Promise<{ category?: string }>;
+}): Promise<Metadata> {
+    const { category } = await searchParams;
+    const [portfolioData, categoriesData] = await Promise.all([
+        fetchPortfolio(category).catch(() => ({ results: [], next: null })),
+        fetchCategories().catch(() => []),
+    ]);
+
+    const portfolio: PortfolioImage[] = portfolioData.results || portfolioData || [];
+    const categories: Category[] = categoriesData || [];
+    const firstImage = extractFirstImage(portfolio);
+    
+    const categoryName = category 
+        ? categories.find(c => c.slug === category)?.name || category
+        : null;
+
+    const title = categoryName 
+        ? `Portofoliu ${categoryName} - AVE Studio | Fotografie Profesională`
+        : 'Portofoliu - AVE Studio | Fotografie Profesională';
+    
+    const description = categoryName
+        ? `Explorează portofoliul nostru de fotografii ${categoryName.toLowerCase()}. Moment speciale capturate cu pasiune și profesionalism de AVE Studio.`
+        : 'Explorează portofoliul nostru complet de fotografii. Moment speciale, evenimente și sesiuni foto profesionale capturate cu pasiune de AVE Studio.';
+
+    return generateSEOMetadata({
+        title,
+        description,
+        images: [{ url: firstImage, width: 1200, height: 630, alt: title }],
+        url: `${SITE_URL}/portfolio${category ? `?category=${category}` : ''}`,
+        type: 'website',
+        section: categoryName || undefined,
+    });
 }
 
 export default async function PortfolioPage({

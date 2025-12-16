@@ -1,5 +1,20 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { fetchPortfolio } from '@/lib/api';
+import { generateMetadata as generateSEOMetadata, extractFirstImage, SITE_URL } from '@/lib/seo';
+
+export async function generateMetadata(): Promise<Metadata> {
+  const portfolioData = await fetchPortfolio().catch(() => []);
+  const firstImage = extractFirstImage(portfolioData);
+
+  return generateSEOMetadata({
+    title: 'Albume Publice - AVE Studio | Colecții de Fotografii',
+    description: 'Răsfoiți albumele și colecțiile noastre publice de fotografii. Colecții speciale de nunti, botezuri, ședințe portret și evenimente corporative.',
+    images: [{ url: firstImage, width: 1200, height: 630, alt: 'Albume AVE Studio' }],
+    url: `${SITE_URL}/albums`,
+    type: 'website',
+  });
+}
 
 export default async function AlbumsPage() {
     const portfolioData = await fetchPortfolio().catch(() => []);
