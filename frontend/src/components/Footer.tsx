@@ -115,8 +115,9 @@ export default function Footer() {
                             &copy; {currentYear} AveStudio. Toate drepturile rezervate.
                         </p>
                         <div className="flex space-x-6 text-xs">
-                            <a href="#" className="hover:text-black transition-all duration-300 transform hover:translate-y-[-2px]">Confidențialitate</a>
-                            <a href="#" className="hover:text-black transition-all duration-300 transform hover:translate-y-[-2px]">Termeni</a>
+                            <Link href="/politica-de-confidentialitate" className="hover:text-black transition-all duration-300 transform hover:translate-y-[-2px]">Confidențialitate</Link>
+                            <Link href="/termeni-si-conditii" className="hover:text-black transition-all duration-300 transform hover:translate-y-[-2px]">Termeni</Link>
+                            <Link href="/politica-de-cookies" className="hover:text-black transition-all duration-300 transform hover:translate-y-[-2px]">Cookie-uri</Link>
                         </div>
                     </div>
                 </div>
