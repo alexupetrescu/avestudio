@@ -27,7 +27,6 @@ interface ImageDimensions {
 export default function PortfolioCarousel({ items }: PortfolioCarouselProps) {
     const [currentSlide, setCurrentSlide] = useState(0);
     const [imageDimensions, setImageDimensions] = useState<ImageDimensions[]>([]);
-    const [containerHeight, setContainerHeight] = useState<string>('80vh');
     
     // Memoize stories to prevent unnecessary re-renders
     const stories = useMemo(() => {
@@ -125,37 +124,6 @@ export default function PortfolioCarousel({ items }: PortfolioCarouselProps) {
         };
     }, [itemsKey, stories.length]);
 
-    // Update container height based on current slide orientation
-    useEffect(() => {
-        if (imageDimensions.length === 0) return;
-        
-        const currentDimensions = imageDimensions[currentSlide];
-        if (!currentDimensions) return;
-
-        // Calculate adaptive height based on viewport width and image orientation
-        const updateHeight = () => {
-            const viewportWidth = window.innerWidth;
-            let baseHeight: number;
-
-            if (currentDimensions.isPortrait) {
-                // Portrait images get taller height
-                baseHeight = viewportWidth < 768 
-                    ? Math.min(viewportWidth * 1.3, window.innerHeight * 0.9)
-                    : Math.min(viewportWidth * 0.8, window.innerHeight * 0.95);
-            } else {
-                // Landscape images use standard height
-                baseHeight = viewportWidth < 768 
-                    ? window.innerHeight * 0.8
-                    : window.innerHeight * 0.85;
-            }
-
-            setContainerHeight(`${baseHeight}px`);
-        };
-
-        updateHeight();
-        window.addEventListener('resize', updateHeight);
-        return () => window.removeEventListener('resize', updateHeight);
-    }, [currentSlide, imageDimensions]);
 
     // Preload next 2-3 images
     useEffect(() => {
@@ -188,10 +156,10 @@ export default function PortfolioCarousel({ items }: PortfolioCarouselProps) {
 
     return (
         <div className="relative">
-            {/* Carousel Container with adaptive height */}
+            {/* Carousel Container with fixed 16:9 aspect ratio */}
             <div 
-                className="relative overflow-hidden transition-all duration-300 ease-in-out"
-                style={{ height: containerHeight }}
+                className="relative overflow-hidden w-full"
+                style={{ aspectRatio: '16/9' }}
             >
                 {/* Slides */}
                 <div 
@@ -209,17 +177,28 @@ export default function PortfolioCarousel({ items }: PortfolioCarouselProps) {
                         return (
                             <div key={index} className="min-w-full h-full relative flex-shrink-0">
                                 {/* Image container with adaptive object-fit */}
-                                <div className={`absolute inset-0 ${
-                                    isPortrait 
-                                        ? 'bg-gradient-to-br from-black/10 via-black/5 to-black/10' 
-                                        : ''
-                                }`}>
+                                <div className="absolute inset-0">
+                                    {/* Blurred background for portrait images */}
+                                    {isPortrait && (
+                                        <Image
+                                            src={story.image}
+                                            alt=""
+                                            fill
+                                            sizes="100vw"
+                                            className="object-cover blur-2xl scale-110 opacity-50"
+                                            priority={index === 0}
+                                            loading={index === 0 ? 'eager' : isPreload ? 'eager' : 'lazy'}
+                                            quality={75}
+                                            aria-hidden="true"
+                                        />
+                                    )}
+                                    {/* Main image */}
                                     <Image
                                         src={story.image}
                                         alt={story.name}
                                         fill
                                         sizes="100vw"
-                                        className={`transition-opacity duration-700 ${
+                                        className={`transition-opacity duration-700 relative z-10 ${
                                             isCurrentSlide ? 'opacity-100' : 'opacity-90'
                                         } ${
                                             isPortrait 
@@ -233,10 +212,10 @@ export default function PortfolioCarousel({ items }: PortfolioCarouselProps) {
                                 </div>
                                 
                                 {/* Subtle gradient overlay */}
-                                <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/40 pointer-events-none" />
+                                <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/40 pointer-events-none z-20" />
 
                                 {/* Minimal Left Overlay Panel with animation */}
-                                <div className="absolute left-0 top-0 bottom-0 w-full md:w-auto flex items-end md:items-center p-8 md:p-12 lg:p-16">
+                                <div className="absolute left-0 top-0 bottom-0 w-full md:w-auto flex items-end md:items-center p-8 md:p-12 lg:p-16 z-30">
                                     <div className={`bg-black/70 backdrop-blur-glass p-6 md:p-8 lg:p-10 rounded-xl max-w-md border border-white/10 shadow-2xl transition-all duration-700 ${
                                         isCurrentSlide 
                                             ? 'opacity-100 translate-x-0' 
