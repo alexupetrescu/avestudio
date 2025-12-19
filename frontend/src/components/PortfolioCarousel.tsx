@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -18,25 +18,159 @@ interface PortfolioCarouselProps {
     items: PortfolioItem[];
 }
 
+interface ImageDimensions {
+    width: number;
+    height: number;
+    isPortrait: boolean;
+}
+
 export default function PortfolioCarousel({ items }: PortfolioCarouselProps) {
     const [currentSlide, setCurrentSlide] = useState(0);
+    const [imageDimensions, setImageDimensions] = useState<ImageDimensions[]>([]);
+    const [containerHeight, setContainerHeight] = useState<string>('80vh');
     
-    // Create stories from portfolio items using fetched data
-    const stories = items.slice(0, 6).map((item) => {
-        // Extract name from title (first word) or use title if short
-        const name = item.title.split(' ')[0] || item.title;
-        const displayName = name.length > 20 ? name.substring(0, 20) : name;
+    // Memoize stories to prevent unnecessary re-renders
+    const stories = useMemo(() => {
+        return items.slice(0, 6).map((item) => {
+            // Extract name from title (first word) or use title if short
+            const name = item.title.split(' ')[0] || item.title;
+            const displayName = name.length > 20 ? name.substring(0, 20) : name;
+            
+            // Use description from API, fallback to title if no description
+            const moment = item.description || item.title;
+            
+            return {
+                name: displayName,
+                moment: moment,
+                image: item.image,
+                id: item.id,
+            };
+        });
+    }, [items]);
+
+    // Create a stable key from items to track when they change
+    const itemsKey = useMemo(() => {
+        return items.slice(0, 6).map(item => item.id).join(',');
+    }, [items]);
+    
+    const loadedItemsKey = useRef<string>('');
+    const isLoadingRef = useRef(false);
+
+    // Load image dimensions and detect orientation
+    useEffect(() => {
+        // Skip if already loaded for these items or currently loading
+        if (itemsKey === loadedItemsKey.current || isLoadingRef.current) {
+            return;
+        }
+
+        // Skip if no stories
+        if (stories.length === 0) {
+            return;
+        }
+
+        isLoadingRef.current = true;
+        loadedItemsKey.current = itemsKey;
+        let isMounted = true;
         
-        // Use description from API, fallback to title if no description
-        const moment = item.description || item.title;
-        
-        return {
-            name: displayName,
-            moment: moment,
-            image: item.image,
-            id: item.id,
+        const loadImageDimensions = async () => {
+            const dimensions: ImageDimensions[] = [];
+            
+            for (const story of stories) {
+                try {
+                    const img = new window.Image();
+                    // Add timeout to prevent hanging
+                    const loadPromise = new Promise((resolve, reject) => {
+                        img.onload = resolve;
+                        img.onerror = reject;
+                        img.src = story.image;
+                    });
+                    
+                    const timeoutPromise = new Promise((_, reject) => {
+                        setTimeout(() => reject(new Error('Image load timeout')), 10000);
+                    });
+                    
+                    await Promise.race([loadPromise, timeoutPromise]);
+                    
+                    if (!isMounted) return;
+                    
+                    const isPortrait = img.height > img.width;
+                    dimensions.push({
+                        width: img.width,
+                        height: img.height,
+                        isPortrait,
+                    });
+                } catch (error) {
+                    if (!isMounted) return;
+                    
+                    // Default to landscape if image fails to load
+                    dimensions.push({
+                        width: 1920,
+                        height: 1080,
+                        isPortrait: false,
+                    });
+                }
+            }
+            
+            if (isMounted) {
+                setImageDimensions(dimensions);
+                isLoadingRef.current = false;
+            }
         };
-    });
+
+        loadImageDimensions();
+        
+        return () => {
+            isMounted = false;
+            isLoadingRef.current = false;
+        };
+    }, [itemsKey, stories.length]);
+
+    // Update container height based on current slide orientation
+    useEffect(() => {
+        if (imageDimensions.length === 0) return;
+        
+        const currentDimensions = imageDimensions[currentSlide];
+        if (!currentDimensions) return;
+
+        // Calculate adaptive height based on viewport width and image orientation
+        const updateHeight = () => {
+            const viewportWidth = window.innerWidth;
+            let baseHeight: number;
+
+            if (currentDimensions.isPortrait) {
+                // Portrait images get taller height
+                baseHeight = viewportWidth < 768 
+                    ? Math.min(viewportWidth * 1.3, window.innerHeight * 0.9)
+                    : Math.min(viewportWidth * 0.8, window.innerHeight * 0.95);
+            } else {
+                // Landscape images use standard height
+                baseHeight = viewportWidth < 768 
+                    ? window.innerHeight * 0.8
+                    : window.innerHeight * 0.85;
+            }
+
+            setContainerHeight(`${baseHeight}px`);
+        };
+
+        updateHeight();
+        window.addEventListener('resize', updateHeight);
+        return () => window.removeEventListener('resize', updateHeight);
+    }, [currentSlide, imageDimensions]);
+
+    // Preload next 2-3 images
+    useEffect(() => {
+        if (stories.length === 0) return;
+        
+        const preloadImages = () => {
+            for (let i = 1; i <= 3; i++) {
+                const nextIndex = (currentSlide + i) % stories.length;
+                const img = new window.Image();
+                img.src = stories[nextIndex].image;
+            }
+        };
+
+        preloadImages();
+    }, [currentSlide, stories]);
 
     const nextSlide = () => {
         setCurrentSlide((prev) => (prev + 1) % stories.length);
@@ -54,49 +188,74 @@ export default function PortfolioCarousel({ items }: PortfolioCarouselProps) {
 
     return (
         <div className="relative">
-            {/* Carousel Container */}
-            <div className="relative h-[80vh] md:h-screen overflow-hidden">
+            {/* Carousel Container with adaptive height */}
+            <div 
+                className="relative overflow-hidden transition-all duration-300 ease-in-out"
+                style={{ height: containerHeight }}
+            >
                 {/* Slides */}
                 <div 
                     className="flex transition-transform duration-700 ease-out h-full"
                     style={{ transform: `translateX(-${currentSlide * 100}%)` }}
                 >
-                    {stories.map((story, index) => (
-                        <div key={index} className="min-w-full h-full relative flex-shrink-0">
-                            {/* Full-width Image with fade effect */}
-                            <div className="absolute inset-0">
-                                <img
-                                    src={story.image}
-                                    alt={story.name}
-                                    className={`w-full h-full object-cover transition-opacity duration-700 ${
-                                        index === currentSlide ? 'opacity-100' : 'opacity-90'
-                                    }`}
-                                />
-                            </div>
-                            
-                            {/* Subtle gradient overlay */}
-                            <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/40 pointer-events-none" />
+                    {stories.map((story, index) => {
+                        const dimensions = imageDimensions[index];
+                        const isPortrait = dimensions?.isPortrait ?? false;
+                        const isCurrentSlide = index === currentSlide;
+                        const isPreload = index === (currentSlide + 1) % stories.length || 
+                                         index === (currentSlide + 2) % stories.length ||
+                                         index === (currentSlide + 3) % stories.length;
 
-                            {/* Minimal Left Overlay Panel with animation */}
-                            <div className="absolute left-0 top-0 bottom-0 w-full md:w-auto flex items-end md:items-center p-8 md:p-12 lg:p-16">
-                                <div className={`bg-black/70 backdrop-blur-glass p-6 md:p-8 lg:p-10 rounded-xl max-w-md border border-white/10 shadow-2xl transition-all duration-700 ${
-                                    index === currentSlide 
-                                        ? 'opacity-100 translate-x-0' 
-                                        : 'opacity-0 -translate-x-8'
+                        return (
+                            <div key={index} className="min-w-full h-full relative flex-shrink-0">
+                                {/* Image container with adaptive object-fit */}
+                                <div className={`absolute inset-0 ${
+                                    isPortrait 
+                                        ? 'bg-gradient-to-br from-black/10 via-black/5 to-black/10' 
+                                        : ''
                                 }`}>
-                                    {/* Family/Child Name */}
-                                    <h3 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-                                        {story.name}
-                                    </h3>
+                                    <Image
+                                        src={story.image}
+                                        alt={story.name}
+                                        fill
+                                        sizes="100vw"
+                                        className={`transition-opacity duration-700 ${
+                                            isCurrentSlide ? 'opacity-100' : 'opacity-90'
+                                        } ${
+                                            isPortrait 
+                                                ? 'object-contain' 
+                                                : 'object-cover'
+                                        }`}
+                                        priority={index === 0}
+                                        loading={index === 0 ? 'eager' : isPreload ? 'eager' : 'lazy'}
+                                        quality={90}
+                                    />
+                                </div>
+                                
+                                {/* Subtle gradient overlay */}
+                                <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/40 pointer-events-none" />
 
-                                    {/* Brief Emotional Moment / Description */}
-                                    <p className="text-lg md:text-xl lg:text-2xl text-white/90 mb-4 leading-relaxed animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
-                                        {story.moment}
-                                    </p>
+                                {/* Minimal Left Overlay Panel with animation */}
+                                <div className="absolute left-0 top-0 bottom-0 w-full md:w-auto flex items-end md:items-center p-8 md:p-12 lg:p-16">
+                                    <div className={`bg-black/70 backdrop-blur-glass p-6 md:p-8 lg:p-10 rounded-xl max-w-md border border-white/10 shadow-2xl transition-all duration-700 ${
+                                        isCurrentSlide 
+                                            ? 'opacity-100 translate-x-0' 
+                                            : 'opacity-0 -translate-x-8'
+                                    }`}>
+                                        {/* Family/Child Name */}
+                                        <h3 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+                                            {story.name}
+                                        </h3>
+
+                                        {/* Brief Emotional Moment / Description */}
+                                        <p className="text-lg md:text-xl lg:text-2xl text-white/90 mb-4 leading-relaxed animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
+                                            {story.moment}
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
 
                 {/* Navigation Arrows with enhanced styling */}
