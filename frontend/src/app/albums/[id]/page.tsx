@@ -5,6 +5,7 @@ import { use } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { fetchPortfolio } from '@/lib/api';
+import ProgressBar from '@/components/ProgressBar';
 
 export default function AlbumDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
@@ -27,9 +28,14 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-white flex items-center justify-center">
-                <div className="text-black/60 text-lg">Se încarcă albumul...</div>
-            </div>
+            <>
+                <ProgressBar isLoading={loading} className="fixed top-0 left-0 right-0 z-50" />
+                <div className="min-h-screen bg-white flex items-center justify-center">
+                    <div className="text-center">
+                        <div className="text-black/60 text-lg">Se încarcă albumul...</div>
+                    </div>
+                </div>
+            </>
         );
     }
 

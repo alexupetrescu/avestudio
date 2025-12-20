@@ -8,7 +8,7 @@ from django.template.response import TemplateResponse
 import re
 import uuid
 from collections import defaultdict
-from .models import ClientAlbum, AlbumImage
+from .models import ClientAlbum, AlbumImage, GoogleDriveAlbum
 
 
 class AlbumImageInline(admin.TabularInline):
@@ -310,3 +310,136 @@ class AlbumImageAdmin(admin.ModelAdmin):
             )
         return "No image"
     image_preview.short_description = "Preview"
+
+
+@admin.register(GoogleDriveAlbum)
+class GoogleDriveAlbumAdmin(admin.ModelAdmin):
+    list_display = ('title', 'folder_id_display', 'created_at', 'qr_code_display', 'access_url_display')
+    readonly_fields = ('folder_id', 'qr_code', 'qr_code_display', 'access_url', 'test_connection')
+    search_fields = ('title', 'folder_id')
+    list_filter = ('created_at',)
+    fieldsets = (
+        ('Album Information', {
+            'fields': ('title', 'folder_link', 'folder_id')
+        }),
+        ('QR Code & Access', {
+            'fields': ('qr_code', 'qr_code_display', 'access_url', 'test_connection'),
+            'description': 'QR code and access URL are automatically generated when you save the album.'
+        }),
+    )
+    
+    def folder_id_display(self, obj):
+        if not obj or not obj.pk:
+            return "-"
+        if obj.folder_id:
+            return format_html(
+                '<code style="background: #f0f0f0; padding: 2px 6px; border-radius: 3px;">{}</code>',
+                obj.folder_id[:30] + '...' if len(obj.folder_id) > 30 else obj.folder_id
+            )
+        return "-"
+    folder_id_display.short_description = 'Folder ID'
+    
+    def qr_code_display(self, obj):
+        if not obj or not obj.pk:
+            return "No QR code"
+        if obj.qr_code:
+            return format_html(
+                '<img src="{}" style="max-width: 200px; max-height: 200px;" />',
+                obj.qr_code.url
+            )
+        return "No QR code"
+    qr_code_display.short_description = 'QR Code'
+    
+    def access_url_display(self, obj):
+        """Display the access URL in list view"""
+        if not obj or not obj.pk:
+            return "-"
+        from django.conf import settings
+        frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
+        url = f"{frontend_url}/drive/{obj.id}"
+        return format_html(
+            '<a href="{}" target="_blank" style="color: #417690; word-break: break-all;">{}</a>',
+            url, url
+        )
+    access_url_display.short_description = 'Access URL'
+    
+    def access_url(self, obj):
+        """Display the full URL for access in detail view"""
+        if not obj or not obj.pk:
+            return mark_safe('<div style="padding: 10px; background: #f0f0f0; border-radius: 4px; margin: 10px 0;">Save the album first to see the access URL.</div>')
+        from django.conf import settings
+        frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
+        url = f"{frontend_url}/drive/{obj.id}"
+        regenerate_url = f"/admin/clients/googledrivealbum/{obj.id}/regenerate-qr/"
+        return format_html(
+            '<div style="padding: 10px; background: #f0f0f0; border-radius: 4px; margin: 10px 0;">'
+            '<strong>Access URL:</strong><br>'
+            '<a href="{}" target="_blank" style="color: #417690; word-break: break-all;">{}</a><br><br>'
+            '<a href="{}" class="button" style="background: #417690; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; display: inline-block; margin-top: 8px;">Regenerate QR Code</a>'
+            '</div>',
+            url, url, regenerate_url
+        )
+    access_url.short_description = 'Access Information'
+    
+    def test_connection(self, obj):
+        """Test connection to Google Drive and show image count"""
+        # Handle case when obj is None (during add view)
+        if not obj or not obj.pk:
+            return mark_safe('<span style="color: #999;">Save the album first to test connection</span>')
+        
+        if not obj.folder_id:
+            return mark_safe('<span style="color: #999;">No folder ID available. Please provide a valid Google Drive folder link.</span>')
+        
+        try:
+            from backend.google_drive import get_google_drive_service
+            drive_service = get_google_drive_service()
+            
+            if not drive_service:
+                return mark_safe(
+                    '<span style="color: #d32f2f;">Google Drive service not configured. Check your API key in settings.</span>'
+                )
+            
+            images = drive_service.get_image_files(obj.folder_id)
+            return format_html(
+                '<div style="padding: 10px; background: #e8f5e9; border: 1px solid #4caf50; border-radius: 4px; color: #2e7d32;">'
+                '<strong>✓ Connection successful!</strong><br>'
+                'Found <strong>{}</strong> image(s) in this folder.'
+                '</div>',
+                len(images)
+            )
+        except Exception as e:
+            return format_html(
+                '<div style="padding: 10px; background: #ffebee; border: 1px solid #f44336; border-radius: 4px; color: #c62828;">'
+                '<strong>✗ Connection failed:</strong><br>'
+                '<code style="font-size: 12px;">{}</code>'
+                '</div>',
+                str(e)
+            )
+    test_connection.short_description = 'Test Connection'
+    
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path('<uuid:album_id>/regenerate-qr/', self.admin_site.admin_view(self.regenerate_qr_code), name='clients_googledrivealbum_regenerate_qr'),
+        ]
+        return custom_urls + urls
+    
+    def regenerate_qr_code(self, request, album_id):
+        """Regenerate QR code for a single album"""
+        album = get_object_or_404(GoogleDriveAlbum, pk=album_id)
+        album.generate_qr_code()
+        album.save()
+        messages.success(request, f'QR code regenerated for "{album.title}".')
+        return redirect('admin:clients_googledrivealbum_change', album_id)
+    
+    actions = ['regenerate_qr_codes']
+    
+    def regenerate_qr_codes(self, request, queryset):
+        """Admin action to regenerate QR codes for selected albums"""
+        count = 0
+        for album in queryset:
+            album.generate_qr_code()
+            album.save()
+            count += 1
+        self.message_user(request, f'Successfully regenerated QR codes for {count} album(s).')
+    regenerate_qr_codes.short_description = 'Regenerate QR codes for selected albums'

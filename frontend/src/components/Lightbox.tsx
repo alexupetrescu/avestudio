@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
+import LoadingSpinner from './LoadingSpinner';
 
 interface LightboxProps {
     images: Array<{ id: number; image: string }>;
@@ -16,13 +17,15 @@ export default function Lightbox({ images, currentIndex, onClose, onNavigate }: 
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
     const [lastTouchDistance, setLastTouchDistance] = useState(0);
     const [isZooming, setIsZooming] = useState(false);
+    const [imageLoading, setImageLoading] = useState(true);
     const imageRef = useRef<HTMLImageElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
-    // Reset zoom when image changes
+    // Reset zoom and loading state when image changes
     useEffect(() => {
         setScale(1);
         setPosition({ x: 0, y: 0 });
+        setImageLoading(true);
     }, [currentIndex]);
 
     // Handle touch events for pinch-to-zoom
@@ -228,16 +231,27 @@ export default function Lightbox({ images, currentIndex, onClose, onNavigate }: 
                 className="relative w-full h-full flex items-center justify-center overflow-hidden"
                 style={{ touchAction: 'none' }}
             >
+                {/* Loading spinner */}
+                {imageLoading && (
+                    <div className="absolute inset-0 flex items-center justify-center z-50">
+                        <LoadingSpinner size="lg" className="text-white" />
+                    </div>
+                )}
+                
                 <img
                     ref={imageRef}
                     src={currentImage.image}
                     alt={`Image ${currentIndex + 1}`}
-                    className="max-w-full max-h-full object-contain select-none"
+                    className={`max-w-full max-h-full object-contain select-none ${
+                        imageLoading ? 'opacity-0' : 'opacity-100'
+                    } transition-opacity duration-300`}
                     style={{
                         transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
                         transition: isDragging || isZooming ? 'none' : 'transform 0.3s ease-out',
                     }}
                     draggable={false}
+                    onLoad={() => setImageLoading(false)}
+                    onError={() => setImageLoading(false)}
                 />
             </div>
 

@@ -1,105 +1,77 @@
 'use client';
 
 import { useEffect, useState, use } from 'react';
-import { fetchAlbum, verifyPin, downloadAlbum } from '@/lib/api';
 import Lightbox from '@/components/Lightbox';
 import ProgressBar from '@/components/ProgressBar';
 
-interface AlbumImage {
-    id: number;
-    image: string;
-    created_at: string;
+interface GoogleDriveImage {
+    id: string;
+    name: string;
+    mimeType: string;
+    size?: string;
+    createdTime?: string;
+    modifiedTime?: string;
+    thumbnailLink?: string;
+    downloadLink: string;
+    directLink: string;
+    proxyLink?: string;
+    thumbnailProxyLink?: string;
 }
 
-interface ClientAlbum {
+interface GoogleDriveAlbum {
     id: string;
     title: string;
-    images: AlbumImage[];
+    folder_id: string;
+    folder_link: string;
+    created_at: string;
+    images: GoogleDriveImage[];
 }
 
-export default function AlbumPage({ params }: { params: Promise<{ id: string }> }) {
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+
+async function fetchDriveAlbum(id: string): Promise<GoogleDriveAlbum> {
+    const res = await fetch(`${API_URL}/drive-albums/${id}/`, { cache: 'no-store' });
+    if (!res.ok) {
+        const error = await res.json().catch(() => ({ error: 'Failed to fetch album' }));
+        throw new Error(error.error || 'Failed to fetch album');
+    }
+    return res.json();
+}
+
+export default function DriveAlbumPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
-    const [album, setAlbum] = useState<ClientAlbum | null>(null);
+    const [album, setAlbum] = useState<GoogleDriveAlbum | null>(null);
     const [loading, setLoading] = useState(true);
-    const [pin, setPin] = useState('');
     const [error, setError] = useState('');
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [lightboxOpen, setLightboxOpen] = useState(false);
     const [lightboxIndex, setLightboxIndex] = useState(0);
-    const [downloading, setDownloading] = useState(false);
 
     useEffect(() => {
-        const storedPin = localStorage.getItem(`album_pin_${id}`);
-        if (storedPin) {
-            verifyPin(storedPin, id)
-                .then((data) => {
-                    if (data.valid && data.album_id === id) {
-                        setIsAuthenticated(true);
-                        loadAlbum();
-                    } else {
-                        localStorage.removeItem(`album_pin_${id}`);
-                    }
-                })
-                .catch(() => {
-                    localStorage.removeItem(`album_pin_${id}`);
-                });
-        }
-        setLoading(false);
-    }, [id]);
-
-    const loadAlbum = async () => {
-        try {
-            const data = await fetchAlbum(id);
-            setAlbum(data);
-        } catch (err) {
-            console.error(err);
-            setError('Eroare la încărcarea albumului');
-        }
-    };
-
-    const handlePinSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError('');
-
-        try {
-            const data = await verifyPin(pin, id);
-            if (data.valid && data.album_id === id) {
-                localStorage.setItem(`album_pin_${id}`, pin);
-                setIsAuthenticated(true);
-                loadAlbum();
-            } else {
-                setError('PIN invalid pentru acest album');
+        const loadAlbum = async () => {
+            try {
+                const data = await fetchDriveAlbum(id);
+                setAlbum(data);
+            } catch (err: any) {
+                console.error(err);
+                setError(err.message || 'Eroare la încărcarea albumului');
+            } finally {
+                setLoading(false);
             }
-        } catch (err: any) {
-            setError(err.message || 'PIN invalid');
-        }
-    };
+        };
 
-    const handleDownloadAll = async () => {
-        if (!album) return;
-        
-        const storedPin = localStorage.getItem(`album_pin_${id}`);
-        if (!storedPin) {
-            setError('PIN-ul nu este disponibil. Vă rugăm să reintroduceți PIN-ul.');
-            return;
-        }
-
-        setDownloading(true);
-        setError('');
-        
-        try {
-            await downloadAlbum(id, storedPin);
-        } catch (err: any) {
-            setError(err.message || 'Eroare la descărcarea albumului');
-        } finally {
-            setDownloading(false);
-        }
-    };
+        loadAlbum();
+    }, [id]);
 
     const openLightbox = (index: number) => {
         setLightboxIndex(index);
         setLightboxOpen(true);
     };
+
+    // Convert Google Drive images to format expected by Lightbox (use full images, not thumbnails)
+    const lightboxImages = album?.images.map((img, index) => ({
+        id: index, // Lightbox expects number, use index
+        image: img.proxyLink || img.directLink,
+    })) || [];
 
     if (loading) {
         return (
@@ -114,48 +86,20 @@ export default function AlbumPage({ params }: { params: Promise<{ id: string }> 
         );
     }
 
-    if (!isAuthenticated) {
+    if (error) {
         return (
             <div className="min-h-screen bg-white flex items-center justify-center px-8 py-32">
-                <div className="w-full max-w-2xl">
-                    <div className="text-center mb-16 animate-slide-up">
-                        <span className="text-sm text-black/40 mb-6 block">Album Protejat</span>
-                        <h2 className="text-4xl md:text-5xl font-bold text-black mb-6 tracking-tight">
-                            Acces Album
-                        </h2>
-                        <p className="text-black/60">Vă rugăm să introduceți PIN-ul pentru a vizualiza acest album.</p>
-                    </div>
-                    <div className="w-full max-w-md mx-auto p-12 bg-white border border-black/10 animate-fade-in">
-                        <form onSubmit={handlePinSubmit} className="space-y-8">
-                            <div>
-                                <label htmlFor="pin" className="block text-sm font-medium text-black mb-4">
-                                    Introduceți PIN-ul de 4 cifre
-                                </label>
-                                <input
-                                    type="tel"
-                                    inputMode="numeric"
-                                    id="pin"
-                                    value={pin}
-                                    onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                                    maxLength={4}
-                                    className="w-full px-6 py-4 bg-gray-50 border border-black/10 text-black text-center text-3xl tracking-[0.5em] focus:outline-none focus:border-black transition-colors duration-300 font-medium"
-                                    placeholder="0000"
-                                    required
-                                />
-                            </div>
-                            {error && (
-                                <div className="text-red-600 text-sm text-center bg-red-50 py-4 border border-red-200">
-                                    {error}
-                                </div>
-                            )}
-                            <button
-                                type="submit"
-                                className="w-full btn-primary"
-                            >
-                                Accesează Albumul
-                            </button>
-                        </form>
-                    </div>
+                <div className="w-full max-w-2xl text-center">
+                    <h2 className="text-4xl md:text-5xl font-bold text-black mb-6 tracking-tight">
+                        Eroare
+                    </h2>
+                    <p className="text-black/60 mb-8">{error}</p>
+                    <button
+                        onClick={() => window.location.reload()}
+                        className="btn-primary"
+                    >
+                        Reîncearcă
+                    </button>
                 </div>
             </div>
         );
@@ -163,14 +107,9 @@ export default function AlbumPage({ params }: { params: Promise<{ id: string }> 
 
     if (!album) {
         return (
-            <>
-                <ProgressBar isLoading={true} className="fixed top-0 left-0 right-0 z-50" />
-                <div className="min-h-screen bg-white flex items-center justify-center">
-                    <div className="text-center">
-                        <div className="text-black/60 text-lg">Se încarcă albumul...</div>
-                    </div>
-                </div>
-            </>
+            <div className="min-h-screen bg-white flex items-center justify-center">
+                <div className="text-black/60 text-lg">Albumul nu a fost găsit.</div>
+            </div>
         );
     }
 
@@ -184,21 +123,20 @@ export default function AlbumPage({ params }: { params: Promise<{ id: string }> 
                     </h1>
                     <div className="flex items-center justify-between flex-wrap gap-4">
                         <p className="text-black/60 text-sm">{album.images.length} Fotografii</p>
-                        {album.images.length > 0 && (
-                            <button
-                                onClick={handleDownloadAll}
-                                disabled={downloading}
-                                className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                        {album.folder_link && (
+                            <a
+                                href={album.folder_link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="btn-primary inline-flex items-center gap-2"
                             >
-                                {downloading ? 'Se descarcă...' : 'Descarcă toate pozele din album'}
-                            </button>
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                </svg>
+                                Vezi pozele în Google Drive
+                            </a>
                         )}
                     </div>
-                    {error && (
-                        <div className="mt-4 text-red-600 text-sm bg-red-50 py-3 px-4 border border-red-200 rounded">
-                            {error}
-                        </div>
-                    )}
                 </div>
             </section>
 
@@ -224,11 +162,31 @@ export default function AlbumPage({ params }: { params: Promise<{ id: string }> 
                                     >
                                         <div className="relative w-full" style={{ height: `${imageHeight}px` }}>
                                             <img
-                                                src={img.image}
-                                                alt={`Fotografie din ${album.title}`}
+                                                src={img.thumbnailProxyLink || img.proxyLink || img.directLink}
+                                                alt={img.name}
                                                 className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
                                                 loading="lazy"
                                                 decoding="async"
+                                                onLoad={(e) => {
+                                                    // Optionally load full image on hover or after thumbnail loads
+                                                    const imgElement = e.target as HTMLImageElement;
+                                                    if (img.thumbnailProxyLink && img.proxyLink) {
+                                                        // Preload full image in background
+                                                        const fullImage = new Image();
+                                                        fullImage.src = img.proxyLink;
+                                                    }
+                                                }}
+                                                onError={(e) => {
+                                                    // Fallback chain: thumbnail -> proxy -> direct -> Google thumbnail
+                                                    const imgElement = e.target as HTMLImageElement;
+                                                    if (img.thumbnailProxyLink && imgElement.src === img.thumbnailProxyLink) {
+                                                        imgElement.src = img.proxyLink || img.directLink;
+                                                    } else if (img.proxyLink && imgElement.src === img.proxyLink) {
+                                                        imgElement.src = img.directLink;
+                                                    } else if (img.thumbnailLink) {
+                                                        imgElement.src = img.thumbnailLink;
+                                                    }
+                                                }}
                                             />
                                             
                                             {/* Gradient overlay on hover */}
@@ -238,7 +196,7 @@ export default function AlbumPage({ params }: { params: Promise<{ id: string }> 
                                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all duration-500 flex flex-col justify-end p-4 md:p-6">
                                                 <div className="transform translate-y-6 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-500 ease-out">
                                                     <p className="text-white/95 text-sm md:text-base drop-shadow-md">
-                                                        Fotografie {index + 1}
+                                                        {img.name}
                                                     </p>
                                                 </div>
                                             </div>
@@ -264,7 +222,7 @@ export default function AlbumPage({ params }: { params: Promise<{ id: string }> 
             {/* Lightbox */}
             {lightboxOpen && album && (
                 <Lightbox
-                    images={album.images}
+                    images={lightboxImages}
                     currentIndex={lightboxIndex}
                     onClose={() => setLightboxOpen(false)}
                     onNavigate={setLightboxIndex}
@@ -273,3 +231,4 @@ export default function AlbumPage({ params }: { params: Promise<{ id: string }> 
         </div>
     );
 }
+
