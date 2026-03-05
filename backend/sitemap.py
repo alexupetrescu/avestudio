@@ -2,24 +2,24 @@
 Django sitemap generation for SEO
 """
 from django.contrib.sitemaps import Sitemap
-from django.urls import reverse
 from portfolio.models import PortfolioImage, Category
 from django.conf import settings
 
 
 class StaticViewSitemap(Sitemap):
-    """Sitemap for static pages"""
+    """Sitemap for static pages (paths served by frontend)"""
     priority = 1.0
     changefreq = 'daily'
 
     def items(self):
         return [
-            'home',
-            'portfolio',
+            '/',
+            '/portfolio',
+            '/360view',
         ]
 
     def location(self, item):
-        return reverse(item)
+        return item
 
 
 class PortfolioSitemap(Sitemap):
