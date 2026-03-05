@@ -58,6 +58,11 @@ dist/
 Thumbs.db
 desktop.ini
 
+# 360 panorama images (large files, keep locally)
+frontend/public/360s/*.jpg
+frontend/public/360s/*.jpeg
+frontend/public/360s/*.png
+
 # Keep example files
 !backend/env.example
 !frontend/.env.example
