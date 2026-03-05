@@ -46,7 +46,7 @@ export default function PanoramaViewer({
     <div className="relative w-full h-screen min-h-[100dvh]">
       <button
         onClick={() => store.enterVR()}
-        className="absolute top-4 right-4 z-10 px-4 py-2 bg-black/80 text-white rounded-lg hover:bg-black/90 transition-colors text-sm font-medium"
+        className="absolute top-4 right-4 z-50 px-4 py-2 bg-black/80 text-white rounded-lg hover:bg-black/90 transition-colors text-sm font-medium"
       >
         Enter VR
       </button>
