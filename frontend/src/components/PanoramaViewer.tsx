@@ -1,11 +1,13 @@
 'use client';
 
-import { Suspense, useRef, useState, useMemo, useCallback } from 'react';
+import { Suspense, useState, useCallback } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, useTexture } from '@react-three/drei';
 import { XR, createXRStore } from '@react-three/xr';
 import * as THREE from 'three';
 import LoadingSpinner from './LoadingSpinner';
+
+const store = createXRStore();
 
 function PanoramaSphere({ imageSrc }: { imageSrc: string }) {
   const texture = useTexture(imageSrc);
@@ -42,18 +44,6 @@ export default function PanoramaViewer({
   images,
   imageSrc,
 }: PanoramaViewerProps) {
-  const overlayRef = useRef<HTMLDivElement>(null);
-  const [overlayEl, setOverlayEl] = useState<HTMLDivElement | null>(null);
-
-  const store = useMemo(
-    () =>
-      createXRStore({
-        // Pass overlay root for VR DOM overlay (WebXR dom-overlay feature)
-        domOverlay: overlayEl ? { root: overlayEl } : true,
-      } as Parameters<typeof createXRStore>[0]),
-    [overlayEl]
-  );
-
   const imageList =
     images && images.length > 0
       ? images
@@ -75,17 +65,9 @@ export default function PanoramaViewer({
     );
   }, [imageList.length]);
 
-  const overlayRefCallback = useCallback((el: HTMLDivElement | null) => {
-    overlayRef.current = el;
-    setOverlayEl(el);
-  }, []);
-
   return (
     <div className="relative w-full h-screen min-h-[100dvh]">
-      <div
-        ref={overlayRefCallback}
-        className="absolute inset-0 pointer-events-none z-50"
-      >
+      <div className="absolute inset-0 pointer-events-none z-50">
         <button
           onClick={() => store.enterVR()}
           className="absolute top-4 right-4 px-4 py-2 bg-black/80 text-white rounded-lg hover:bg-black/90 transition-colors text-sm font-medium pointer-events-auto"
