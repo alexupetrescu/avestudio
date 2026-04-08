@@ -27,116 +27,153 @@ export default async function Home() {
     fetchCategories().catch(() => []),
   ]);
 
-  // Handle paginated response - extract results array
   const portfolioArray = portfolioData.results || portfolioData || [];
   const featuredPortfolio = Array.isArray(portfolioArray) ? portfolioArray.slice(0, 12) : [];
-  const categories = categoriesData || [];
 
   return (
-    <div className="flex flex-col bg-white">
-      {/* Hero Section - Full Image with Bottom-Left Overlay */}
+    <div className="flex flex-col">
+      {/* Hero Section */}
       <section className="relative h-screen w-full overflow-hidden">
-        {/* Hero Image with subtle parallax effect */}
         <HeroParallax />
 
-        {/* Subtle gradient overlay for better text readability */}
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/20 pointer-events-none" />
+        {/* Gradient overlays */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/60 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-transparent pointer-events-none" />
 
-        {/* Bottom-Left Overlay with Gradient */}
-        <div className="absolute bottom-0 left-0 w-full lg:w-auto p-8 lg:p-12 pb-12 lg:pb-16 z-10">
-          <div className="relative bg-gradient-to-t from-black/80 via-black/50 to-black/30 backdrop-blur-glass p-8 lg:p-12 rounded-xl max-w-2xl border border-white/10 shadow-2xl">
-            {/* Small Logo with animation */}
-            <div className="mb-6 animate-slide-down" style={{ animationDelay: '0.2s', animationFillMode: 'both' }}>
-              <Image
-                src="/logo/avephotostudio.svg"
-                alt="AveStudio"
-                width={150}
-                height={40}
-                className="h-6 w-auto brightness-0 invert transition-opacity duration-500"
-                priority
-              />
-            </div>
+        {/* Hero content */}
+        <div className="absolute inset-0 flex items-end z-10">
+          <div className="w-full px-6 lg:px-12 pb-16 lg:pb-24 max-w-7xl mx-auto">
+            <div className="max-w-2xl">
+              {/* Logo mark */}
+              <div className="mb-8 animate-fade-in" style={{ animationDelay: '0.3s', animationFillMode: 'both' }}>
+                <Image
+                  src="/logo/avephotostudio.svg"
+                  alt="AVE Studio"
+                  width={120}
+                  height={32}
+                  className="h-5 w-auto brightness-0 invert opacity-60"
+                  priority
+                />
+              </div>
 
-            {/* Main Heading - White, Large, Emotional with animation */}
-            <h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white mb-4 leading-[1.1] tracking-tight animate-fade-in-up" style={{ animationDelay: '0.3s', animationFillMode: 'both' }}>
-              Cresc atât de repede
-            </h1>
-
-            {/* Subheading - Shorter, Punchier with animation */}
-            <p className="text-lg md:text-xl lg:text-2xl text-white/90 mb-8 font-normal leading-relaxed animate-fade-in-up" style={{ animationDelay: '0.5s', animationFillMode: 'both' }}>
-              Pentru momentele care nu se mai întorc
-            </p>
-
-            {/* Single White-Outlined CTA Button with enhanced animation */}
-            <div className="animate-fade-in-up" style={{ animationDelay: '0.7s', animationFillMode: 'both' }}>
-              <Link 
-                href="/portfolio" 
-                className="inline-block px-8 py-4 border-2 border-white text-white font-medium hover:bg-white hover:text-black transition-all duration-500 rounded-sm relative overflow-hidden group"
+              {/* Heading */}
+              <h1
+                className="text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-semibold text-white mb-6 leading-[1.05] tracking-tight animate-fade-in-up"
+                style={{ animationDelay: '0.5s', animationFillMode: 'both', fontFamily: 'var(--font-heading)' }}
               >
-                <span className="relative z-10 group-hover:text-black transition-colors duration-300">Vezi Portofoliul</span>
-                <span className="absolute inset-0 bg-white transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left -z-0"></span>
-              </Link>
+                Cresc atât
+                <br />
+                <em className="font-normal italic">de repede</em>
+              </h1>
+
+              {/* Decorative line */}
+              <div
+                className="luxury-line-white mb-6 animate-fade-in"
+                style={{ animationDelay: '0.7s', animationFillMode: 'both' }}
+              />
+
+              {/* Subheading */}
+              <p
+                className="text-lg md:text-xl text-white/70 mb-10 font-light leading-relaxed animate-fade-in-up"
+                style={{ animationDelay: '0.8s', animationFillMode: 'both' }}
+              >
+                Pentru momentele care nu se mai întorc
+              </p>
+
+              {/* CTA */}
+              <div className="animate-fade-in-up" style={{ animationDelay: '1s', animationFillMode: 'both' }}>
+                <Link
+                  href="/portfolio"
+                  className="inline-flex items-center gap-3 px-8 py-4 rounded-full border border-white/30 text-white text-sm font-medium tracking-[0.05em] hover:bg-white hover:text-black transition-all duration-700 backdrop-blur-sm bg-white/5"
+                >
+                  <span>Vezi Portofoliul</span>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 8.25L21 12m0 0l-3.75 3.75M21 12H3" />
+                  </svg>
+                </Link>
+              </div>
             </div>
           </div>
         </div>
+
+        {/* Scroll indicator */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 animate-float">
+          <div className="w-[1px] h-12 bg-gradient-to-b from-transparent to-white/40" />
+        </div>
       </section>
 
-      {/* Portfolio Carousel Section */}
+      {/* Portfolio Section */}
       {featuredPortfolio.length > 0 && (
-        <section className="bg-white">
-          {/* Section Header with scroll reveal */}
+        <section className="bg-[var(--background)]">
           <ScrollReveal>
-            <div className="max-w-7xl mx-auto px-8 lg:px-16 pt-32 pb-16">
-              <h2 className="text-5xl md:text-6xl lg:text-7xl font-bold text-black mb-4 tracking-tight">
-                Ei Au Ales Să Oprească Timpul
-              </h2>
-              <p className="text-xl md:text-2xl text-black/60">
-                Poate e rândul tău
-              </p>
+            <div className="max-w-7xl mx-auto px-6 lg:px-12 pt-32 pb-16">
+              <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+                <div>
+                  <p className="text-[11px] font-semibold tracking-[0.2em] uppercase text-black/30 mb-4">
+                    Portofoliu
+                  </p>
+                  <h2 className="text-4xl md:text-5xl lg:text-6xl font-semibold text-black tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>
+                    Ei Au Ales Să
+                    <br />
+                    <em className="font-normal italic">Oprească Timpul</em>
+                  </h2>
+                </div>
+                <p className="text-base text-black/40 max-w-sm leading-relaxed">
+                  Poate e rândul tău să transformi o clipă într-o amintire veșnică
+                </p>
+              </div>
             </div>
           </ScrollReveal>
 
-          {/* Carousel */}
           <PortfolioCarousel items={featuredPortfolio} />
         </section>
       )}
 
-      {/* CTA Section with enhanced styling */}
-      <section className="py-40 bg-black text-white relative overflow-hidden">
-        {/* Subtle background pattern */}
-        <div className="absolute inset-0 opacity-5">
+      {/* CTA Section */}
+      <section className="py-32 md:py-40 bg-[#0a0a0a] text-white relative overflow-hidden">
+        <div className="absolute inset-0 opacity-[0.03]">
           <div className="absolute inset-0" style={{
-            backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
-            backgroundSize: '40px 40px'
-          }}></div>
+            backgroundImage: 'radial-gradient(circle at 1px 1px, white 0.5px, transparent 0)',
+            backgroundSize: '48px 48px'
+          }} />
         </div>
-        
+
         <ScrollReveal>
-          <div className="max-w-4xl mx-auto px-8 lg:px-16 text-center relative z-10">
-            <h2 className="text-5xl md:text-7xl font-bold mb-8 leading-tight tracking-tight">
+          <div className="max-w-3xl mx-auto px-6 lg:px-12 text-center relative z-10">
+            <p className="text-[11px] font-semibold tracking-[0.2em] uppercase text-white/30 mb-6">
+              Contact
+            </p>
+            <h2
+              className="text-4xl md:text-6xl lg:text-7xl font-semibold mb-6 leading-tight tracking-tight"
+              style={{ fontFamily: 'var(--font-heading)' }}
+            >
               Gata să Creăm
               <br />
-              <span className="inline-block animate-float">Amintiri?</span>
+              <em className="font-normal italic animate-float inline-block">Amintiri?</em>
             </h2>
-            <p className="text-xl text-white/70 mb-12 max-w-2xl mx-auto leading-relaxed">
+
+            <div className="luxury-line-white mx-auto mb-8" />
+
+            <p className="text-lg text-white/40 mb-16 max-w-lg mx-auto leading-relaxed font-light">
               Să lucrăm împreună pentru a vă captura momentele speciale
             </p>
-            <div className="space-y-6 text-white/90">
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-md mx-auto text-white/60">
               <div className="group">
-                <p className="font-semibold mb-2 text-lg">Adina</p>
-                <a href="tel:0746986415" className="block hover:text-white transition-all duration-300 hover:translate-x-1 inline-block">
-                  0746986415
+                <p className="text-white font-medium mb-2 text-sm tracking-wide">Adina</p>
+                <a href="tel:0746986415" className="block text-sm hover:text-white transition-colors duration-500 mb-0.5">
+                  0746 986 415
                 </a>
-                <a href="mailto:adina@aveletter.ro" className="block hover:text-white transition-all duration-300 hover:translate-x-1 inline-block">
+                <a href="mailto:adina@aveletter.ro" className="block text-sm hover:text-white transition-colors duration-500">
                   adina@aveletter.ro
                 </a>
               </div>
               <div className="group">
-                <p className="font-semibold mb-2 text-lg">Alex</p>
-                <a href="tel:0756538455" className="block hover:text-white transition-all duration-300 hover:translate-x-1 inline-block">
-                  0756538455
+                <p className="text-white font-medium mb-2 text-sm tracking-wide">Alex</p>
+                <a href="tel:0756538455" className="block text-sm hover:text-white transition-colors duration-500 mb-0.5">
+                  0756 538 455
                 </a>
-                <a href="mailto:alexupetrescu@pm.me" className="block hover:text-white transition-all duration-300 hover:translate-x-1 inline-block">
+                <a href="mailto:alexupetrescu@pm.me" className="block text-sm hover:text-white transition-colors duration-500">
                   alexupetrescu@pm.me
                 </a>
               </div>

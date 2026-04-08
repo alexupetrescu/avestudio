@@ -35,20 +35,25 @@ export default function Panorama360Page() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-black/60 text-lg">Se încarcă...</div>
+      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
+        <div className="flex gap-1.5">
+          <div className="w-1.5 h-1.5 bg-black/20 rounded-full animate-[softPulse_1.4s_ease-in-out_infinite]" />
+          <div className="w-1.5 h-1.5 bg-black/20 rounded-full animate-[softPulse_1.4s_ease-in-out_0.2s_infinite]" />
+          <div className="w-1.5 h-1.5 bg-black/20 rounded-full animate-[softPulse_1.4s_ease-in-out_0.4s_infinite]" />
+        </div>
       </div>
     );
   }
 
   if (tours.length === 0) {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-8">
-        <h1 className="text-2xl font-semibold text-black/80 mb-4">
+      <div className="min-h-screen bg-[var(--background)] flex flex-col items-center justify-center p-6">
+        <h1 className="text-xl font-semibold text-black mb-3" style={{ fontFamily: 'var(--font-heading)' }}>
           Nu există tururi 360° disponibile
         </h1>
-        <p className="text-black/60 text-center max-w-md">
-          Adăugați foldere în <code className="bg-black/5 px-2 py-1 rounded">public/360s/</code> cu imagini în formatul <code className="bg-black/5 px-2 py-1 rounded">nume-001.jpeg</code>, <code className="bg-black/5 px-2 py-1 rounded">nume-002.jpeg</code>, etc.
+        <p className="text-sm text-black/40 text-center max-w-md">
+          Adăugați foldere în <code className="bg-black/5 px-2 py-0.5 rounded-md text-xs">public/360s/</code> cu
+          imagini panoramice.
         </p>
       </div>
     );
@@ -56,32 +61,36 @@ export default function Panorama360Page() {
 
   if (tours.length === 1) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-black/60 text-lg">Redirecționare...</div>
+      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
+        <p className="text-sm text-black/40">Redirecționare...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white p-8">
-      <h1 className="text-3xl font-semibold text-black/90 mb-8 text-center">
-        Tururi 360°
-      </h1>
-      <div className="max-w-4xl mx-auto grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {tours.map((tour) => (
-          <Link
-            key={tour.slug}
-            href={`/360view/${tour.slug}`}
-            className="block p-6 bg-black/5 hover:bg-black/10 rounded-xl transition-colors border border-black/5"
-          >
-            <h2 className="text-xl font-medium text-black/90 capitalize">
-              {tour.slug.replace(/-/g, ' ')}
-            </h2>
-            <p className="mt-2 text-black/60 text-sm">
-              {tour.images.length} panorame
-            </p>
-          </Link>
-        ))}
+    <div className="min-h-screen bg-[var(--background)] pt-36 pb-20 px-6 lg:px-12">
+      <div className="max-w-4xl mx-auto">
+        <p className="text-[11px] font-semibold tracking-[0.2em] uppercase text-black/30 mb-4">Experiență</p>
+        <h1 className="text-3xl md:text-4xl font-semibold text-black mb-8 tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>
+          Tururi 360°
+        </h1>
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {tours.map((tour) => (
+            <Link
+              key={tour.slug}
+              href={`/360view/${tour.slug}`}
+              className="group block p-6 bg-white rounded-[var(--radius-lg)] shadow-[var(--card-shadow)] hover:shadow-[var(--card-shadow-hover)] transition-all duration-500 hover:-translate-y-1"
+            >
+              <h2 className="text-lg font-medium text-black capitalize" style={{ fontFamily: 'var(--font-heading)' }}>
+                {tour.slug.replace(/-/g, ' ')}
+              </h2>
+              <p className="mt-2 text-black/40 text-sm">
+                {tour.images.length} panorame
+              </p>
+            </Link>
+          ))}
+        </div>
       </div>
     </div>
   );

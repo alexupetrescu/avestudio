@@ -14,13 +14,13 @@ export default function CategoryFilter({ categories }: { categories: Category[] 
     const currentCategory = searchParams.get('category');
 
     return (
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-2 md:gap-3">
             <Link
                 href="/portfolio"
-                className={`px-6 py-2.5 text-sm font-medium transition-all duration-300 ${
+                className={`px-5 py-2 text-[13px] font-medium transition-all duration-500 rounded-full ${
                     !currentCategory
-                        ? 'bg-black text-white'
-                        : 'bg-transparent text-black/60 hover:text-black border border-black/20 hover:border-black'
+                        ? 'bg-[var(--accent)] text-white shadow-[0_2px_12px_rgba(0,0,0,0.15)]'
+                        : 'bg-transparent text-black/40 hover:text-black border border-black/10 hover:border-black/30'
                 }`}
             >
                 Toate
@@ -29,10 +29,10 @@ export default function CategoryFilter({ categories }: { categories: Category[] 
                 <Link
                     key={category.id}
                     href={`/portfolio?category=${category.slug}`}
-                    className={`px-6 py-2.5 text-sm font-medium transition-all duration-300 ${
+                    className={`px-5 py-2 text-[13px] font-medium transition-all duration-500 rounded-full ${
                         currentCategory === category.slug
-                            ? 'bg-black text-white'
-                            : 'bg-transparent text-black/60 hover:text-black border border-black/20 hover:border-black'
+                            ? 'bg-[var(--accent)] text-white shadow-[0_2px_12px_rgba(0,0,0,0.15)]'
+                            : 'bg-transparent text-black/40 hover:text-black border border-black/10 hover:border-black/30'
                     }`}
                 >
                     {category.name}

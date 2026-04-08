@@ -77,7 +77,7 @@ export default function AlbumPage({ params }: { params: Promise<{ id: string }> 
 
     const handleDownloadAll = async () => {
         if (!album) return;
-        
+
         const storedPin = localStorage.getItem(`album_pin_${id}`);
         if (!storedPin) {
             setError('PIN-ul nu este disponibil. Vă rugăm să reintroduceți PIN-ul.');
@@ -86,7 +86,7 @@ export default function AlbumPage({ params }: { params: Promise<{ id: string }> 
 
         setDownloading(true);
         setError('');
-        
+
         try {
             await downloadAlbum(id, storedPin);
         } catch (err: any) {
@@ -105,9 +105,11 @@ export default function AlbumPage({ params }: { params: Promise<{ id: string }> 
         return (
             <>
                 <ProgressBar isLoading={loading} className="fixed top-0 left-0 right-0 z-50" />
-                <div className="min-h-screen bg-white flex items-center justify-center">
-                    <div className="text-center">
-                        <div className="text-black/60 text-lg">Se încarcă...</div>
+                <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
+                    <div className="flex gap-1.5">
+                        <div className="w-1.5 h-1.5 bg-black/20 rounded-full animate-[softPulse_1.4s_ease-in-out_infinite]" />
+                        <div className="w-1.5 h-1.5 bg-black/20 rounded-full animate-[softPulse_1.4s_ease-in-out_0.2s_infinite]" />
+                        <div className="w-1.5 h-1.5 bg-black/20 rounded-full animate-[softPulse_1.4s_ease-in-out_0.4s_infinite]" />
                     </div>
                 </div>
             </>
@@ -116,20 +118,23 @@ export default function AlbumPage({ params }: { params: Promise<{ id: string }> 
 
     if (!isAuthenticated) {
         return (
-            <div className="min-h-screen bg-white flex items-center justify-center px-8 py-32">
-                <div className="w-full max-w-2xl">
-                    <div className="text-center mb-16 animate-slide-up">
-                        <span className="text-sm text-black/40 mb-6 block">Album Protejat</span>
-                        <h2 className="text-4xl md:text-5xl font-bold text-black mb-6 tracking-tight">
-                            Acces Album
-                        </h2>
-                        <p className="text-black/60">Vă rugăm să introduceți PIN-ul pentru a vizualiza acest album.</p>
-                    </div>
-                    <div className="w-full max-w-md mx-auto p-12 bg-white border border-black/10 animate-fade-in">
-                        <form onSubmit={handlePinSubmit} className="space-y-8">
+            <div className="min-h-screen bg-[var(--background)] flex items-center justify-center px-6 py-32">
+                <div className="w-full max-w-md text-center animate-fade-in-up" style={{ animationFillMode: 'both' }}>
+                    <p className="text-[11px] font-semibold tracking-[0.2em] uppercase text-black/30 mb-4">Album Protejat</p>
+                    <h2
+                        className="text-3xl md:text-4xl font-semibold text-black mb-4 tracking-tight"
+                        style={{ fontFamily: 'var(--font-heading)' }}
+                    >
+                        Acces Album
+                    </h2>
+                    <div className="luxury-line mx-auto mb-6" />
+                    <p className="text-sm text-black/40 mb-10">Introduceți PIN-ul pentru a vizualiza acest album.</p>
+
+                    <div className="w-full p-8 md:p-10 bg-white rounded-[var(--radius-xl)] shadow-[var(--card-shadow-lg)]">
+                        <form onSubmit={handlePinSubmit} className="space-y-6">
                             <div>
-                                <label htmlFor="pin" className="block text-sm font-medium text-black mb-4">
-                                    Introduceți PIN-ul de 4 cifre
+                                <label htmlFor="pin" className="block text-sm font-medium text-black/40 mb-3">
+                                    PIN de 4 cifre
                                 </label>
                                 <input
                                     type="tel"
@@ -138,19 +143,19 @@ export default function AlbumPage({ params }: { params: Promise<{ id: string }> 
                                     value={pin}
                                     onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
                                     maxLength={4}
-                                    className="w-full px-6 py-4 bg-gray-50 border border-black/10 text-black text-center text-3xl tracking-[0.5em] focus:outline-none focus:border-black transition-colors duration-300 font-medium"
+                                    className="w-full px-6 py-5 bg-[var(--muted)] border border-black/[0.06] text-black text-center text-3xl tracking-[0.5em] rounded-[var(--radius-md)] focus:outline-none focus:border-black/20 transition-colors duration-500 font-medium"
                                     placeholder="0000"
                                     required
                                 />
                             </div>
                             {error && (
-                                <div className="text-red-600 text-sm text-center bg-red-50 py-4 border border-red-200">
+                                <div className="text-red-500/80 text-sm text-center bg-red-50 py-3 rounded-[var(--radius-sm)] border border-red-100">
                                     {error}
                                 </div>
                             )}
                             <button
                                 type="submit"
-                                className="w-full btn-primary"
+                                className="w-full py-4 bg-[var(--accent)] text-white text-sm font-medium tracking-[0.03em] rounded-full hover:bg-[#333] transition-all duration-500"
                             >
                                 Accesează Albumul
                             </button>
@@ -165,87 +170,71 @@ export default function AlbumPage({ params }: { params: Promise<{ id: string }> 
         return (
             <>
                 <ProgressBar isLoading={true} className="fixed top-0 left-0 right-0 z-50" />
-                <div className="min-h-screen bg-white flex items-center justify-center">
-                    <div className="text-center">
-                        <div className="text-black/60 text-lg">Se încarcă albumul...</div>
-                    </div>
+                <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
+                    <p className="text-sm text-black/40">Se încarcă albumul...</p>
                 </div>
             </>
         );
     }
 
     return (
-        <div className="min-h-screen bg-white">
-            {/* Header */}
-            <section className="pt-32 pb-16 px-8 lg:px-16 border-b border-black/5">
+        <div className="min-h-screen bg-[var(--background)]">
+            <section className="pt-36 pb-12 px-6 lg:px-12">
                 <div className="max-w-7xl mx-auto">
-                    <h1 className="text-5xl md:text-6xl font-bold text-black mb-4 tracking-tight">
+                    <p className="text-[11px] font-semibold tracking-[0.2em] uppercase text-black/30 mb-4">Album Client</p>
+                    <h1 className="text-3xl md:text-4xl font-semibold text-black mb-4 tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>
                         {album.title}
                     </h1>
+                    <div className="luxury-line mb-6" />
                     <div className="flex items-center justify-between flex-wrap gap-4">
-                        <p className="text-black/60 text-sm">{album.images.length} Fotografii</p>
+                        <p className="text-sm text-black/40">{album.images.length} Fotografii</p>
                         {album.images.length > 0 && (
                             <button
                                 onClick={handleDownloadAll}
                                 disabled={downloading}
-                                className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="inline-flex items-center gap-2 px-6 py-3 bg-[var(--accent)] text-white text-sm font-medium tracking-[0.03em] rounded-full hover:bg-[#333] transition-all duration-500 disabled:opacity-40 disabled:cursor-not-allowed"
                             >
-                                {downloading ? 'Se descarcă...' : 'Descarcă toate pozele din album'}
+                                {downloading ? 'Se descarcă...' : 'Descarcă toate pozele'}
                             </button>
                         )}
                     </div>
                     {error && (
-                        <div className="mt-4 text-red-600 text-sm bg-red-50 py-3 px-4 border border-red-200 rounded">
+                        <div className="mt-4 text-sm text-red-500/80 bg-red-50 py-3 px-4 rounded-[var(--radius-sm)] border border-red-100">
                             {error}
                         </div>
                     )}
                 </div>
             </section>
 
-            {/* Images Masonry */}
-            <section className="py-12 px-8 lg:px-16">
+            <section className="py-8 px-4 md:px-8 lg:px-12">
                 <div className="max-w-7xl mx-auto">
                     {album.images.length > 0 ? (
-                        <div className="columns-1 md:columns-2 lg:columns-3 xl:columns-4 gap-4 md:gap-6">
+                        <div className="columns-1 md:columns-2 lg:columns-3 xl:columns-4 gap-4 md:gap-5">
                             {album.images.map((img, index) => {
-                                // Generate varied heights for masonry effect
-                                const heights = [300, 400, 350, 450, 380, 320, 360, 420];
+                                const heights = [320, 420, 360, 480, 400, 340, 380, 440];
                                 const imageHeight = heights[index % heights.length];
-                                const staggerDelay = (index % 6) * 0.1;
-                                
+                                const staggerDelay = (index % 6) * 0.08;
+
                                 return (
                                     <div
                                         key={img.id}
-                                        className="break-inside-avoid mb-4 md:mb-6 group cursor-pointer relative overflow-hidden rounded-xl bg-gray-100 shadow-sm hover:shadow-2xl transition-all duration-500"
+                                        className="break-inside-avoid mb-4 md:mb-5 group cursor-pointer relative overflow-hidden rounded-[var(--radius-lg)] bg-[var(--muted)] photo-card"
                                         onClick={() => openLightbox(index)}
-                                        style={{
-                                            animation: `fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) ${staggerDelay}s both`
-                                        }}
+                                        style={{ animation: `fadeInUp 0.8s var(--ease-luxury) ${staggerDelay}s both` }}
                                     >
                                         <div className="relative w-full" style={{ height: `${imageHeight}px` }}>
                                             <img
                                                 src={img.image}
                                                 alt={`Fotografie din ${album.title}`}
-                                                className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                                                className="w-full h-full object-cover transition-transform duration-1000 ease-[var(--ease-luxury)] group-hover:scale-[1.06]"
                                                 loading="lazy"
                                                 decoding="async"
                                             />
-                                            
-                                            {/* Gradient overlay on hover */}
-                                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                                            
-                                            {/* Hover overlay */}
-                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all duration-500 flex flex-col justify-end p-4 md:p-6">
-                                                <div className="transform translate-y-6 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-500 ease-out">
-                                                    <p className="text-white/95 text-sm md:text-base drop-shadow-md">
-                                                        Fotografie {index + 1}
-                                                    </p>
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                                            <div className="absolute inset-0 flex flex-col justify-end p-5">
+                                                <div className="transform translate-y-3 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-500 ease-[var(--ease-luxury)]">
+                                                    <p className="text-white/80 text-sm font-light">Fotografie {index + 1}</p>
                                                 </div>
-                                            </div>
-                                            
-                                            {/* Subtle shine effect on hover */}
-                                            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700">
-                                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
                                             </div>
                                         </div>
                                     </div>
@@ -254,14 +243,12 @@ export default function AlbumPage({ params }: { params: Promise<{ id: string }> 
                         </div>
                     ) : (
                         <div className="text-center py-32">
-                            <p className="text-black/60 text-lg mb-2">Nu există încă imagini în acest album.</p>
-                            <p className="text-black/40 text-sm">Verificați mai târziu pentru actualizări.</p>
+                            <p className="text-black/40 text-base">Nu există încă imagini în acest album.</p>
                         </div>
                     )}
                 </div>
             </section>
 
-            {/* Lightbox */}
             {lightboxOpen && album && (
                 <Lightbox
                     images={album.images}

@@ -72,12 +72,7 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
-  verification: {
-    // Add your verification codes here when available
-    // google: 'your-google-verification-code',
-    // yandex: 'your-yandex-verification-code',
-    // yahoo: 'your-yahoo-verification-code',
-  },
+  verification: {},
 };
 
 export default function RootLayout({
@@ -110,12 +105,18 @@ export default function RootLayout({
   return (
     <html lang="ro">
       <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap"
+          rel="stylesheet"
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organization) }}
         />
       </head>
-      <body className="antialiased bg-white text-black min-h-screen flex flex-col">
+      <body className="antialiased bg-[var(--background)] text-[var(--foreground)] min-h-screen flex flex-col">
         <GoogleAnalytics />
         <Navbar />
         <main className="flex-grow">

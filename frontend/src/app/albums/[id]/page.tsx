@@ -2,14 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { use } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { fetchPortfolio } from '@/lib/api';
 import ProgressBar from '@/components/ProgressBar';
 
 export default function AlbumDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
-    const router = useRouter();
     const [images, setImages] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [albumTitle, setAlbumTitle] = useState('');
@@ -30,9 +28,11 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
         return (
             <>
                 <ProgressBar isLoading={loading} className="fixed top-0 left-0 right-0 z-50" />
-                <div className="min-h-screen bg-white flex items-center justify-center">
-                    <div className="text-center">
-                        <div className="text-black/60 text-lg">Se încarcă albumul...</div>
+                <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
+                    <div className="flex gap-1.5">
+                        <div className="w-1.5 h-1.5 bg-black/20 rounded-full animate-[softPulse_1.4s_ease-in-out_infinite]" />
+                        <div className="w-1.5 h-1.5 bg-black/20 rounded-full animate-[softPulse_1.4s_ease-in-out_0.2s_infinite]" />
+                        <div className="w-1.5 h-1.5 bg-black/20 rounded-full animate-[softPulse_1.4s_ease-in-out_0.4s_infinite]" />
                     </div>
                 </div>
             </>
@@ -40,42 +40,43 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
     }
 
     return (
-        <div className="min-h-screen bg-white">
-            {/* Header */}
-            <section className="pt-32 pb-16 px-8 lg:px-16 border-b border-black/5">
+        <div className="min-h-screen bg-[var(--background)]">
+            <section className="pt-36 pb-12 px-6 lg:px-12">
                 <div className="max-w-7xl mx-auto">
                     <Link
                         href="/albums"
-                        className="inline-flex items-center text-black/60 hover:text-black mb-8 transition-colors duration-300 group text-sm font-medium"
+                        className="inline-flex items-center gap-2 text-sm text-black/30 hover:text-black transition-colors duration-500 mb-8"
                     >
-                        <span className="mr-2 group-hover:-translate-x-1 transition-transform duration-300">←</span>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+                        </svg>
                         Înapoi la Albume
                     </Link>
-                    <h1 className="text-5xl md:text-6xl font-bold text-black mb-4 tracking-tight">
+                    <h1 className="text-3xl md:text-4xl font-semibold text-black mb-4 tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>
                         {albumTitle}
                     </h1>
-                    <p className="text-black/60 text-sm">{images.length} Fotografii</p>
+                    <div className="luxury-line mb-4" />
+                    <p className="text-sm text-black/40">{images.length} Fotografii</p>
                 </div>
             </section>
 
-            {/* Images Grid */}
-            <section className="py-12 px-8 lg:px-16">
+            <section className="py-8 px-4 md:px-8 lg:px-12">
                 <div className="max-w-7xl mx-auto">
                     {images.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                            {images.map((item, index) => (
+                            {images.map((item: any, index: number) => (
                                 <div
                                     key={item.id || index}
-                                    className="group relative aspect-square overflow-hidden bg-gray-100 card-hover"
+                                    className="group relative aspect-square overflow-hidden rounded-[var(--radius-lg)] bg-[var(--muted)] photo-card"
                                 >
                                     <img
                                         src={item.image}
                                         alt={item.title || 'Fotografie'}
-                                        className="w-full h-full object-cover image-zoom"
+                                        className="w-full h-full object-cover transition-transform duration-1000 ease-[var(--ease-luxury)] group-hover:scale-[1.06]"
                                     />
                                     {item.title && (
-                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-500 flex flex-col justify-end p-6">
-                                            <p className="text-sm text-white font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-500">{item.title}</p>
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 flex flex-col justify-end p-5">
+                                            <p className="text-sm text-white/80 font-light">{item.title}</p>
                                         </div>
                                     )}
                                 </div>
@@ -83,7 +84,7 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
                         </div>
                     ) : (
                         <div className="text-center py-32">
-                            <p className="text-black/60 text-lg">Nu există imagini în acest album.</p>
+                            <p className="text-black/40 text-base">Nu există imagini în acest album.</p>
                         </div>
                     )}
                 </div>

@@ -32,15 +32,15 @@ export async function generateMetadata({
     const portfolio: PortfolioImage[] = portfolioData.results || portfolioData || [];
     const categories: Category[] = categoriesData || [];
     const firstImage = extractFirstImage(portfolio);
-    
-    const categoryName = category 
+
+    const categoryName = category
         ? categories.find(c => c.slug === category)?.name || category
         : null;
 
-    const title = categoryName 
+    const title = categoryName
         ? `Portofoliu ${categoryName} - AVE Studio | Fotografie Profesională`
         : 'Portofoliu - AVE Studio | Fotografie Profesională';
-    
+
     const description = categoryName
         ? `Explorează portofoliul nostru de fotografii ${categoryName.toLowerCase()}. Moment speciale capturate cu pasiune și profesionalism de AVE Studio.`
         : 'Explorează portofoliul nostru complet de fotografii. Moment speciale, evenimente și sesiuni foto profesionale capturate cu pasiune de AVE Studio.';
@@ -67,38 +67,44 @@ export default async function PortfolioPage({
         fetchCategories().catch(() => []),
     ]);
 
-    // Handle paginated response
     const portfolio: PortfolioImage[] = portfolioData.results || portfolioData || [];
     const categories: Category[] = categoriesData || [];
     const hasNextPage = portfolioData.next !== null && portfolioData.next !== undefined;
 
     return (
-        <div className="min-h-screen bg-white">
-            {/* Hero Section - Minimal */}
-            <section className="pt-32 pb-12 px-8 lg:px-16">
+        <div className="min-h-screen bg-[var(--background)]">
+            {/* Hero */}
+            <section className="pt-36 pb-12 px-6 lg:px-12">
                 <ScrollReveal>
-                    <div className="max-w-7xl mx-auto text-center">
-                        <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-black mb-4 tracking-tight">
-                            Momente Care Rămân
+                    <div className="max-w-7xl mx-auto">
+                        <p className="text-[11px] font-semibold tracking-[0.2em] uppercase text-black/30 mb-4">
+                            Portofoliu
+                        </p>
+                        <h1
+                            className="text-4xl md:text-5xl lg:text-6xl font-semibold text-black mb-6 tracking-tight"
+                            style={{ fontFamily: 'var(--font-heading)' }}
+                        >
+                            Momente Care <em className="font-normal italic">Rămân</em>
                         </h1>
-                        <p className="text-lg md:text-xl text-black/60 max-w-3xl mx-auto leading-relaxed">
+                        <div className="luxury-line mb-6" />
+                        <p className="text-base md:text-lg text-black/40 max-w-xl leading-relaxed font-light">
                             Fiecare fotografie spune o poveste despre dragoste, creștere și timpul care trece prea repede
                         </p>
                     </div>
                 </ScrollReveal>
             </section>
 
-            {/* Filter Tabs - Subtle, Top */}
+            {/* Filter */}
             {categories.length > 0 && (
-                <section className="sticky top-20 z-40 bg-white/95 backdrop-blur-sm border-b border-black/5 py-4 px-8 lg:px-16">
+                <section className="sticky top-20 z-40 bg-[var(--background)]/95 backdrop-blur-xl py-4 px-6 lg:px-12 transition-all duration-300">
                     <div className="max-w-7xl mx-auto">
-                        <div className="flex flex-wrap gap-2 md:gap-3 justify-center">
+                        <div className="flex flex-wrap gap-2 md:gap-3">
                             <a
                                 href="/portfolio"
-                                className={`px-4 py-2 text-sm font-medium transition-colors duration-300 rounded-full ${
+                                className={`px-5 py-2 text-[13px] font-medium transition-all duration-500 rounded-full ${
                                     !category
-                                        ? 'bg-black text-white'
-                                        : 'bg-transparent text-black/60 hover:text-black border border-black/20 hover:border-black'
+                                        ? 'bg-[var(--accent)] text-white shadow-[0_2px_12px_rgba(0,0,0,0.15)]'
+                                        : 'bg-transparent text-black/40 hover:text-black border border-black/10 hover:border-black/30'
                                 }`}
                             >
                                 Toate
@@ -107,10 +113,10 @@ export default async function PortfolioPage({
                                 <a
                                     key={cat.id}
                                     href={`/portfolio?category=${cat.slug}`}
-                                    className={`px-4 py-2 text-sm font-medium transition-colors duration-300 rounded-full ${
+                                    className={`px-5 py-2 text-[13px] font-medium transition-all duration-500 rounded-full ${
                                         category === cat.slug
-                                            ? 'bg-black text-white'
-                                            : 'bg-transparent text-black/60 hover:text-black border border-black/20 hover:border-black'
+                                            ? 'bg-[var(--accent)] text-white shadow-[0_2px_12px_rgba(0,0,0,0.15)]'
+                                            : 'bg-transparent text-black/40 hover:text-black border border-black/10 hover:border-black/30'
                                     }`}
                                 >
                                     {cat.name}
@@ -121,19 +127,21 @@ export default async function PortfolioPage({
                 </section>
             )}
 
-            {/* Masonry Grid Portfolio */}
+            {/* Grid */}
             {portfolio.length > 0 ? (
-                <PortfolioMasonry 
-                    initialItems={portfolio} 
+                <PortfolioMasonry
+                    initialItems={portfolio}
                     category={category}
                     categories={categories}
                     hasNextPage={hasNextPage}
                 />
             ) : (
-                <section className="py-32 px-8 lg:px-16">
+                <section className="py-32 px-6 lg:px-12">
                     <div className="max-w-7xl mx-auto text-center">
-                        <p className="text-black/60 text-lg mb-2">Nu s-au găsit imagini în această categorie.</p>
-                        <p className="text-black/40 text-sm">
+                        <p className="text-black/40 text-lg mb-2" style={{ fontFamily: 'var(--font-heading)' }}>
+                            Nu s-au găsit imagini în această categorie.
+                        </p>
+                        <p className="text-black/25 text-sm">
                             Vă rugăm să verificați mai târziu sau să răsfoiți alte categorii.
                         </p>
                     </div>

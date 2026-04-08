@@ -26,10 +26,10 @@ export default function PinEntryForm() {
     };
 
     return (
-        <div className="w-full max-w-md p-12 bg-white border border-black/10">
+        <div className="w-full max-w-md p-10 md:p-12 bg-white rounded-[var(--radius-xl)] shadow-[var(--card-shadow-lg)]">
             <form onSubmit={handleSubmit} className="space-y-8">
                 <div>
-                    <label htmlFor="pin" className="block text-sm font-medium text-black mb-4">
+                    <label htmlFor="pin" className="block text-sm font-medium text-black/50 mb-4 tracking-wide">
                         Introduceți PIN-ul de 4 cifre
                     </label>
                     <input
@@ -40,14 +40,14 @@ export default function PinEntryForm() {
                         onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
                         maxLength={4}
                         pattern="\d{4}"
-                        className="w-full px-6 py-4 bg-gray-50 border border-black/10 text-black text-center text-3xl tracking-[0.5em] focus:outline-none focus:border-black transition-colors duration-300 font-medium"
+                        className="w-full px-6 py-5 bg-[var(--muted)] border border-black/[0.06] text-black text-center text-3xl tracking-[0.5em] rounded-[var(--radius-md)] focus:outline-none focus:border-black/20 focus:ring-0 transition-colors duration-500 font-medium"
                         placeholder="0000"
                         required
                     />
                 </div>
 
                 {error && (
-                    <div className="text-red-600 text-sm text-center bg-red-50 py-4 border border-red-200">
+                    <div className="text-red-500/80 text-sm text-center bg-red-50 py-3 rounded-[var(--radius-sm)] border border-red-100">
                         {error}
                     </div>
                 )}
@@ -55,7 +55,7 @@ export default function PinEntryForm() {
                 <button
                     type="submit"
                     disabled={loading}
-                    className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full py-4 bg-[var(--accent)] text-white text-sm font-medium tracking-[0.03em] rounded-full hover:bg-[#333] transition-all duration-500 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                     {loading ? 'Se verifică...' : 'Accesează Albumul'}
                 </button>
