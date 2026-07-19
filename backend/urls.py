@@ -5,7 +5,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from rest_framework.routers import DefaultRouter
 from backend.sitemap import sitemaps
-from portfolio.views import PortfolioViewSet, CategoryViewSet
+from portfolio.views import PortfolioViewSet, CategoryViewSet, site_settings
 from clients.views import ClientAlbumViewSet, GoogleDriveAlbumViewSet, verify_pin, download_album, proxy_google_drive_image
 from backend.views import list_google_drive_images, get_google_drive_folder_info
 
@@ -19,6 +19,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
     path('api/', include(router.urls)),
+    path('api/site-settings/', site_settings, name='site-settings'),
     path('api/verify-pin/', verify_pin, name='verify-pin'),
     path('api/verify-pin', verify_pin, name='verify-pin-no-slash'),
     path('api/download-album/', download_album, name='download-album'),

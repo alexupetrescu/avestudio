@@ -2,6 +2,7 @@ import uuid
 import qrcode
 import re
 from io import BytesIO
+from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.db import models
 from django.conf import settings
@@ -16,6 +17,9 @@ class ClientAlbum(models.Model):
     pin = models.CharField(max_length=4, default=generate_pin)
     created_at = models.DateTimeField(auto_now_add=True)
     qr_code = models.ImageField(upload_to='qrcodes/', blank=True, null=True)
+
+    class Meta:
+        ordering = ['-created_at']
 
     def generate_qr_code(self):
         """Generate or regenerate the QR code with the current domain from settings"""
@@ -43,6 +47,9 @@ class AlbumImage(models.Model):
     image = models.ImageField(upload_to='client_albums/')
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        ordering = ['created_at', 'id']
+
     def __str__(self):
         # Show filename or a more descriptive identifier
         if self.image:
@@ -66,6 +73,9 @@ class GoogleDriveAlbum(models.Model):
     folder_id = models.CharField(max_length=200, blank=True, editable=False, help_text="Extracted from folder link")
     created_at = models.DateTimeField(auto_now_add=True)
     qr_code = models.ImageField(upload_to='qrcodes/', blank=True, null=True)
+
+    class Meta:
+        ordering = ['-created_at']
 
     def extract_folder_id(self):
         """Extract folder ID from Google Drive URL"""
@@ -96,19 +106,26 @@ class GoogleDriveAlbum(models.Model):
             self.qr_code.delete(save=False)
         self.qr_code.save(f'qr_drive_{self.id}.png', File(buffer), save=False)
 
+    def clean(self):
+        super().clean()
+        if self.folder_link and not self.extract_folder_id():
+            raise ValidationError({
+                'folder_link': 'Could not extract a folder ID from this Google Drive link. '
+                               'Expected a link like https://drive.google.com/drive/folders/FOLDER_ID'
+            })
+
     def save(self, *args, **kwargs):
-        # Extract folder ID from link
+        # Extract folder ID from link (validated in clean(); silently skip if unparseable
+        # so a direct save never crashes with an unhandled exception)
         if self.folder_link:
             extracted_id = self.extract_folder_id()
             if extracted_id:
                 self.folder_id = extracted_id
-            else:
-                raise ValueError("Could not extract folder ID from the provided Google Drive link. Please check the link format.")
-        
+
         # Generate QR code if not exists
         if not self.qr_code:
             self.generate_qr_code()
-        
+
         super().save(*args, **kwargs)
 
     def __str__(self):

@@ -1,762 +1,898 @@
-/* Modern Admin Design - AVE Studio */
-/* Color Palette: White, #71997d (green), #292929 (dark gray), #FF8C42 (orange accent) */
-/* COMPREHENSIVE OVERRIDE - All Admin Styling */
+/* ============================================================
+   AVE Studio — Django Admin Theme
+   Minimalist black & white, matching the frontend visual system.
 
+   Strategy: override Django admin's own CSS custom properties for
+   BOTH light and dark themes instead of forcing colors with
+   !important. Every stock widget then inherits readable colors in
+   either theme, which structurally prevents same-color-on-same-
+   color contrast bugs.
+   ============================================================ */
+
+/* ---------- LIGHT THEME (default) ---------- */
+html[data-theme="light"],
 :root {
-    --primary-green: #71997d;
-    --primary-green-dark: #5a7a64;
-    --primary-green-light: #8fb39a;
-    --dark-gray: #292929;
-    --dark-gray-light: #3a3a3a;
-    --orange-accent: #FF8C42;
-    --orange-accent-light: #ffa366;
-    --white: #ffffff;
-    --bg-light: #f8f9fa;
-    --border-color: #e0e0e0;
-    --text-primary: #292929;
-    --text-secondary: #666666;
-    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
-    --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.1);
-    --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.15);
-    --radius: 8px;
-    --radius-sm: 4px;
+    --primary: #1a1a1a;
+    --secondary: #1a1a1a;
+    --accent: #b08d57;              /* muted bronze, used sparingly */
+    --primary-fg: #ffffff;
+
+    --body-fg: #1f1f1f;
+    --body-bg: #ffffff;
+    --body-quiet-color: #6b6b6b;
+    --body-medium-color: #3d3d3d;
+    --body-loud-color: #000000;
+
+    --header-color: #bdbdbd;
+    --header-branding-color: #ffffff;
+    --header-bg: #111111;
+    --header-link-color: #ffffff;
+
+    --breadcrumbs-fg: #8a8a8a;
+    --breadcrumbs-link-fg: #1a1a1a;
+    --breadcrumbs-bg: #fafafa;
+
+    --link-fg: #1a1a1a;
+    --link-hover-color: #b08d57;
+    --link-selected-fg: #b08d57;
+
+    --hairline-color: #ececec;
+    --border-color: #d8d8d8;
+
+    --error-fg: #b3261e;
+
+    --darkened-bg: #f7f7f5;
+    --selected-bg: #f0efec;
+    --selected-row: #f7f2e9;
+
+    --button-fg: #ffffff;
+    --button-bg: #2b2b2b;
+    --button-hover-bg: #000000;
+    --default-button-bg: #111111;
+    --default-button-hover-bg: #3a3a3a;
+    --close-button-bg: #6b6b6b;
+    --close-button-hover-bg: #1a1a1a;
+    --delete-button-bg: #a1352c;
+    --delete-button-hover-bg: #7f261f;
+
+    --object-tools-fg: #ffffff;
+    --object-tools-bg: #111111;
+    --object-tools-hover-bg: #3a3a3a;
+
+    /* Theme-aware values for AVE custom components */
+    --ave-panel-bg: #fafaf8;
+    --ave-panel-border: #e4e4e0;
+    --ave-status-ok-bg: #eef4ee;
+    --ave-status-ok-fg: #1e5b2a;
+    --ave-status-ok-border: #bcd6c0;
+    --ave-status-error-bg: #faeceb;
+    --ave-status-error-fg: #8c2b24;
+    --ave-status-error-border: #e3b7b3;
+    --ave-default-btn-bg: #111111;
+    --ave-default-btn-fg: #ffffff;
+    --ave-default-btn-hover-bg: #3a3a3a;
+
+    color-scheme: light;
 }
 
-/* ============================================
-   GLOBAL OVERRIDES
-   ============================================ */
-body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
-    color: var(--text-primary) !important;
-    background: var(--white) !important;
+/* ---------- DARK THEME (explicit toggle) ---------- */
+html[data-theme="dark"] {
+    --primary: #2e2e2e;
+    --secondary: #2e2e2e;
+    --accent: #c9a96e;
+    --primary-fg: #ffffff;
+
+    --body-fg: #e8e8e8;
+    --body-bg: #121212;
+    --body-quiet-color: #a3a3a3;
+    --body-medium-color: #cfcfcf;
+    --body-loud-color: #ffffff;
+
+    --header-color: #8a8a8a;
+    --header-branding-color: #ffffff;
+    --header-bg: #0a0a0a;
+    --header-link-color: #ffffff;
+
+    --breadcrumbs-fg: #8a8a8a;
+    --breadcrumbs-link-fg: #e8e8e8;
+    --breadcrumbs-bg: #181818;
+
+    --link-fg: #e8e8e8;
+    --link-hover-color: #c9a96e;
+    --link-selected-fg: #c9a96e;
+
+    --hairline-color: #262626;
+    --border-color: #3a3a3a;
+
+    --error-fg: #e35f5f;
+
+    --darkened-bg: #1c1c1c;
+    --selected-bg: #242424;
+    --selected-row: #2a2519;
+
+    --button-fg: #ffffff;
+    --button-bg: #333333;
+    --button-hover-bg: #454545;
+    --default-button-bg: #f2f2f2;
+    --default-button-hover-bg: #d6d6d6;
+    --close-button-bg: #3a3a3a;
+    --close-button-hover-bg: #555555;
+    --delete-button-bg: #8c2b24;
+    --delete-button-hover-bg: #6e1f19;
+
+    --object-tools-fg: #111111;
+    --object-tools-bg: #f2f2f2;
+    --object-tools-hover-bg: #d6d6d6;
+
+    --ave-panel-bg: #1a1a1a;
+    --ave-panel-border: #2e2e2e;
+    --ave-status-ok-bg: #16231a;
+    --ave-status-ok-fg: #9fd0a9;
+    --ave-status-ok-border: #2c4a33;
+    --ave-status-error-bg: #2a1715;
+    --ave-status-error-fg: #e8a29c;
+    --ave-status-error-border: #5c2b26;
+    --ave-default-btn-bg: #f2f2f2;
+    --ave-default-btn-fg: #111111;
+    --ave-default-btn-hover-bg: #d6d6d6;
+
+    color-scheme: dark;
 }
 
-/* ============================================
-   HEADER - TOP BAR
-   ============================================ */
+/* ---------- DARK THEME (system preference, data-theme="auto") ---------- */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --primary: #2e2e2e;
+        --secondary: #2e2e2e;
+        --accent: #c9a96e;
+        --primary-fg: #ffffff;
+
+        --body-fg: #e8e8e8;
+        --body-bg: #121212;
+        --body-quiet-color: #a3a3a3;
+        --body-medium-color: #cfcfcf;
+        --body-loud-color: #ffffff;
+
+        --header-color: #8a8a8a;
+        --header-branding-color: #ffffff;
+        --header-bg: #0a0a0a;
+        --header-link-color: #ffffff;
+
+        --breadcrumbs-fg: #8a8a8a;
+        --breadcrumbs-link-fg: #e8e8e8;
+        --breadcrumbs-bg: #181818;
+
+        --link-fg: #e8e8e8;
+        --link-hover-color: #c9a96e;
+        --link-selected-fg: #c9a96e;
+
+        --hairline-color: #262626;
+        --border-color: #3a3a3a;
+
+        --error-fg: #e35f5f;
+
+        --darkened-bg: #1c1c1c;
+        --selected-bg: #242424;
+        --selected-row: #2a2519;
+
+        --button-fg: #ffffff;
+        --button-bg: #333333;
+        --button-hover-bg: #454545;
+        --default-button-bg: #f2f2f2;
+        --default-button-hover-bg: #d6d6d6;
+        --close-button-bg: #3a3a3a;
+        --close-button-hover-bg: #555555;
+        --delete-button-bg: #8c2b24;
+        --delete-button-hover-bg: #6e1f19;
+
+        --object-tools-fg: #111111;
+        --object-tools-bg: #f2f2f2;
+        --object-tools-hover-bg: #d6d6d6;
+
+        --ave-panel-bg: #1a1a1a;
+        --ave-panel-border: #2e2e2e;
+        --ave-status-ok-bg: #16231a;
+        --ave-status-ok-fg: #9fd0a9;
+        --ave-status-ok-border: #2c4a33;
+        --ave-status-error-bg: #2a1715;
+        --ave-status-error-fg: #e8a29c;
+        --ave-status-error-border: #5c2b26;
+        --ave-default-btn-bg: #f2f2f2;
+        --ave-default-btn-fg: #111111;
+        --ave-default-btn-hover-bg: #d6d6d6;
+
+        color-scheme: dark;
+    }
+}
+
+/* ============================================================
+   TYPOGRAPHY & CHROME
+   ============================================================ */
+
+#site-name a {
+    font-weight: 300;
+    font-size: 1.125rem;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+}
+
 #header {
-    background: var(--primary-green) !important;
-    color: var(--white) !important;
-    box-shadow: var(--shadow-md) !important;
-    border-bottom: none !important;
-    padding: 0 !important;
-    height: auto !important;
+    padding: 18px 40px;
 }
 
-#header #branding {
-    background: var(--primary-green) !important;
+#user-tools {
+    font-size: 0.6875rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
 }
 
-#header #site-name {
-    padding: 15px 20px !important;
-    background: var(--primary-green) !important;
-}
-
-#header #site-name a {
-    color: var(--white) !important;
-    font-weight: 600 !important;
-    font-size: 18px !important;
-    text-decoration: none !important;
-}
-
-#header #user-tools {
-    padding: 15px 20px !important;
-    background: var(--primary-green) !important;
-    color: var(--white) !important;
-}
-
-#header #user-tools,
-#header #user-tools strong {
-    color: var(--white) !important;
-}
-
-#header #user-tools a {
-    color: var(--white) !important;
-    font-weight: 500 !important;
-    text-decoration: none !important;
-    padding: 5px 10px !important;
-    border-radius: var(--radius-sm) !important;
-    transition: background-color 0.2s !important;
-}
-
-#header #user-tools a:hover {
-    background: rgba(255, 255, 255, 0.15) !important;
-    color: var(--white) !important;
-}
-
-/* ============================================
-   BREADCRUMBS
-   ============================================ */
 .breadcrumbs {
-    background: var(--dark-gray) !important;
-    padding: 12px 20px !important;
-    border-bottom: none !important;
-    color: var(--white) !important;
+    padding: 12px 40px;
+    border-bottom: 1px solid var(--hairline-color);
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
 }
 
-.breadcrumbs a {
-    color: var(--white) !important;
-    text-decoration: none !important;
-}
-
-.breadcrumbs a:hover {
-    color: var(--orange-accent-light) !important;
-}
-
-.breadcrumbs,
-.breadcrumbs a,
-.breadcrumbs a:link,
-.breadcrumbs a:visited {
-    color: var(--white) !important;
-}
-
-/* ============================================
-   SIDEBAR NAVIGATION - COMPLETE OVERRIDE
-   ============================================ */
-#nav-sidebar {
-    background: var(--white) !important;
-    border-right: 1px solid var(--border-color) !important;
-    box-shadow: var(--shadow-sm) !important;
-    width: 250px !important;
-}
-
-#nav-sidebar .sticky {
-    background: var(--white) !important;
-}
-
-#nav-sidebar .module {
-    background: transparent !important;
-    border: none !important;
-    margin: 0 !important;
-    padding: 0 !important;
-}
-
-#nav-sidebar .module h2 {
-    color: var(--dark-gray) !important;
-    font-weight: 600 !important;
-    font-size: 13px !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.5px !important;
-    padding: 15px 20px 10px !important;
-    margin: 0 !important;
-    border-bottom: 1px solid var(--border-color) !important;
-    background: transparent !important;
-}
-
-#nav-sidebar .module ul {
-    margin: 0 !important;
-    padding: 0 !important;
-    list-style: none !important;
-}
-
-#nav-sidebar .module li {
-    margin: 0 !important;
-    border-bottom: 1px solid var(--bg-light) !important;
-    list-style: none !important;
-}
-
-#nav-sidebar .module li a {
-    color: var(--text-primary) !important;
-    padding: 12px 20px !important;
-    display: block !important;
-    text-decoration: none !important;
-    transition: all 0.2s !important;
-    font-weight: 500 !important;
-    background: transparent !important;
-}
-
-#nav-sidebar .module li a:hover {
-    background: var(--bg-light) !important;
-    color: var(--primary-green) !important;
-    padding-left: 25px !important;
-}
-
-#nav-sidebar .module li.selected a,
-#nav-sidebar .module li.selected a:link,
-#nav-sidebar .module li.selected a:visited {
-    background: var(--primary-green) !important;
-    color: var(--white) !important;
-    font-weight: 600 !important;
-}
-
-/* Dashboard/Index Page App List */
-#content-main .app-list .app {
-    background: var(--white) !important;
-    border: 1px solid var(--border-color) !important;
-    border-radius: var(--radius) !important;
-    margin-bottom: 20px !important;
-    box-shadow: var(--shadow-sm) !important;
-    overflow: hidden !important;
-}
-
-#content-main .app-list .app .section {
-    background: var(--primary-green) !important;
-    color: var(--white) !important;
-    padding: 12px 15px !important;
-    margin: 0 !important;
-    font-weight: 600 !important;
-    font-size: 14px !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.5px !important;
-}
-
-#content-main .app-list .app .model {
-    border-bottom: 1px solid var(--bg-light) !important;
-}
-
-#content-main .app-list .app .model a {
-    color: var(--text-primary) !important;
-    padding: 12px 20px !important;
-    display: block !important;
-    text-decoration: none !important;
-    transition: all 0.2s !important;
-    font-weight: 500 !important;
-}
-
-#content-main .app-list .app .model a:hover {
-    background: var(--bg-light) !important;
-    color: var(--primary-green) !important;
-    padding-left: 25px !important;
-}
-
-#content-main .app-list .app .model.addlink a {
-    color: var(--primary-green) !important;
-    font-weight: 600 !important;
-}
-
-#content-main .app-list .app .model.addlink a:hover {
-    color: var(--primary-green-dark) !important;
-}
-
-/* ============================================
-   MAIN CONTENT AREA
-   ============================================ */
 #content {
-    padding: 25px 30px !important;
-    background: var(--white) !important;
+    padding: 28px 40px;
 }
 
 #content h1 {
-    color: var(--dark-gray) !important;
-    font-weight: 600 !important;
-    font-size: 24px !important;
-    margin-bottom: 20px !important;
-    padding-bottom: 15px !important;
-    border-bottom: 2px solid var(--primary-green) !important;
+    font-weight: 400;
+    font-size: 1.5rem;
+    letter-spacing: 0.06em;
+    color: var(--body-loud-color);
 }
 
-/* ============================================
-   ALL CHECKBOXES - BIGGER EVERYWHERE
-   ============================================ */
-input[type="checkbox"] {
-    width: 22px !important;
-    height: 22px !important;
-    cursor: pointer !important;
-    accent-color: var(--primary-green) !important;
-    transform: scale(1.2) !important;
-    margin: 0 !important;
+/* Section captions: quiet uppercase labels instead of colored bands */
+.module h2, .module caption, .inline-group h2 {
+    background: var(--darkened-bg);
+    color: var(--body-medium-color);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--hairline-color);
 }
 
-input[type="checkbox"]:hover {
-    transform: scale(1.3) !important;
+/* App names inside module captions (dashboard, sidebar): Django colors these
+   with --header-link-color (white); our captions are light, so recolor them */
+.module caption a.section:link,
+.module caption a.section:visited,
+.module h2 a:link,
+.module h2 a:visited {
+    color: var(--body-medium-color);
 }
 
-/* Table checkboxes */
-#result_list input[type="checkbox"],
-#changelist input[type="checkbox"],
-table input[type="checkbox"],
-.inline-group input[type="checkbox"],
-.form-row input[type="checkbox"] {
-    width: 24px !important;
-    height: 24px !important;
-    transform: scale(1.25) !important;
+.module caption a.section:hover,
+.module caption a.section:focus {
+    color: var(--link-hover-color);
+    text-decoration: none;
 }
 
-#result_list input[type="checkbox"]:hover,
-#changelist input[type="checkbox"]:hover,
-table input[type="checkbox"]:hover {
-    transform: scale(1.35) !important;
+.module {
+    border: 1px solid var(--hairline-color);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 24px;
+    background: var(--body-bg);
 }
 
-/* ============================================
+/* ============================================================
    BUTTONS
-   ============================================ */
-.button,
-input[type="submit"],
-input[type="button"],
-.submit-row input,
-a.button,
-button {
-    background: var(--primary-green) !important;
-    color: var(--white) !important;
-    border: none !important;
-    padding: 10px 20px !important;
-    border-radius: var(--radius-sm) !important;
-    font-weight: 500 !important;
-    cursor: pointer !important;
-    transition: all 0.2s !important;
-    text-decoration: none !important;
-    display: inline-block !important;
+   ============================================================ */
+
+.button, input[type=submit], input[type=button], .submit-row input, a.button {
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 10px 18px;
+    transition: background 0.15s ease, color 0.15s ease;
 }
 
-.button:hover,
-input[type="submit"]:hover,
-input[type="button"]:hover,
-a.button:hover,
-button:hover {
-    background: var(--primary-green-dark) !important;
-    transform: translateY(-1px) !important;
-    box-shadow: var(--shadow-md) !important;
-    color: var(--white) !important;
+a.button {
+    padding: 8px 14px;
 }
 
-.button.default,
-input[type="submit"].default,
-.submit-row input.default {
-    background: var(--orange-accent) !important;
+/* Primary action: black in light mode, white in dark mode */
+.button.default, input[type=submit].default, .submit-row input.default {
+    background: var(--ave-default-btn-bg);
+    color: var(--ave-default-btn-fg);
 }
 
-.button.default:hover,
-input[type="submit"].default:hover {
-    background: var(--orange-accent-light) !important;
+.button.default:active, input[type=submit].default:active,
+.button.default:focus, input[type=submit].default:focus,
+.button.default:hover, input[type=submit].default:hover {
+    background: var(--ave-default-btn-hover-bg);
+    color: var(--ave-default-btn-fg);
 }
 
-/* Object Tools */
-.object-tools {
-    margin-bottom: 20px !important;
+.submit-row a.deletelink,
+.submit-row a.deletelink:visited {
+    color: #ffffff;
 }
 
-.object-tools li {
-    margin-left: 10px !important;
+.object-tools a:link, .object-tools a:visited {
+    border-radius: 3px;
+    padding: 8px 16px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
 }
 
-.object-tools a {
-    background: var(--primary-green) !important;
-    color: var(--white) !important;
-    padding: 12px 20px !important;
-    border-radius: var(--radius-sm) !important;
-    font-weight: 500 !important;
-    text-decoration: none !important;
-    transition: all 0.2s !important;
-    box-shadow: var(--shadow-sm) !important;
+/* Django places a +/→ icon at the right edge of these buttons; keep room
+   for it so the icon never overlaps the label */
+.object-tools a.addlink, .object-tools a.viewsitelink {
+    padding-right: 34px;
+    background-position: right 12px center;
 }
 
-.object-tools a:hover {
-    background: var(--primary-green-dark) !important;
-    transform: translateY(-2px) !important;
-    box-shadow: var(--shadow-md) !important;
-    color: var(--white) !important;
-}
+/* ============================================================
+   CHANGE LIST
+   ============================================================ */
 
-.object-tools a.addlink {
-    background: var(--orange-accent) !important;
-}
-
-.object-tools a.addlink:hover {
-    background: var(--orange-accent-light) !important;
-}
-
-/* ============================================
-   CHANGE LIST TABLE
-   ============================================ */
-#changelist {
-    background: var(--white) !important;
-}
-
-#changelist-filter {
-    background: var(--bg-light) !important;
-    border: 1px solid var(--border-color) !important;
-    border-radius: var(--radius) !important;
-    padding: 15px !important;
-    margin-left: 20px !important;
-}
-
-#changelist-filter h2 {
-    color: var(--dark-gray) !important;
-    font-size: 14px !important;
-    font-weight: 600 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.5px !important;
-    margin-bottom: 15px !important;
-    padding-bottom: 10px !important;
-    border-bottom: 2px solid var(--primary-green) !important;
-}
-
-#changelist-filter h3 {
-    color: var(--text-secondary) !important;
-    font-size: 12px !important;
-    font-weight: 600 !important;
-    margin-top: 15px !important;
-    margin-bottom: 8px !important;
-}
-
-#changelist-filter ul {
-    margin: 0 !important;
-    padding: 0 !important;
-    list-style: none !important;
-}
-
-#changelist-filter li {
-    margin: 5px 0 !important;
-}
-
-#changelist-filter a {
-    color: var(--text-primary) !important;
-    text-decoration: none !important;
-    padding: 6px 10px !important;
-    display: block !important;
-    border-radius: var(--radius-sm) !important;
-    transition: all 0.2s !important;
-}
-
-#changelist-filter a:hover {
-    background: var(--primary-green) !important;
-    color: var(--white) !important;
-}
-
-#changelist-filter li.selected a {
-    background: var(--primary-green) !important;
-    color: var(--white) !important;
-    font-weight: 600 !important;
-}
-
-/* Table Styling - Compact Rows */
 #result_list {
-    width: 100% !important;
-    border-collapse: separate !important;
-    border-spacing: 0 !important;
-    background: var(--white) !important;
-    border-radius: var(--radius) !important;
-    overflow: hidden !important;
-    box-shadow: var(--shadow-sm) !important;
+    border: 1px solid var(--hairline-color);
+    border-radius: 6px;
+    border-collapse: separate;
+    border-spacing: 0;
+    overflow: hidden;
 }
 
 #result_list thead th {
-    background: var(--primary-green) !important;
-    color: var(--white) !important;
-    font-weight: 600 !important;
-    padding: 14px 15px !important;
-    text-align: left !important;
-    border: none !important;
-    font-size: 13px !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.5px !important;
+    background: var(--darkened-bg);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--body-medium-color);
+    padding: 12px 14px;
 }
 
-#result_list thead th.action-checkbox-column {
-    width: 70px !important;
-    text-align: center !important;
-    padding: 14px 20px !important;
+#result_list thead th a:link, #result_list thead th a:visited {
+    color: var(--body-medium-color);
 }
 
-#result_list tbody tr {
-    background: var(--white) !important;
-    border-bottom: 1px solid var(--border-color) !important;
-    transition: all 0.2s !important;
-    height: 65px !important;
+#result_list tbody td, #result_list tbody th {
+    padding: 10px 14px;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--hairline-color);
+}
+
+#result_list tbody tr:last-child td,
+#result_list tbody tr:last-child th {
+    border-bottom: none;
 }
 
 #result_list tbody tr:hover {
-    background: var(--bg-light) !important;
-    transform: translateX(2px) !important;
+    background: var(--darkened-bg);
 }
 
-#result_list tbody tr.selected {
-    background: rgba(113, 153, 125, 0.15) !important;
-    border-left: 3px solid var(--primary-green) !important;
+#changelist-filter {
+    border: 1px solid var(--hairline-color);
+    border-radius: 6px;
+    background: var(--darkened-bg);
 }
 
-#result_list tbody td {
-    padding: 8px 15px !important;
-    vertical-align: middle !important;
-    border: none !important;
-    font-size: 14px !important;
-}
-
-#result_list tbody td.action-checkbox-column {
-    padding: 15px 20px !important;
-    text-align: center !important;
-    width: 70px !important;
-}
-
-/* QR Code Display in Table */
-#result_list tbody td img {
-    max-width: 60px !important;
-    max-height: 60px !important;
-    border-radius: var(--radius-sm) !important;
-    box-shadow: var(--shadow-sm) !important;
-}
-
-/* Search Bar */
-#changelist-search {
-    margin-bottom: 20px !important;
+#changelist-filter h2 {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    background: transparent;
+    color: var(--body-medium-color);
+    border-bottom: 1px solid var(--hairline-color);
 }
 
 #changelist-search input[type="text"] {
-    padding: 10px 15px !important;
-    border: 2px solid var(--border-color) !important;
-    border-radius: var(--radius-sm) !important;
-    font-size: 14px !important;
-    width: 300px !important;
-    transition: all 0.2s !important;
+    padding: 8px 12px;
+    border-radius: 3px;
 }
 
-#changelist-search input[type="text"]:focus {
-    outline: none !important;
-    border-color: var(--primary-green) !important;
-    box-shadow: 0 0 0 3px rgba(113, 153, 125, 0.1) !important;
+.paginator {
+    font-size: 0.8125rem;
 }
 
-#changelist-search input[type="submit"] {
-    margin-left: 10px !important;
-    padding: 10px 20px !important;
+.paginator a:link, .paginator a:visited {
+    border-radius: 3px;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--body-fg);
 }
 
-/* Action Bar */
-#changelist-actions {
-    margin-bottom: 20px !important;
-    padding: 15px !important;
-    background: var(--bg-light) !important;
-    border-radius: var(--radius) !important;
-    border: 1px solid var(--border-color) !important;
+.paginator a:focus, .paginator a:hover {
+    background: var(--body-loud-color);
+    color: var(--body-bg);
 }
 
-#changelist-actions select {
-    padding: 8px 12px !important;
-    border: 2px solid var(--border-color) !important;
-    border-radius: var(--radius-sm) !important;
-    font-size: 14px !important;
-    margin-right: 10px !important;
+.paginator .this-page {
+    background: var(--body-loud-color);
+    color: var(--body-bg);
+    border-radius: 3px;
+    padding: 2px 8px;
 }
 
-#changelist-actions button {
-    background: var(--orange-accent) !important;
-    color: var(--white) !important;
-    border: none !important;
-    padding: 8px 20px !important;
-    border-radius: var(--radius-sm) !important;
-    font-weight: 500 !important;
-    cursor: pointer !important;
-    transition: all 0.2s !important;
-}
-
-#changelist-actions button:hover {
-    background: var(--orange-accent-light) !important;
-}
-
-/* ============================================
-   MESSAGES
-   ============================================ */
-.messagelist {
-    margin: 0 0 20px 0 !important;
-    padding: 0 !important;
-    list-style: none !important;
-}
-
-.messagelist li {
-    padding: 12px 20px !important;
-    margin-bottom: 10px !important;
-    border-radius: var(--radius-sm) !important;
-    font-weight: 500 !important;
-}
-
-.messagelist li.success {
-    background: rgba(113, 153, 125, 0.1) !important;
-    color: var(--primary-green-dark) !important;
-    border-left: 4px solid var(--primary-green) !important;
-}
-
-.messagelist li.error {
-    background: rgba(255, 140, 66, 0.1) !important;
-    color: #d32f2f !important;
-    border-left: 4px solid #d32f2f !important;
-}
-
-.messagelist li.info {
-    background: rgba(41, 41, 41, 0.05) !important;
-    color: var(--dark-gray) !important;
-    border-left: 4px solid var(--dark-gray) !important;
-}
-
-/* ============================================
+/* ============================================================
    FORMS
-   ============================================ */
-.form-row {
-    margin-bottom: 20px !important;
-    padding: 15px !important;
-    background: var(--bg-light) !important;
-    border-radius: var(--radius) !important;
-    border: 1px solid var(--border-color) !important;
+   ============================================================ */
+
+input[type=text], input[type=password], input[type=email], input[type=url],
+input[type=number], input[type=tel], textarea, select, .vTextField {
+    border: 1px solid var(--border-color);
+    border-radius: 3px;
+    padding: 8px 10px;
+    background: var(--body-bg);
+    color: var(--body-fg);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.form-row label {
-    color: var(--dark-gray) !important;
-    font-weight: 600 !important;
-    margin-bottom: 8px !important;
-    display: block !important;
+input[type=text]:focus, input[type=password]:focus, input[type=email]:focus,
+input[type=url]:focus, input[type=number]:focus, input[type=tel]:focus,
+textarea:focus, select:focus, .vTextField:focus {
+    border-color: var(--body-loud-color);
+    outline: none;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
 }
 
-.form-row input[type="text"],
-.form-row input[type="number"],
-.form-row input[type="email"],
-.form-row input[type="password"],
-.form-row textarea,
-.form-row select {
-    width: 100% !important;
-    padding: 10px 15px !important;
-    border: 2px solid var(--border-color) !important;
-    border-radius: var(--radius-sm) !important;
-    font-size: 14px !important;
-    transition: all 0.2s !important;
+/* Larger, easier-to-hit checkboxes everywhere */
+input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--body-loud-color);
 }
 
-.form-row input:focus,
-.form-row textarea:focus,
-.form-row select:focus {
-    outline: none !important;
-    border-color: var(--primary-green) !important;
-    box-shadow: 0 0 0 3px rgba(113, 153, 125, 0.1) !important;
+#result_list input[type="checkbox"],
+.action-checkbox-column input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
 }
 
-/* Submit Row */
 .submit-row {
-    padding: 20px !important;
-    background: var(--bg-light) !important;
-    border-radius: var(--radius) !important;
-    border: 1px solid var(--border-color) !important;
-    margin-top: 20px !important;
+    background: var(--darkened-bg);
+    border: 1px solid var(--hairline-color);
+    border-radius: 6px;
+    padding: 14px 16px;
 }
 
-/* Inline Forms */
-.inline-group {
-    border: 1px solid var(--border-color) !important;
-    border-radius: var(--radius) !important;
-    overflow: hidden !important;
-    margin-bottom: 20px !important;
+.aligned label {
+    color: var(--body-medium-color);
+    font-weight: 500;
 }
 
-.inline-group h2 {
-    background: var(--primary-green) !important;
-    color: var(--white) !important;
-    padding: 12px 15px !important;
-    margin: 0 !important;
-    font-size: 14px !important;
-    font-weight: 600 !important;
+.help, .aligned p.help, .aligned div.help {
+    color: var(--body-quiet-color);
+    font-size: 0.75rem;
 }
 
-.inline-group .tabular {
-    background: var(--white) !important;
+fieldset .description {
+    color: var(--body-quiet-color);
+    font-size: 0.8125rem;
+    background: transparent;
 }
 
-.inline-group .tabular thead th {
-    background: var(--bg-light) !important;
-    color: var(--dark-gray) !important;
-    padding: 10px 15px !important;
-    font-weight: 600 !important;
-    font-size: 13px !important;
+/* ============================================================
+   FOCUS VISIBILITY
+   ============================================================ */
+
+a:focus-visible, button:focus-visible,
+input:focus-visible, select:focus-visible, textarea:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
 }
 
-.inline-group .tabular tbody tr {
-    border-bottom: 1px solid var(--border-color) !important;
+/* ============================================================
+   AVE CUSTOM COMPONENTS (used by admin.py & templates)
+   ============================================================ */
+
+.ave-thumb {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid var(--hairline-color);
+    display: block;
 }
 
-.inline-group .tabular tbody td {
-    padding: 10px 15px !important;
+.ave-thumb-sm {
+    width: 48px;
+    height: 48px;
 }
 
-/* ============================================
-   MODULES
-   ============================================ */
-.module {
-    background: var(--white) !important;
-    border: 1px solid var(--border-color) !important;
-    border-radius: var(--radius) !important;
-    margin-bottom: 20px !important;
-    box-shadow: var(--shadow-sm) !important;
+.ave-preview {
+    max-width: 480px;
+    max-height: 480px;
+    object-fit: contain;
+    border-radius: 6px;
+    border: 1px solid var(--hairline-color);
 }
 
-.module h2 {
-    background: var(--primary-green) !important;
-    color: var(--white) !important;
-    padding: 12px 15px !important;
-    margin: 0 !important;
-    font-size: 14px !important;
-    font-weight: 600 !important;
-    border-radius: var(--radius) var(--radius) 0 0 !important;
+.ave-qr {
+    width: 56px;
+    height: 56px;
+    border-radius: 4px;
+    border: 1px solid var(--hairline-color);
+    background: #ffffff;   /* QR codes must stay on white to scan */
+    padding: 2px;
 }
 
-.module table {
-    width: 100% !important;
+.ave-pin {
+    font-family: var(--font-family-monospace);
+    font-weight: 700;
+    font-size: 0.9375rem;
+    letter-spacing: 0.2em;
+    color: var(--body-loud-color);
+    background: var(--darkened-bg);
+    border: 1px solid var(--hairline-color);
+    border-radius: 3px;
+    padding: 2px 8px;
+    display: inline-block;
 }
 
-/* ============================================
-   RESPONSIVE
-   ============================================ */
-@media (max-width: 768px) {
-    #content {
-        padding: 15px !important;
-    }
-    
-    #changelist-filter {
-        margin-left: 0 !important;
-        margin-top: 20px !important;
-    }
-    
-    #result_list {
-        font-size: 12px !important;
-    }
-    
-    #result_list tbody td {
-        padding: 8px 10px !important;
-    }
+.ave-muted {
+    color: var(--body-quiet-color);
 }
 
-/* ============================================
-   ACCESSIBILITY
-   ============================================ */
-a:focus,
-button:focus,
-input:focus,
-select:focus,
-textarea:focus {
-    outline: 2px solid var(--orange-accent) !important;
-    outline-offset: 2px !important;
+.ave-error-text {
+    color: var(--error-fg);
 }
 
-/* ============================================
-   OVERRIDE DJANGO DEFAULTS - AGGRESSIVE
-   ============================================ */
-#header,
-#header * {
-    background-color: var(--primary-green) !important;
+.ave-code {
+    font-family: var(--font-family-monospace);
+    font-size: 0.75rem;
+    background: var(--darkened-bg);
+    border: 1px solid var(--hairline-color);
+    border-radius: 3px;
+    padding: 2px 6px;
+    color: var(--body-fg);
 }
 
-#branding h1,
-#branding h1 a,
-#branding h1 a:link,
-#branding h1 a:visited {
-    color: var(--white) !important;
+.ave-access-panel {
+    background: var(--ave-panel-bg);
+    border: 1px solid var(--ave-panel-border);
+    border-radius: 6px;
+    padding: 16px 18px;
+    margin: 6px 0;
+    max-width: 640px;
 }
 
-/* Remove default Django blue colors */
-a:link,
-a:visited {
-    color: var(--primary-green) !important;
+.ave-access-row {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
 }
 
-a:hover {
-    color: var(--primary-green-dark) !important;
+.ave-access-row a {
+    word-break: break-all;
+    text-decoration: underline;
+    text-underline-offset: 3px;
 }
 
-/* Override any remaining default styles */
-#container {
-    background: var(--white) !important;
+.ave-access-label {
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--body-quiet-color);
+    min-width: 90px;
 }
 
-.main {
-    background: var(--white) !important;
+.ave-inline-button {
+    margin-top: 4px;
 }
 
-.content {
-    background: var(--white) !important;
+.ave-status {
+    border-radius: 6px;
+    padding: 12px 16px;
+    max-width: 640px;
+}
+
+.ave-status-ok {
+    background: var(--ave-status-ok-bg);
+    color: var(--ave-status-ok-fg);
+    border: 1px solid var(--ave-status-ok-border);
+}
+
+.ave-status-error {
+    background: var(--ave-status-error-bg);
+    color: var(--ave-status-error-fg);
+    border: 1px solid var(--ave-status-error-border);
+}
+
+/* ============================================================
+   UPLOAD PAGES (bulk upload & add-photos)
+   ============================================================ */
+
+.ave-upload-page {
+    max-width: 960px;
+}
+
+.ave-hint {
+    background: var(--ave-panel-bg);
+    border: 1px solid var(--ave-panel-border);
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    padding: 14px 18px;
+    margin-bottom: 24px;
+    font-size: 0.8125rem;
+    color: var(--body-medium-color);
+}
+
+.ave-hint strong {
+    color: var(--body-loud-color);
+}
+
+.ave-hint ul {
+    margin: 8px 0 0;
+    padding-left: 18px;
+}
+
+.ave-hint li {
+    margin-bottom: 4px;
+}
+
+.ave-field {
+    margin-bottom: 22px;
+}
+
+.ave-field > label {
+    display: block;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--body-medium-color);
+    margin-bottom: 8px;
+}
+
+.ave-field input[type="text"] {
+    width: 100%;
+    max-width: 480px;
+}
+
+.ave-check {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.8125rem;
+    color: var(--body-medium-color);
+    cursor: pointer;
+}
+
+/* Dropzone */
+.ave-dropzone {
+    border: 2px dashed var(--border-color);
+    border-radius: 8px;
+    background: var(--darkened-bg);
+    padding: 48px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.ave-dropzone:hover,
+.ave-dropzone:focus-visible {
+    border-color: var(--body-loud-color);
+}
+
+.ave-dropzone.is-dragover {
+    border-color: var(--accent);
+    background: var(--selected-row);
+}
+
+.ave-dropzone-icon {
+    font-size: 2rem;
+    line-height: 1;
+    margin-bottom: 12px;
+    opacity: 0.6;
+}
+
+.ave-dropzone-title {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--body-loud-color);
+    margin-bottom: 4px;
+}
+
+.ave-dropzone-sub {
+    font-size: 0.75rem;
+    color: var(--body-quiet-color);
+}
+
+.ave-dropzone input[type="file"] {
+    display: none;
+}
+
+/* Selection summary bar */
+.ave-selection-bar {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 16px;
+    padding: 10px 16px;
+    background: var(--ave-panel-bg);
+    border: 1px solid var(--ave-panel-border);
+    border-radius: 6px;
+    font-size: 0.8125rem;
+}
+
+.ave-selection-bar.is-visible {
+    display: flex;
+}
+
+.ave-selection-count {
+    font-weight: 600;
+    color: var(--body-loud-color);
+}
+
+.ave-clear-btn {
+    background: none;
+    border: none;
+    color: var(--body-quiet-color);
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    padding: 4px;
+}
+
+.ave-clear-btn:hover {
+    color: var(--error-fg);
+}
+
+/* Album group cards (bulk upload preview) */
+.ave-groups {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+    margin-top: 16px;
+}
+
+.ave-group-card {
+    border: 1px solid var(--hairline-color);
+    border-radius: 6px;
+    background: var(--body-bg);
+    overflow: hidden;
+}
+
+.ave-group-card-head {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--hairline-color);
+    background: var(--darkened-bg);
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.ave-group-card-title {
+    font-weight: 600;
+    font-size: 0.8125rem;
+    color: var(--body-loud-color);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ave-group-card-count {
+    font-size: 0.6875rem;
+    color: var(--body-quiet-color);
+    white-space: nowrap;
+}
+
+.ave-group-card-thumbs {
+    display: flex;
+    gap: 6px;
+    padding: 10px 14px;
+    overflow: hidden;
+}
+
+.ave-group-card-thumbs img {
+    width: 52px;
+    height: 52px;
+    object-fit: cover;
+    border-radius: 3px;
+    border: 1px solid var(--hairline-color);
+}
+
+.ave-group-card-more {
+    width: 52px;
+    height: 52px;
+    border-radius: 3px;
+    border: 1px dashed var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6875rem;
+    color: var(--body-quiet-color);
+    flex-shrink: 0;
+}
+
+/* Thumbnail grid (single-album upload preview + existing photos) */
+.ave-photo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 12px;
+    margin-top: 14px;
+}
+
+.ave-photo-cell {
+    border: 1px solid var(--hairline-color);
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--body-bg);
+}
+
+.ave-photo-cell img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    display: block;
+}
+
+.ave-photo-cell figcaption {
+    padding: 6px 8px;
+    font-size: 0.6875rem;
+    color: var(--body-quiet-color);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Upload progress */
+.ave-progress {
+    display: none;
+    margin-top: 20px;
+}
+
+.ave-progress.is-visible {
+    display: block;
+}
+
+.ave-progress-track {
+    height: 6px;
+    border-radius: 3px;
+    background: var(--darkened-bg);
+    border: 1px solid var(--hairline-color);
+    overflow: hidden;
+}
+
+.ave-progress-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    transition: width 0.2s ease;
+}
+
+.ave-progress-label {
+    margin-top: 8px;
+    font-size: 0.75rem;
+    color: var(--body-quiet-color);
+}
+
+.ave-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 26px;
+}
+
+.ave-section-title {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--body-quiet-color);
+    margin: 30px 0 4px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--hairline-color);
 }

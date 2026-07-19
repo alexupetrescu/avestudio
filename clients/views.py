@@ -1,6 +1,7 @@
 import zipfile
 import os
 import re
+import urllib.parse
 from io import BytesIO
 from django.http import HttpResponse
 from rest_framework import viewsets, status, views
@@ -52,10 +53,7 @@ def download_album(request):
         return Response({'error': 'Album ID is required'}, status=status.HTTP_400_BAD_REQUEST)
     
     try:
-        # Refresh album from database to ensure we have latest data
         album = ClientAlbum.objects.get(id=album_id, pin=pin)
-        # Refresh from database to ensure we have the latest title
-        album.refresh_from_db()
     except ClientAlbum.DoesNotExist:
         return Response({'error': 'Invalid PIN for this album'}, status=status.HTTP_400_BAD_REQUEST)
     
@@ -65,14 +63,20 @@ def download_album(request):
     if not images.exists():
         return Response({'error': 'No images in this album'}, status=status.HTTP_404_NOT_FOUND)
     
-    # Create a ZIP file in memory
+    # Create a ZIP file in memory, deduplicating filenames so entries don't overwrite each other
     zip_buffer = BytesIO()
+    seen_names = set()
     with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
         for image in images:
             if image.image and os.path.exists(image.image.path):
-                # Get the filename
                 filename = image.filename
-                # Add the image to the ZIP file
+                if filename in seen_names:
+                    stem, ext = os.path.splitext(filename)
+                    counter = 2
+                    while f"{stem}_{counter}{ext}" in seen_names:
+                        counter += 1
+                    filename = f"{stem}_{counter}{ext}"
+                seen_names.add(filename)
                 zip_file.write(image.image.path, filename)
     
     # Prepare the response with album name in filename
@@ -108,8 +112,13 @@ def download_album(request):
         filename = f"album_{album.id}.zip"
     
     response = HttpResponse(zip_buffer.read(), content_type='application/zip')
-    # Use filename* format for better browser compatibility with special characters
-    response['Content-Disposition'] = f'attachment; filename="{filename}"; filename*=UTF-8\'\'{filename}'
+    # HTTP headers must be latin-1 safe: send an ASCII fallback in filename= and the
+    # percent-encoded UTF-8 original in filename* (RFC 5987)
+    ascii_fallback = filename.encode('ascii', 'ignore').decode('ascii') or f"album_{album.id}.zip"
+    encoded_filename = urllib.parse.quote(filename)
+    response['Content-Disposition'] = (
+        f'attachment; filename="{ascii_fallback}"; filename*=UTF-8\'\'{encoded_filename}'
+    )
     return response
 
 
