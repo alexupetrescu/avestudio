@@ -21,7 +21,7 @@ venv\Scripts\python manage.py collectstatic --noinput     # doar pe server
 Rulează pe procesor, nu are nevoie de placă video. Descarcă ~200 MB de pachete și, la prima rulare, ~107 MB de modele.
 
 ```bash
-venv\Scripts\pip install torch --index-url https://download.pytorch.org/whl/cpu
+venv\Scripts\pip install torch==2.2.2 torchvision==0.17.2 --index-url https://download.pytorch.org/whl/cpu
 venv\Scripts\pip install facenet-pytorch
 ```
 

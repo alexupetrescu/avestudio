@@ -1,4 +1,4 @@
-Django>=6.0
+Django>=5.0,<7
 djangorestframework
 django-cors-headers
 python-dotenv
@@ -10,7 +10,7 @@ google-auth-httplib2>=0.1.1
 Pillow>=10.0.0
 
 numpy
-# Face recognition (schools app). CPU-only torch wheel keeps the download small:
-#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+# Face recognition (schools app), optional: without it the app still works (filename matching only).
+# Install the CPU-only torch build FIRST and pinned, otherwise facenet-pytorch pulls the 3 GB CUDA build:
+#   pip install torch==2.2.2 torchvision==0.17.2 --index-url https://download.pytorch.org/whl/cpu
 #   pip install facenet-pytorch
-# Optional: without them the app still works (filename matching only).

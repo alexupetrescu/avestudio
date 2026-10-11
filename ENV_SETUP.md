@@ -73,7 +73,7 @@ New Django app `schools` (the older `clients` app and its albums are untouched a
 
 **Face recognition (optional, CPU only):**
 ```bash
-venv\Scripts\pip install torch --index-url https://download.pytorch.org/whl/cpu
+venv\Scripts\pip install torch==2.2.2 torchvision==0.17.2 --index-url https://download.pytorch.org/whl/cpu
 venv\Scripts\pip install facenet-pytorch
 ```
 The first run downloads the VGGFace2 weights (~107 MB) into the user cache. Without these packages

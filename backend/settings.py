@@ -172,6 +172,9 @@ DATA_UPLOAD_MAX_NUMBER_FILES = 500
 DATA_UPLOAD_MAX_MEMORY_SIZE = 100 * 1024 * 1024  # 100 MB
 # Increase file upload max size (default is 2.5MB, set to 50MB per file)
 FILE_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024  # 50 MB
+# Django 6 made BigAutoField the default; pin it so Django 5 on the server sees the same models
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
 # Image variants generated on upload (schools app). Max long side in px.
 IMAGE_WEB_MAX = int(os.getenv('IMAGE_WEB_MAX', '1600'))
 IMAGE_THUMB_MAX = int(os.getenv('IMAGE_THUMB_MAX', '400'))
