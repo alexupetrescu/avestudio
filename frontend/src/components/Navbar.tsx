@@ -90,6 +90,15 @@ export default function Navbar() {
                                     <span className="absolute -bottom-1 left-0 w-full h-[1px] bg-current animate-[lineGrow_0.3s_var(--ease-luxury)] origin-left" />
                                 )}
                             </Link>
+                            <Link
+                                href="/oferta-scoli"
+                                className={`text-[13px] font-medium tracking-[0.08em] uppercase transition-all duration-500 relative ${getLinkClass('/oferta-scoli')}`}
+                            >
+                                Ofertă Crăciun
+                                {isActive('/oferta-scoli') && (
+                                    <span className="absolute -bottom-1 left-0 w-full h-[1px] bg-current animate-[lineGrow_0.3s_var(--ease-luxury)] origin-left" />
+                                )}
+                            </Link>
                         </div>
 
                         <button
@@ -151,6 +160,16 @@ export default function Navbar() {
                         style={{ fontFamily: 'var(--font-heading)' }}
                     >
                         Portofoliu
+                    </Link>
+                    <Link
+                        href="/oferta-scoli"
+                        className={`text-3xl tracking-tight transition-all duration-300 ${
+                            isActive('/oferta-scoli') ? 'text-black' : 'text-black/40 hover:text-black'
+                        }`}
+                        onClick={() => setIsMenuOpen(false)}
+                        style={{ fontFamily: 'var(--font-heading)' }}
+                    >
+                        Ofertă Crăciun
                     </Link>
 
                     <div className="luxury-line mt-4" />

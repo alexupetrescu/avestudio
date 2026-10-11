@@ -88,6 +88,8 @@ class SchoolClass(models.Model):
     teacher_phone = models.CharField(max_length=40, blank=True)
     pin = models.CharField(max_length=4, default=generate_pin, help_text='Teacher PIN for the online order list')
     qr_code = models.ImageField(upload_to='schools/qr/', blank=True, null=True)
+    shoot_date = models.DateField('Shoot date', null=True, blank=True, help_text='Day of the photo session at this class')
+    shoot_time = models.TimeField('Shoot time', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -102,6 +104,18 @@ class SchoolClass(models.Model):
     @property
     def price_a(self) -> int:
         return self.school.price_a
+
+    @property
+    def shoot_display(self) -> str:
+        """'12 noiembrie 2026, ora 09:30' in Romanian, or '' when not scheduled."""
+        if not self.shoot_date:
+            return ''
+        months = ['ianuarie', 'februarie', 'martie', 'aprilie', 'mai', 'iunie', 'iulie',
+                  'august', 'septembrie', 'octombrie', 'noiembrie', 'decembrie']
+        text = f"{self.shoot_date.day} {months[self.shoot_date.month - 1]} {self.shoot_date.year}"
+        if self.shoot_time:
+            text += f", ora {self.shoot_time.strftime('%H:%M')}"
+        return text
 
     def generate_qr_code(self):
         if self.qr_code:

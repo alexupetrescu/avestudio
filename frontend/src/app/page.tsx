@@ -81,7 +81,7 @@ export default async function Home() {
               </p>
 
               {/* CTA */}
-              <div className="animate-fade-in-up" style={{ animationDelay: '1s', animationFillMode: 'both' }}>
+              <div className="flex flex-wrap gap-4 animate-fade-in-up" style={{ animationDelay: '1s', animationFillMode: 'both' }}>
                 <Link
                   href="/portfolio"
                   className="inline-flex items-center gap-3 px-8 py-4 rounded-full border border-white/30 text-white text-sm font-medium tracking-[0.05em] hover:bg-white hover:text-black transition-all duration-700 backdrop-blur-sm bg-white/5"
@@ -90,6 +90,16 @@ export default async function Home() {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 8.25L21 12m0 0l-3.75 3.75M21 12H3" />
                   </svg>
+                </Link>
+                <Link
+                  href="/oferta-scoli"
+                  className="inline-flex items-center gap-3 px-8 py-4 rounded-full text-sm font-medium tracking-[0.05em] transition-all duration-700 hover:-translate-y-0.5"
+                  style={{ background: '#7D1C27', color: '#F7F3EA', boxShadow: '0 8px 30px rgba(125,28,39,0.35)' }}
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M12 0c.6 7.2 4.8 11.4 12 12-7.2.6-11.4 4.8-12 12-.6-7.2-4.8-11.4-12-12 7.2-.6 11.4-4.8 12-12z" />
+                  </svg>
+                  <span>Oferta de Crăciun pentru școli</span>
                 </Link>
               </div>
             </div>

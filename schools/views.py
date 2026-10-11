@@ -23,6 +23,7 @@ from backend.serializers import (
 )
 from . import pricing
 from .models import Child, SchoolClass
+from .pdf import class_list_filename, render_class_list_pdf
 
 
 def _pin_from(request) -> str:
@@ -102,6 +103,29 @@ def class_child_detail(request, class_id, child_id):
     serializer.is_valid(raise_exception=True)
     serializer.save()
     return Response(serializer.data)
+
+
+def pdf_response(school_class, inline: bool) -> HttpResponse:
+    content = render_class_list_pdf(school_class)
+    filename = class_list_filename(school_class)
+    response = HttpResponse(content, content_type='application/pdf')
+    ascii_fallback = filename.encode('ascii', 'ignore').decode('ascii') or 'lista.pdf'
+    disposition = 'inline' if inline else 'attachment'
+    response['Content-Disposition'] = (
+        f"{disposition}; filename=\"{ascii_fallback}\"; filename*=UTF-8''{urllib.parse.quote(filename)}"
+    )
+    return response
+
+
+@api_view(['GET'])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def class_list_pdf(request, class_id):
+    """Order list as PDF. ?inline=1 opens it in the browser (for printing), otherwise downloads."""
+    school_class = _get_class(request, class_id)
+    if not school_class:
+        return _invalid_pin()
+    return pdf_response(school_class, inline=request.query_params.get('inline') == '1')
 
 
 # --------------------------------------------------------------------------

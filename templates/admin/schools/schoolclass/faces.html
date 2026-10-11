@@ -20,6 +20,7 @@
     <div class="ave-actions" style="margin:0 0 20px">
         <a href="{% url 'admin:schools_schoolclass_upload' school_class.pk %}" class="button">Upload more</a>
         <a href="{% url 'admin:schools_schoolclass_print_cards' school_class.pk %}" class="button" target="_blank" rel="noopener">Print QR cards</a>
+        <a href="{% url 'admin:schools_schoolclass_list_pdf' school_class.pk %}" class="button" target="_blank" rel="noopener">Order list PDF</a>
         <a href="{% url 'admin:schools_schoolclass_export' school_class.pk %}" class="button">Export CSV</a>
         <form method="post" action="{% url 'admin:schools_schoolclass_faces_rerun' school_class.pk %}" style="display:inline">
             {% csrf_token %}

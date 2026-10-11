@@ -6,6 +6,7 @@
 <li><a href="{% url 'admin:schools_schoolclass_upload' original.pk %}" class="addlink">{% translate 'Upload photos' %}</a></li>
 <li><a href="{% url 'admin:schools_schoolclass_faces' original.pk %}">{% translate 'Face review' %}</a></li>
 <li><a href="{% url 'admin:schools_schoolclass_print_cards' original.pk %}" target="_blank" rel="noopener">{% translate 'Print QR cards' %}</a></li>
+<li><a href="{% url 'admin:schools_schoolclass_list_pdf' original.pk %}" target="_blank" rel="noopener">{% translate 'Order list (PDF)' %}</a></li>
 <li><a href="{% url 'admin:schools_schoolclass_export' original.pk %}">{% translate 'Export orders (CSV)' %}</a></li>
 {% endif %}
 {{ block.super }}

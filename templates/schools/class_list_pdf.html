@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<title>Lista de comenzi - {{ school.name }} - {{ school_class.name }}</title>
+<style>
+    @page {
+        size: A4 portrait;
+        margin: 1.4cm 1.4cm 1.6cm 1.4cm;
+        @frame footer { -pdf-frame-content: footer; bottom: 0.6cm; margin-left: 1.4cm; margin-right: 1.4cm; height: 0.8cm; }
+    }
+    body { font-family: 'DejaVu'; font-size: 9.5pt; color: #2B2420; }
+    h1 { font-size: 15pt; color: #1F3A2E; margin: 0 0 2pt 0; }
+    .brand { font-size: 8pt; color: #C8A45D; letter-spacing: 2pt; text-transform: uppercase; margin-bottom: 6pt; }
+    .meta { font-size: 9.5pt; color: #2B2420; margin: 0 0 2pt 0; }
+    .meta b { color: #1F3A2E; }
+    .shoot { font-size: 10.5pt; color: #7D1C27; margin: 4pt 0 8pt 0; }
+    .legend { font-size: 8pt; color: #555; margin: 0 0 10pt 0; }
+    table.list { width: 100%; border-collapse: collapse; }
+    table.list th {
+        background-color: #1F3A2E; color: #F7F3EA; font-size: 8.5pt; padding: 5pt 4pt;
+        border: 0.6pt solid #1F3A2E; text-align: left;
+    }
+    table.list td { border: 0.6pt solid #C8A45D; padding: 7pt 4pt; font-size: 9.5pt; vertical-align: middle; }
+    table.list td.c, table.list th.c { text-align: center; }
+    table.list td.r, table.list th.r { text-align: right; }
+    table.list td.nr { color: #888; }
+    table.list td.notes { color: #555; font-size: 8.5pt; }
+    table.list tr.total td { background-color: #EFE8D8; font-weight: bold; color: #1F3A2E; border-color: #1F3A2E; }
+    .mark { color: #1F3A2E; font-weight: bold; }
+    #footer { font-size: 7.5pt; color: #888; text-align: center; }
+</style>
+</head>
+<body>
+    <div class="brand">AVE Studio · Ofertă foto Crăciun {{ season }}</div>
+    <h1>{{ school.name }}{% if school.city %} ({{ school.city }}){% endif %} — {{ school_class.name }}</h1>
+    <p class="meta">
+        {% if school_class.teacher_name %}<b>Cadru didactic:</b> {{ school_class.teacher_name }}{% if school_class.teacher_phone %} · {{ school_class.teacher_phone }}{% endif %} &nbsp;&nbsp;{% endif %}
+        <b>Copii în listă:</b> {{ count }}
+    </p>
+    {% if school_class.shoot_display %}
+    <p class="shoot"><b>Ședința foto:</b> {{ school_class.shoot_display }}</p>
+    {% else %}
+    <p class="shoot"><b>Perioadă pentru fotografiere:</b> {{ period }}</p>
+    {% endif %}
+    <p class="legend">
+        <b>A</b> = pachet de bază {{ price_a }} lei (calendar 20x30, 2 felicitări, foto 20x30, 15x20, retro 10x12 + digital) &nbsp;·&nbsp;
+        <b>B</b> = {{ extras.b.label }} {{ extras.b.price }} lei &nbsp;·&nbsp;
+        <b>C</b> = {{ extras.c.label }} {{ extras.c.price }} lei &nbsp;·&nbsp;
+        <b>D</b> = {{ extras.d.label }} {{ extras.d.price }} lei
+    </p>
+
+    <table class="list" repeat="1">
+        <thead>
+            <tr>
+                <th class="c" style="width:6%">Nr.</th>
+                <th style="width:18%">Nume</th>
+                <th style="width:17%">Prenume</th>
+                <th class="c" style="width:5%">A</th>
+                <th class="c" style="width:5%">B</th>
+                <th class="c" style="width:5%">C</th>
+                <th class="c" style="width:5%">D</th>
+                <th class="r" style="width:9%">Total</th>
+                <th style="width:30%">Observații</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for row in rows %}
+            <tr>
+                <td class="c nr">{{ row.nr }}</td>
+                <td>{{ row.child.last_name }}</td>
+                <td>{{ row.child.first_name }}</td>
+                <td class="c">{% if row.child.package_a %}<span class="mark">✓</span>{% endif %}</td>
+                <td class="c">{% if row.child.package_b %}<span class="mark">✓</span>{% endif %}</td>
+                <td class="c">{% if row.child.package_c %}<span class="mark">✓</span>{% endif %}</td>
+                <td class="c">{% if row.child.package_d %}<span class="mark">✓</span>{% endif %}</td>
+                <td class="r">{% if row.total %}{{ row.total }} lei{% endif %}</td>
+                <td class="notes">{{ row.child.notes }}</td>
+            </tr>
+        {% endfor %}
+        {% for i in "123" %}
+            <tr>
+                <td class="c nr"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+            </tr>
+        {% endfor %}
+            <tr class="total">
+                <td class="c"></td>
+                <td colspan="2">TOTAL ({{ count }} copii)</td>
+                <td class="c">{{ totals.a }}</td>
+                <td class="c">{{ totals.b }}</td>
+                <td class="c">{{ totals.c }}</td>
+                <td class="c">{{ totals.d }}</td>
+                <td class="r">{{ totals.lei }} lei</td>
+                <td></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div id="footer">
+        AVE Studio · Alexandru 0756 538 455 · Adina 0746 986 415 · www.avestudio.ro &nbsp;·&nbsp; pagina <pdf:pagenumber> / <pdf:pagecount>
+    </div>
+</body>
+</html>

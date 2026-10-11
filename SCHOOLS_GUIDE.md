@@ -84,10 +84,16 @@ Pentru PDF: deschide pagina în browser, Ctrl+P, "Salvează ca PDF". Meniul și 
 1. Admin → **Schools & Kindergartens → Schools → Add**.
    Bifează **Is returning customer** dacă am mai lucrat cu ei (asta dă prețul de 70 lei în loc de 75).
 2. În aceeași pagină adaugă clasele (nume, educatoare / învățătoare, telefon). Salvează.
+   Când stabilești ședința foto, completează **Shoot date** și **Shoot time** pe clasă: apar pe pagina
+   educatoarei, pe cardul tipărit al clasei și în PDF-ul cu lista.
 3. Deschide clasa. În panoul **Teacher access** ai link-ul, PIN-ul și codul QR.
 4. **Print QR cards** (buton sus) → prima carte din foaie e cea pentru cadrul didactic. Tipărește-o sau trimite link + PIN pe WhatsApp.
 
 Cadrul didactic intră pe `/scoala/<id>` cu PIN-ul, adaugă copiii (nume, prenume) și bifează A/B/C/D pentru fiecare. Se salvează automat. Tu vezi lista în admin, pe pagina clasei, cu totaluri pe pachet.
+
+Pe pagina ei, educatoarea are două butoane: **Printează lista** (deschide PDF-ul în browser) și
+**Descarcă PDF**. PDF-ul are coloanele Nume, Prenume, A/B/C/D, Total și o coloană **Observații** cu
+rânduri libere pentru completat de mână. Același PDF e în admin, pe pagina clasei: **Order list (PDF)**.
 
 **Export CSV** (pe pagina clasei) dă lista de comenzi cu total în lei, deschide direct în Excel.
 

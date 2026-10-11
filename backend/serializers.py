@@ -103,11 +103,13 @@ class SchoolClassOrderSerializer(serializers.ModelSerializer):
     is_returning = serializers.BooleanField(source='school.is_returning_customer', read_only=True)
     prices = serializers.SerializerMethodField()
     period = serializers.SerializerMethodField()
+    shoot_display = serializers.CharField(read_only=True)
     children = ChildOrderSerializer(many=True, read_only=True)
 
     class Meta:
         model = SchoolClass
-        fields = ['id', 'name', 'teacher_name', 'school_name', 'is_returning', 'prices', 'period', 'children']
+        fields = ['id', 'name', 'teacher_name', 'school_name', 'is_returning', 'prices', 'period',
+                  'shoot_date', 'shoot_time', 'shoot_display', 'children']
 
     def get_prices(self, obj):
         return school_pricing.prices_for(obj.school.is_returning_customer)

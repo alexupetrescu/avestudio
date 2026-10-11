@@ -32,6 +32,7 @@ urlpatterns = [
     path('api/schools/prices/', school_views.offer_prices, name='schools-prices'),
     path('api/schools/class/<uuid:class_id>/verify-pin/', school_views.class_verify_pin, name='schools-class-verify-pin'),
     path('api/schools/class/<uuid:class_id>/', school_views.class_detail, name='schools-class-detail'),
+    path('api/schools/class/<uuid:class_id>/list.pdf', school_views.class_list_pdf, name='schools-class-list-pdf'),
     path('api/schools/class/<uuid:class_id>/children/', school_views.class_add_child, name='schools-class-add-child'),
     path('api/schools/class/<uuid:class_id>/children/<uuid:child_id>/', school_views.class_child_detail, name='schools-class-child'),
     path('api/schools/child/verify-pin/', school_views.child_verify_pin, name='schools-child-verify-pin'),

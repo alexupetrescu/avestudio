@@ -15,6 +15,7 @@ from django.views.decorators.csrf import csrf_protect
 
 from . import face_engine, pricing
 from .face_tasks import add_match, start_face_job
+from .pdf import class_list_filename, render_class_list_pdf
 from .models import (
     Child, ClassPhoto, FaceJob, FaceReference, PhotoMatch, School, SchoolClass, fold_name,
 )
@@ -64,7 +65,7 @@ def _child_from_reference_name(school_class: SchoolClass, filename: str, childre
 class SchoolClassInline(admin.TabularInline):
     model = SchoolClass
     extra = 0
-    fields = ('name', 'teacher_name', 'teacher_phone', 'pin', 'links')
+    fields = ('name', 'teacher_name', 'teacher_phone', 'shoot_date', 'shoot_time', 'pin', 'links')
     readonly_fields = ('pin', 'links')
     show_change_link = True
 
@@ -167,14 +168,16 @@ class SchoolAdmin(admin.ModelAdmin):
 
 @admin.register(SchoolClass)
 class SchoolClassAdmin(admin.ModelAdmin):
-    list_display = ('name', 'school', 'teacher_name', 'pin_display', 'child_count', 'photo_count', 'orders_summary', 'tools')
-    list_filter = ('school',)
+    list_display = ('name', 'school', 'teacher_name', 'shoot_display', 'pin_display', 'child_count', 'photo_count', 'orders_summary', 'tools')
+    list_filter = ('school', 'shoot_date')
     search_fields = ('name', 'teacher_name', 'school__name', 'pin')
     list_select_related = ('school',)
     readonly_fields = ('pin', 'qr_code', 'access_panel', 'created_at')
     inlines = [ChildInline]
     fieldsets = (
         ('Class', {'fields': ('school', 'name', 'teacher_name', 'teacher_phone')}),
+        ('Photo session', {'fields': (('shoot_date', 'shoot_time'),),
+                           'description': 'Shown to the teacher on the order page and on the printed class card.'}),
         ('Teacher access', {'fields': ('access_panel', 'pin', 'qr_code'),
                             'description': 'Share the link + PIN with the teacher. They fill in the children and the packages.'}),
     )
@@ -196,6 +199,11 @@ class SchoolClassAdmin(admin.ModelAdmin):
         return format_html('<span class="ave-pin">{}</span>', obj.pin)
     pin_display.short_description = 'PIN'
 
+    def shoot_display(self, obj):
+        return obj.shoot_display or mark_safe('<span class="ave-muted">not set</span>')
+    shoot_display.short_description = 'Shoot'
+    shoot_display.admin_order_field = 'shoot_date'
+
     def child_count(self, obj):
         return obj._children
     child_count.short_description = 'Children'
@@ -210,10 +218,12 @@ class SchoolClassAdmin(admin.ModelAdmin):
 
     def tools(self, obj):
         return format_html(
-            '<a href="{}">Upload</a> · <a href="{}">Faces</a> · <a href="{}" target="_blank">Cards</a> · <a href="{}">CSV</a>',
+            '<a href="{}">Upload</a> · <a href="{}">Faces</a> · <a href="{}" target="_blank">Cards</a> · '
+            '<a href="{}" target="_blank">PDF</a> · <a href="{}">CSV</a>',
             reverse('admin:schools_schoolclass_upload', args=[obj.pk]),
             reverse('admin:schools_schoolclass_faces', args=[obj.pk]),
             reverse('admin:schools_schoolclass_print_cards', args=[obj.pk]),
+            reverse('admin:schools_schoolclass_list_pdf', args=[obj.pk]),
             reverse('admin:schools_schoolclass_export', args=[obj.pk]),
         )
     tools.short_description = 'Tools'
@@ -248,6 +258,7 @@ class SchoolClassAdmin(admin.ModelAdmin):
             path('<uuid:class_id>/faces/rerun/', wrap(self.faces_rerun), name='schools_schoolclass_faces_rerun'),
             path('<uuid:class_id>/print-cards/', wrap(self.print_cards), name='schools_schoolclass_print_cards'),
             path('<uuid:class_id>/export.csv', wrap(self.export_csv), name='schools_schoolclass_export'),
+            path('<uuid:class_id>/list.pdf', wrap(self.list_pdf), name='schools_schoolclass_list_pdf'),
         ]
         return custom + urls
 
@@ -437,6 +448,13 @@ class SchoolClassAdmin(admin.ModelAdmin):
             'site_url': 'www.avestudio.ro',
         }
         return TemplateResponse(request, 'admin/schools/schoolclass/print_cards.html', context)
+
+    def list_pdf(self, request, class_id):
+        school_class = get_object_or_404(SchoolClass.objects.select_related('school'), pk=class_id)
+        response = HttpResponse(render_class_list_pdf(school_class), content_type='application/pdf')
+        disposition = 'attachment' if request.GET.get('download') == '1' else 'inline'
+        response['Content-Disposition'] = f'{disposition}; filename="{class_list_filename(school_class)}"'
+        return response
 
     def export_csv(self, request, class_id):
         school_class = get_object_or_404(SchoolClass.objects.select_related('school'), pk=class_id)

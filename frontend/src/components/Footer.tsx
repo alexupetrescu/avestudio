@@ -76,6 +76,11 @@ export default function Footer() {
                                     Portofoliu
                                 </Link>
                             </li>
+                            <li>
+                                <Link href="/oferta-scoli" className="text-black/50 hover:text-black transition-colors duration-500 text-sm">
+                                    Ofertă Crăciun școli &amp; grădinițe
+                                </Link>
+                            </li>
                         </ul>
                     </div>
 

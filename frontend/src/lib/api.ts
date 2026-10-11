@@ -141,7 +141,17 @@ export interface SchoolClassOrder {
     is_returning: boolean;
     prices: { list: number; a: number; b: number; c: number; d: number };
     period: string;
+    shoot_date: string | null;
+    shoot_time: string | null;
+    shoot_display: string;
     children: ChildOrder[];
+}
+
+/** URL of the class order list as PDF. inline=true opens it in the browser for printing. */
+export function classListPdfUrl(classId: string, pin: string, inline: boolean): string {
+    const params = new URLSearchParams({ pin });
+    if (inline) params.set('inline', '1');
+    return `${API_URL}/schools/class/${classId}/list.pdf?${params.toString()}`;
 }
 
 export async function verifyClassPin(classId: string, pin: string): Promise<boolean> {
