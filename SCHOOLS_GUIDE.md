@@ -67,12 +67,17 @@ Rezultatul merge în `frontend/public/oferta/` și se publică odată cu site-ul
 
 ## 2. Paginile de ofertă
 
-| Pagină | Pentru cine | Preț pachet A |
-|---|---|---|
-| `/oferta-scoli` | școli și grădinițe noi | 75 lei (în loc de 85) |
-| `/oferta-scoli/clienti-fideli` | cei cu care am lucrat anul trecut | 70 lei (în loc de 85) |
+| Pagină | Pentru cine | A · Pachet Standard | B · Pachet Extra |
+|---|---|---|---|
+| `/oferta-scoli` | școli și grădinițe noi | 50 lei (în loc de 65) | 75 lei (în loc de 85) |
+| `/oferta-scoli/clienti-fideli` | cei cu care am lucrat anul trecut | 45 lei (în loc de 65) | 65 lei (în loc de 85) |
 
-Extra: B breloc 40 lei, C magnet 25 lei, D puzzle 105 lei, fiecare se poate comanda separat.
+- **A · Standard:** calendar 20x30, 2 fotografii 15x20 (simple, fără grafică), 1 fotografie retro 10x12.
+- **B · Extra:** calendar 20x30, felicitare 15x21, felicitare 21x15, fotografie 20x30, 2 fotografii 15x20, 2 fotografii retro 10x12.
+- **Format digital inclus în ambele.** Pe paginile de ofertă apare și ca pop-up, o dată pe sesiune.
+- Un copil primește **fie A, fie B**, nu amândouă. Pagina educatoarei, admin-ul și API-ul refuză combinația.
+
+Extra: C breloc 40 lei, D magnet 20 lei, E puzzle 105 lei, fiecare se poate comanda separat sau peste A / B.
 Perioada afișată: 9 noiembrie - 5 decembrie 2026. Toate prețurile și perioada sunt în `schools/pricing.py`.
 
 Pentru PDF: deschide pagina în browser, Ctrl+P, "Salvează ca PDF". Meniul și footerul se ascund automat la printare.
@@ -82,17 +87,17 @@ Pentru PDF: deschide pagina în browser, Ctrl+P, "Salvează ca PDF". Meniul și 
 ## 3. Înainte de ședința foto: școala, clasele, cadrele didactice
 
 1. Admin → **Schools & Kindergartens → Schools → Add**.
-   Bifează **Is returning customer** dacă am mai lucrat cu ei (asta dă prețul de 70 lei în loc de 75).
+   Bifează **Is returning customer** dacă am mai lucrat cu ei (asta dă 45 / 65 lei în loc de 50 / 75).
 2. În aceeași pagină adaugă clasele (nume, educatoare / învățătoare, telefon). Salvează.
    Când stabilești ședința foto, completează **Shoot date** și **Shoot time** pe clasă: apar pe pagina
    educatoarei, pe cardul tipărit al clasei și în PDF-ul cu lista.
 3. Deschide clasa. În panoul **Teacher access** ai link-ul, PIN-ul și codul QR.
 4. **Print QR cards** (buton sus) → prima carte din foaie e cea pentru cadrul didactic. Tipărește-o sau trimite link + PIN pe WhatsApp.
 
-Cadrul didactic intră pe `/scoala/<id>` cu PIN-ul, adaugă copiii (nume, prenume) și bifează A/B/C/D pentru fiecare. Se salvează automat. Tu vezi lista în admin, pe pagina clasei, cu totaluri pe pachet.
+Cadrul didactic intră pe `/scoala/<id>` cu PIN-ul, adaugă copiii (nume, prenume) și bifează A sau B, plus C/D/E dacă vor, pentru fiecare. Se salvează automat. Tu vezi lista în admin, pe pagina clasei, cu totaluri pe pachet.
 
 Pe pagina ei, educatoarea are două butoane: **Printează lista** (deschide PDF-ul în browser) și
-**Descarcă PDF**. PDF-ul are coloanele Nume, Prenume, A/B/C/D, Total și o coloană **Observații** cu
+**Descarcă PDF**. PDF-ul are coloanele Nume, Prenume, A/B/C/D/E, Total și o coloană **Observații** cu
 rânduri libere pentru completat de mână. Același PDF e în admin, pe pagina clasei: **Order list (PDF)**.
 
 **Export CSV** (pe pagina clasei) dă lista de comenzi cu total în lei, deschide direct în Excel.

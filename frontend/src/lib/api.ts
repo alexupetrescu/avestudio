@@ -129,6 +129,7 @@ export interface ChildOrder {
     package_b: boolean;
     package_c: boolean;
     package_d: boolean;
+    package_e: boolean;
     notes: string;
     total_lei: number;
 }
@@ -139,7 +140,7 @@ export interface SchoolClassOrder {
     teacher_name: string;
     school_name: string;
     is_returning: boolean;
-    prices: { list: number; a: number; b: number; c: number; d: number };
+    prices: { a: number; b: number; c: number; d: number; e: number; list_a: number; list_b: number };
     period: string;
     shoot_date: string | null;
     shoot_time: string | null;
@@ -218,6 +219,7 @@ export interface ChildAlbum {
     package_b: boolean;
     package_c: boolean;
     package_d: boolean;
+    package_e: boolean;
     packages: string;
     photos: ChildPhoto[];
 }

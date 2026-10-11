@@ -44,24 +44,29 @@ def ensure_fonts():
 
 def class_list_context(school_class) -> dict:
     children = list(school_class.children.all())
-    totals = {'a': 0, 'b': 0, 'c': 0, 'd': 0, 'lei': 0}
+    totals = {k: 0 for k in pricing.LETTERS}
+    total_lei = 0
     rows = []
     for i, child in enumerate(children, start=1):
-        totals['a'] += child.package_a
-        totals['b'] += child.package_b
-        totals['c'] += child.package_c
-        totals['d'] += child.package_d
-        totals['lei'] += child.total_lei
-        rows.append({'nr': i, 'child': child, 'total': child.total_lei})
+        for k in pricing.LETTERS:
+            totals[k] += child.has(k)
+        total_lei += child.total_lei
+        rows.append({
+            'nr': i,
+            'child': child,
+            'marks': [child.has(k) for k in pricing.LETTERS],
+            'total': child.total_lei,
+        })
+    is_returning = school_class.school.is_returning_customer
     return {
         'school_class': school_class,
         'school': school_class.school,
         'rows': rows,
-        'totals': totals,
+        'letters': [k.upper() for k in pricing.LETTERS],
+        'totals': [totals[k] for k in pricing.LETTERS],
+        'total_lei': total_lei,
         'count': len(children),
-        'price_a': school_class.price_a,
-        'price_list': pricing.LIST_PRICE,
-        'extras': pricing.EXTRAS,
+        'legend': pricing.legend(is_returning),
         'period': pricing.PERIOD,
         'season': pricing.SEASON,
     }

@@ -13,6 +13,7 @@ from io import BytesIO
 
 import qrcode
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.db import models
 from django.utils import timezone
@@ -63,7 +64,8 @@ class School(models.Model):
     contact_phone = models.CharField(max_length=40, blank=True)
     is_returning_customer = models.BooleanField(
         default=False,
-        help_text=f"Returning schools pay {pricing.PRICE_RETURNING} lei for package A instead of {pricing.PRICE_NEW}.",
+        help_text=(f"Returning schools pay {pricing.tier_display(True)} "
+                   f"instead of {pricing.tier_display(False)}."),
     )
     season = models.PositiveIntegerField(default=pricing.SEASON)
     notes = models.TextField(blank=True)
@@ -73,8 +75,20 @@ class School(models.Model):
         ordering = ['-season', 'name']
 
     @property
+    def prices(self) -> dict:
+        return pricing.prices_for(self.is_returning_customer)
+
+    @property
     def price_a(self) -> int:
-        return pricing.price_a(self.is_returning_customer)
+        return self.prices['a']
+
+    @property
+    def price_b(self) -> int:
+        return self.prices['b']
+
+    @property
+    def tier_display(self) -> str:
+        return pricing.tier_display(self.is_returning_customer)
 
     def __str__(self):
         return f"{self.name}{f' ({self.city})' if self.city else ''}"
@@ -100,6 +114,10 @@ class SchoolClass(models.Model):
     @property
     def teacher_url(self) -> str:
         return _frontend_url(f"/scoala/{self.id}")
+
+    @property
+    def prices(self) -> dict:
+        return self.school.prices
 
     @property
     def price_a(self) -> int:
@@ -137,10 +155,11 @@ class Child(models.Model):
     first_name = models.CharField('Prenume', max_length=120)
     last_name = models.CharField('Nume', max_length=120)
     match_key = models.CharField(max_length=255, editable=False, db_index=True, blank=True)
-    package_a = models.BooleanField('A', default=False)
-    package_b = models.BooleanField('B', default=False)
-    package_c = models.BooleanField('C', default=False)
-    package_d = models.BooleanField('D', default=False)
+    package_a = models.BooleanField('A · Standard', default=False)
+    package_b = models.BooleanField('B · Extra', default=False)
+    package_c = models.BooleanField('C · Breloc', default=False)
+    package_d = models.BooleanField('D · Magnet', default=False)
+    package_e = models.BooleanField('E · Puzzle', default=False)
     notes = models.CharField(max_length=255, blank=True)
     pin = models.CharField(max_length=4, default=generate_pin, help_text='PIN for the child album')
     qr_code = models.ImageField(upload_to='schools/qr/', blank=True, null=True)
@@ -161,23 +180,22 @@ class Child(models.Model):
     def album_url(self) -> str:
         return _frontend_url(f"/copil/{self.id}")
 
+    def has(self, key: str) -> bool:
+        return bool(getattr(self, f'package_{key}'))
+
     @property
     def total_lei(self) -> int:
-        total = 0
-        if self.package_a:
-            total += self.school_class.price_a
-        if self.package_b:
-            total += pricing.EXTRAS['b']['price']
-        if self.package_c:
-            total += pricing.EXTRAS['c']['price']
-        if self.package_d:
-            total += pricing.EXTRAS['d']['price']
-        return total
+        prices = self.school_class.prices
+        return sum(prices[k] for k in pricing.LETTERS if self.has(k))
 
     @property
     def packages(self) -> str:
-        return ''.join(l for l, on in (('A', self.package_a), ('B', self.package_b),
-                                       ('C', self.package_c), ('D', self.package_d)) if on) or '-'
+        return ''.join(k.upper() for k in pricing.LETTERS if self.has(k)) or '-'
+
+    def clean(self):
+        super().clean()
+        if self.package_a and self.package_b:
+            raise ValidationError('Alegeți fie Pachetul Standard (A), fie Pachetul Extra (B), nu amândouă.')
 
     def generate_qr_code(self):
         if self.qr_code:
@@ -188,6 +206,8 @@ class Child(models.Model):
         self.first_name = self.first_name.strip()
         self.last_name = self.last_name.strip()
         self.match_key = fold_name(f"{self.last_name} {self.first_name}")
+        if self.package_a and self.package_b:
+            raise ValidationError('Alegeți fie Pachetul Standard (A), fie Pachetul Extra (B), nu amândouă.')
         if not self.qr_code:
             self.generate_qr_code()
         super().save(*args, **kwargs)

@@ -84,7 +84,8 @@ class SchoolClassInline(admin.TabularInline):
 class ChildInline(admin.TabularInline):
     model = Child
     extra = 0
-    fields = ('last_name', 'first_name', 'package_a', 'package_b', 'package_c', 'package_d', 'pin', 'photo_count', 'album_link')
+    fields = ('last_name', 'first_name', 'package_a', 'package_b', 'package_c', 'package_d', 'package_e',
+              'pin', 'photo_count', 'album_link')
     readonly_fields = ('pin', 'photo_count', 'album_link')
     show_change_link = True
 
@@ -142,12 +143,13 @@ class SchoolAdmin(admin.ModelAdmin):
             _classes=Count('classes', distinct=True),
             _children=Count('classes__children', distinct=True),
             _orders_a=Count('classes__children', filter=Q(classes__children__package_a=True), distinct=True),
+            _orders_b=Count('classes__children', filter=Q(classes__children__package_b=True), distinct=True),
         )
 
     def tier(self, obj):
         label = 'Returning' if obj.is_returning_customer else 'New'
-        return format_html('<span class="ave-pin">{} lei</span> {}', obj.price_a, label)
-    tier.short_description = 'Package A'
+        return format_html('<span class="ave-pin">{}</span> {}', obj.tier_display, label)
+    tier.short_description = 'Prices'
 
     def class_count(self, obj):
         return obj._classes
@@ -158,8 +160,8 @@ class SchoolAdmin(admin.ModelAdmin):
     child_count.short_description = 'Children'
 
     def orders_a(self, obj):
-        return obj._orders_a
-    orders_a.short_description = 'Orders A'
+        return f"A {obj._orders_a} · B {obj._orders_b}"
+    orders_a.short_description = 'Orders A / B'
 
 
 # ---------------------------------------------------------------------------
@@ -188,10 +190,8 @@ class SchoolClassAdmin(admin.ModelAdmin):
         return super().get_queryset(request).annotate(
             _children=Count('children', distinct=True),
             _photos=Count('photos', distinct=True),
-            _a=Count('children', filter=Q(children__package_a=True), distinct=True),
-            _b=Count('children', filter=Q(children__package_b=True), distinct=True),
-            _c=Count('children', filter=Q(children__package_c=True), distinct=True),
-            _d=Count('children', filter=Q(children__package_d=True), distinct=True),
+            **{f'_{k}': Count('children', filter=Q(**{f'children__package_{k}': True}), distinct=True)
+               for k in pricing.LETTERS},
         )
 
     # --- list columns -----------------------------------------------------
@@ -213,7 +213,7 @@ class SchoolClassAdmin(admin.ModelAdmin):
     photo_count.short_description = 'Photos'
 
     def orders_summary(self, obj):
-        return f"A {obj._a} · B {obj._b} · C {obj._c} · D {obj._d}"
+        return ' · '.join(f"{k.upper()} {getattr(obj, f'_{k}')}" for k in pricing.LETTERS)
     orders_summary.short_description = 'Orders'
 
     def tools(self, obj):
@@ -236,10 +236,10 @@ class SchoolClassAdmin(admin.ModelAdmin):
             '<div class="ave-access-row"><span class="ave-access-label">Teacher URL</span>'
             '<a href="{0}" target="_blank" rel="noopener">{0}</a></div>'
             '<div class="ave-access-row"><span class="ave-access-label">PIN</span><span class="ave-pin">{1}</span></div>'
-            '<div class="ave-access-row"><span class="ave-access-label">Package A</span><span>{2} lei ({3})</span></div>'
+            '<div class="ave-access-row"><span class="ave-access-label">Prices</span><span>{2} ({3})</span></div>'
             '{4}'
             '</div>',
-            obj.teacher_url, obj.pin, obj.price_a,
+            obj.teacher_url, obj.pin, obj.school.tier_display,
             'returning customer' if obj.school.is_returning_customer else 'new customer',
             format_html('<img src="{}" class="ave-qr" alt="QR" />', obj.qr_code.url) if obj.qr_code else '',
         )
@@ -463,24 +463,23 @@ class SchoolClassAdmin(admin.ModelAdmin):
         response['Content-Disposition'] = f'attachment; filename="comenzi_{safe}.csv"'
         response.write('﻿')
         writer = csv.writer(response, delimiter=';')
-        writer.writerow(['Nume', 'Prenume', f'A ({school_class.price_a} lei)',
-                         f"B ({pricing.EXTRAS['b']['price']} lei)", f"C ({pricing.EXTRAS['c']['price']} lei)",
-                         f"D ({pricing.EXTRAS['d']['price']} lei)", 'Total lei', 'PIN album', 'Link album', 'Observații'])
-        totals = {'a': 0, 'b': 0, 'c': 0, 'd': 0, 'lei': 0}
+        prices = school_class.prices
+        writer.writerow(['Nume', 'Prenume',
+                         *[f"{k.upper()} {pricing.label(k)} ({prices[k]} lei)" for k in pricing.LETTERS],
+                         'Total lei', 'PIN album', 'Link album', 'Observații'])
+        totals = {k: 0 for k in pricing.LETTERS}
+        total_lei = 0
         for child in school_class.children.all():
             writer.writerow([
                 child.last_name, child.first_name,
-                'X' if child.package_a else '', 'X' if child.package_b else '',
-                'X' if child.package_c else '', 'X' if child.package_d else '',
+                *['X' if child.has(k) else '' for k in pricing.LETTERS],
                 child.total_lei, child.pin, child.album_url, child.notes,
             ])
-            totals['a'] += child.package_a
-            totals['b'] += child.package_b
-            totals['c'] += child.package_c
-            totals['d'] += child.package_d
-            totals['lei'] += child.total_lei
+            for k in pricing.LETTERS:
+                totals[k] += child.has(k)
+            total_lei += child.total_lei
         writer.writerow([])
-        writer.writerow(['TOTAL', '', totals['a'], totals['b'], totals['c'], totals['d'], totals['lei'], '', '', ''])
+        writer.writerow(['TOTAL', '', *[totals[k] for k in pricing.LETTERS], total_lei, '', '', ''])
         return response
 
 
@@ -492,7 +491,7 @@ class SchoolClassAdmin(admin.ModelAdmin):
 class ChildAdmin(admin.ModelAdmin):
     list_display = ('last_name', 'first_name', 'school_class', 'packages_display', 'total_display',
                     'pin_display', 'photo_count', 'album_link')
-    list_filter = ('school_class__school', 'school_class', 'package_a', 'package_b', 'package_c', 'package_d')
+    list_filter = ('school_class__school', 'school_class', 'package_a', 'package_b', 'package_c', 'package_d', 'package_e')
     search_fields = ('first_name', 'last_name', 'pin', 'school_class__name', 'school_class__school__name')
     list_select_related = ('school_class__school',)
     readonly_fields = ('pin', 'qr_code', 'album_panel', 'match_key', 'created_at')
@@ -500,7 +499,8 @@ class ChildAdmin(admin.ModelAdmin):
     actions = ['print_cards']
     fieldsets = (
         ('Child', {'fields': ('school_class', 'last_name', 'first_name', 'notes')}),
-        ('Order', {'fields': (('package_a', 'package_b', 'package_c', 'package_d'),)}),
+        ('Order', {'fields': (('package_a', 'package_b', 'package_c', 'package_d', 'package_e'),),
+                   'description': 'A (Standard) and B (Extra) are alternatives: tick only one of them.'}),
         ('Album access', {'fields': ('album_panel', 'pin', 'qr_code', 'match_key')}),
     )
 

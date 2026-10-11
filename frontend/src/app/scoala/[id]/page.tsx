@@ -7,14 +7,38 @@ import {
     type ChildOrder, type SchoolClassOrder,
 } from '@/lib/api';
 
-type PackageKey = 'package_a' | 'package_b' | 'package_c' | 'package_d';
+type PackageKey = 'package_a' | 'package_b' | 'package_c' | 'package_d' | 'package_e';
+type PriceKey = 'a' | 'b' | 'c' | 'd' | 'e';
 
-const PACKAGES: Array<{ key: PackageKey; letter: string; label: string; priceKey: 'a' | 'b' | 'c' | 'd' }> = [
-    { key: 'package_a', letter: 'A', label: 'Pachet de bază (calendar, 2 felicitări, foto 20x30, 15x20, retro 10x12 + digital)', priceKey: 'a' },
-    { key: 'package_b', letter: 'B', label: 'Breloc 7x5 cm', priceKey: 'b' },
-    { key: 'package_c', letter: 'C', label: 'Magnet frigider 6.5x6.5 cm', priceKey: 'c' },
-    { key: 'package_d', letter: 'D', label: 'Puzzle 45 piese', priceKey: 'd' },
+interface PackageDef {
+    key: PackageKey;
+    letter: string;
+    name: string;
+    label: string;
+    priceKey: PriceKey;
+    listKey?: 'list_a' | 'list_b';
+}
+
+const PACKAGES: PackageDef[] = [
+    { key: 'package_a', letter: 'A', name: 'Standard', label: 'Calendar 20x30, 2× foto 15x20, 1× retro 10x12', priceKey: 'a', listKey: 'list_a' },
+    { key: 'package_b', letter: 'B', name: 'Extra', label: 'Calendar 20x30, 2 felicitări, foto 20x30, 2× foto 15x20, 2× retro 10x12', priceKey: 'b', listKey: 'list_b' },
+    { key: 'package_c', letter: 'C', name: 'Breloc', label: 'Breloc 7x5 cm', priceKey: 'c' },
+    { key: 'package_d', letter: 'D', name: 'Magnet', label: 'Magnet frigider 6.5x6.5 cm', priceKey: 'd' },
+    { key: 'package_e', letter: 'E', name: 'Puzzle', label: 'Puzzle 45 piese', priceKey: 'e' },
 ];
+const MAIN_PACKAGES = PACKAGES.slice(0, 2);
+const ADDONS = PACKAGES.slice(2);
+const EMPTY_NEW: Record<PackageKey, boolean> = {
+    package_a: true, package_b: false, package_c: false, package_d: false, package_e: false,
+};
+
+/** A (Standard) and B (Extra) are alternatives: turning one on turns the other off. */
+function withExclusive(current: Record<PackageKey, boolean>, key: PackageKey, value: boolean): Partial<Record<PackageKey, boolean>> {
+    const patch: Partial<Record<PackageKey, boolean>> = { [key]: value };
+    if (value && key === 'package_a' && current.package_b) patch.package_b = false;
+    if (value && key === 'package_b' && current.package_a) patch.package_a = false;
+    return patch;
+}
 
 export default function TeacherOrderPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
@@ -26,9 +50,7 @@ export default function TeacherOrderPage({ params }: { params: Promise<{ id: str
     const [busy, setBusy] = useState<string | null>(null);
     const [lastName, setLastName] = useState('');
     const [firstName, setFirstName] = useState('');
-    const [newPackages, setNewPackages] = useState<Record<PackageKey, boolean>>({
-        package_a: true, package_b: false, package_c: false, package_d: false,
-    });
+    const [newPackages, setNewPackages] = useState<Record<PackageKey, boolean>>(EMPTY_NEW);
 
     const load = useCallback(async (p: string) => {
         try {
@@ -45,15 +67,15 @@ export default function TeacherOrderPage({ params }: { params: Promise<{ id: str
 
     const totals = useMemo(() => {
         if (!data) return null;
-        const t = { a: 0, b: 0, c: 0, d: 0, lei: 0 };
+        const counts: Record<PackageKey, number> = { package_a: 0, package_b: 0, package_c: 0, package_d: 0, package_e: 0 };
+        let lei = 0;
         data.children.forEach((c) => {
-            if (c.package_a) t.a += 1;
-            if (c.package_b) t.b += 1;
-            if (c.package_c) t.c += 1;
-            if (c.package_d) t.d += 1;
-            t.lei += c.total_lei;
+            PACKAGES.forEach((p) => {
+                if (c[p.key]) counts[p.key] += 1;
+            });
+            lei += c.total_lei;
         });
-        return t;
+        return { counts, lei };
     }, [data]);
 
     const replaceChild = (child: ChildOrder) =>
@@ -69,7 +91,7 @@ export default function TeacherOrderPage({ params }: { params: Promise<{ id: str
             setData({ ...data, children: [...data.children, child].sort((x, y) => `${x.last_name} ${x.first_name}`.localeCompare(`${y.last_name} ${y.first_name}`, 'ro')) });
             setLastName('');
             setFirstName('');
-            setNewPackages({ package_a: true, package_b: false, package_c: false, package_d: false });
+            setNewPackages(EMPTY_NEW);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Eroare');
         } finally {
@@ -80,10 +102,10 @@ export default function TeacherOrderPage({ params }: { params: Promise<{ id: str
     const toggle = async (child: ChildOrder, key: PackageKey) => {
         setError('');
         setBusy(child.id);
-        const optimistic = { ...child, [key]: !child[key] };
-        replaceChild(optimistic);
+        const patch = withExclusive(child, key, !child[key]);
+        replaceChild({ ...child, ...patch });
         try {
-            replaceChild(await updateChild(id, pin, child.id, { [key]: !child[key] }));
+            replaceChild(await updateChild(id, pin, child.id, patch));
         } catch (err) {
             replaceChild(child);
             setError(err instanceof Error ? err.message : 'Eroare');
@@ -152,21 +174,43 @@ export default function TeacherOrderPage({ params }: { params: Promise<{ id: str
                     <section className="pb-24 px-6">
                         <div className="max-w-5xl mx-auto space-y-8">
                             {/* Price legend */}
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                {PACKAGES.map((p) => (
-                                    <div key={p.key} className="xmas-card p-4 flex items-start gap-3">
-                                        <span className="xmas-letter !w-9 !h-9 !text-base">{p.letter}</span>
-                                        <div className="min-w-0">
-                                            <p className="text-lg font-semibold leading-tight" style={{ color: 'var(--xmas-burgundy)', fontFamily: 'var(--font-heading)' }}>
-                                                {data.prices[p.priceKey]} lei
-                                                {p.priceKey === 'a' && (
-                                                    <span className="xmas-strike ml-2 text-xs font-normal" style={{ color: 'rgba(43,36,32,0.4)' }}>{data.prices.list} lei</span>
-                                                )}
-                                            </p>
-                                            <p className="text-[11px] leading-snug mt-1" style={{ color: 'rgba(43,36,32,0.6)' }}>{p.label}</p>
+                            <div className="space-y-3">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    {MAIN_PACKAGES.map((p) => (
+                                        <div key={p.key} className="xmas-card p-5 flex items-start gap-4">
+                                            <span className="xmas-letter">{p.letter}</span>
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                                                    <p className="text-lg font-semibold" style={{ color: 'var(--xmas-green)', fontFamily: 'var(--font-heading)' }}>
+                                                        Pachet {p.name}
+                                                    </p>
+                                                    <p className="text-xl font-semibold" style={{ color: 'var(--xmas-burgundy)', fontFamily: 'var(--font-heading)' }}>
+                                                        {p.listKey && (
+                                                            <span className="xmas-strike mr-2 text-sm font-normal" style={{ color: 'rgba(43,36,32,0.4)' }}>{data.prices[p.listKey]} lei</span>
+                                                        )}
+                                                        {data.prices[p.priceKey]} lei
+                                                    </p>
+                                                </div>
+                                                <p className="text-xs leading-snug mt-1" style={{ color: 'rgba(43,36,32,0.6)' }}>{p.label}</p>
+                                                <span className="xmas-tag mt-2">+ format digital inclus</span>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
+                                <p className="text-xs" style={{ color: 'rgba(43,36,32,0.55)' }}>
+                                    Fiecare copil primește <strong>fie pachetul A, fie pachetul B</strong>. Extra C, D și E se pot bifa în plus, oricâte.
+                                </p>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    {ADDONS.map((p) => (
+                                        <div key={p.key} className="xmas-card px-4 py-3 flex items-center gap-3">
+                                            <span className="xmas-letter !w-9 !h-9 !text-base">{p.letter}</span>
+                                            <p className="text-sm flex-1 min-w-0" style={{ color: 'var(--xmas-ink)' }}>{p.label}</p>
+                                            <p className="text-lg font-semibold whitespace-nowrap" style={{ color: 'var(--xmas-burgundy)', fontFamily: 'var(--font-heading)' }}>
+                                                {data.prices[p.priceKey]} lei
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
 
                             {error && (
@@ -191,16 +235,18 @@ export default function TeacherOrderPage({ params }: { params: Promise<{ id: str
                                         {busy === 'add' ? 'Se adaugă...' : 'Adaugă'}
                                     </button>
                                 </div>
-                                <div className="flex flex-wrap gap-5 mt-4">
+                                <div className="flex flex-wrap gap-x-6 gap-y-3 mt-5">
                                     {PACKAGES.map((p) => (
-                                        <label key={p.key} className="inline-flex items-center gap-2 text-sm cursor-pointer select-none">
+                                        <label key={p.key} className="inline-flex items-center gap-2.5 text-sm cursor-pointer select-none">
                                             <input
                                                 type="checkbox"
                                                 className="xmas-check"
                                                 checked={newPackages[p.key]}
-                                                onChange={(e) => setNewPackages({ ...newPackages, [p.key]: e.target.checked })}
+                                                onChange={(e) => setNewPackages({ ...newPackages, ...withExclusive(newPackages, p.key, e.target.checked) })}
                                             />
-                                            <span><strong>{p.letter}</strong> · {data.prices[p.priceKey]} lei</span>
+                                            <span>
+                                                <strong>{p.letter}</strong> {p.name} · {data.prices[p.priceKey]} lei
+                                            </span>
                                         </label>
                                     ))}
                                 </div>
@@ -244,8 +290,9 @@ export default function TeacherOrderPage({ params }: { params: Promise<{ id: str
                                                 <th className="text-left px-4 py-3 font-medium" style={{ color: 'rgba(43,36,32,0.55)' }}>#</th>
                                                 <th className="text-left px-4 py-3 font-medium" style={{ color: 'rgba(43,36,32,0.55)' }}>Copil</th>
                                                 {PACKAGES.map((p) => (
-                                                    <th key={p.key} className="text-center px-2 py-3 font-semibold" style={{ color: 'var(--xmas-green)' }} title={p.label}>
+                                                    <th key={p.key} className="text-center px-2 py-3 font-semibold leading-tight" style={{ color: 'var(--xmas-green)' }} title={p.label}>
                                                         {p.letter}
+                                                        <span className="block text-[10px] font-normal" style={{ color: 'rgba(43,36,32,0.5)' }}>{p.name}</span>
                                                     </th>
                                                 ))}
                                                 <th className="text-right px-4 py-3 font-medium" style={{ color: 'rgba(43,36,32,0.55)' }}>Total</th>
@@ -289,7 +336,7 @@ export default function TeacherOrderPage({ params }: { params: Promise<{ id: str
                                             ))}
                                             {data.children.length === 0 && (
                                                 <tr>
-                                                    <td colSpan={8} className="px-4 py-10 text-center text-sm" style={{ color: 'rgba(43,36,32,0.45)' }}>
+                                                    <td colSpan={PACKAGES.length + 4} className="px-4 py-10 text-center text-sm" style={{ color: 'rgba(43,36,32,0.45)' }}>
                                                         Niciun copil încă. Adăugați primul copil din formularul de mai sus.
                                                     </td>
                                                 </tr>
@@ -300,10 +347,9 @@ export default function TeacherOrderPage({ params }: { params: Promise<{ id: str
                                                 <tr style={{ background: 'var(--xmas-green)', color: 'var(--xmas-cream)' }}>
                                                     <td className="px-4 py-3" />
                                                     <td className="px-4 py-3 font-medium">{data.children.length} copii</td>
-                                                    <td className="text-center px-2 py-3">{totals.a}</td>
-                                                    <td className="text-center px-2 py-3">{totals.b}</td>
-                                                    <td className="text-center px-2 py-3">{totals.c}</td>
-                                                    <td className="text-center px-2 py-3">{totals.d}</td>
+                                                    {PACKAGES.map((p) => (
+                                                        <td key={p.key} className="text-center px-2 py-3">{totals.counts[p.key]}</td>
+                                                    ))}
                                                     <td className="text-right px-4 py-3 font-semibold whitespace-nowrap" style={{ color: 'var(--xmas-gold)' }}>{totals.lei} lei</td>
                                                     <td />
                                                 </tr>

@@ -44,7 +44,7 @@
                     <option value="">— choose —</option>
                     {% for school in schools %}
                     <option value="{{ school.pk }}" {% if preselected and preselected.school_id == school.pk %}selected{% endif %}>
-                        {{ school }} · {{ school.price_a }} lei
+                        {{ school }} · {{ school.tier_display }}
                     </option>
                     {% endfor %}
                 </select>

@@ -443,10 +443,64 @@
   text-transform: uppercase;
 }
 
+/* Custom checkbox: always shows a clear white tick on green, also when printed */
 .xmas-check {
-  accent-color: var(--xmas-green);
-  width: 22px;
-  height: 22px;
+  -webkit-appearance: none;
+  appearance: none;
+  display: inline-block;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  margin: 0;
+  border-radius: 8px;
+  border: 1.5px solid var(--xmas-gold);
+  background-color: #fff;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 16px 16px;
+  cursor: pointer;
+  vertical-align: middle;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.xmas-check:hover:not(:disabled) {
+  border-color: var(--xmas-green);
+  box-shadow: 0 0 0 4px rgba(31, 58, 46, 0.08);
+}
+.xmas-check:checked {
+  background-color: var(--xmas-green);
+  border-color: var(--xmas-green);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 8.5l3 3 6-7'/%3E%3C/svg%3E");
+  animation: xmasCheckPop 0.25s ease;
+}
+.xmas-check:focus-visible {
+  outline: 2px solid var(--xmas-gold);
+  outline-offset: 2px;
+}
+.xmas-check:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+@keyframes xmasCheckPop {
+  0% { transform: scale(0.85); }
+  60% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .xmas-check:checked { animation: none; }
+}
+
+.xmas-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  background: rgba(200, 164, 93, 0.16);
+  color: #8a6a2c;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
 }
 
 .xmas-input {

@@ -215,8 +215,8 @@ def offer_prices(request):
     return Response({
         'season': pricing.SEASON,
         'period': pricing.PERIOD,
-        'list': pricing.LIST_PRICE,
-        'new': pricing.PRICE_NEW,
-        'returning': pricing.PRICE_RETURNING,
+        'packages': pricing.PACKAGES,
         'extras': pricing.EXTRAS,
+        'new': pricing.prices_for(False),
+        'returning': pricing.prices_for(True),
     })

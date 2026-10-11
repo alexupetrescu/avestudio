@@ -5,7 +5,7 @@ import { generateMetadata as generateSEOMetadata, SITE_URL } from '@/lib/seo';
 export const metadata: Metadata = generateSEOMetadata({
   title: 'Ofertă foto Crăciun 2026 pentru școli și grădinițe - AVE Studio',
   description:
-    'Pachet foto de Crăciun pentru școli și grădinițe: calendar 20x30 cu design, 2 felicitări, fotografie 20x30, 15x20 și retro 10x12, plus format digital. 75 lei în loc de 85 lei.',
+    'Ofertă foto de Crăciun pentru școli și grădinițe: Pachet Standard 50 lei (în loc de 65) sau Pachet Extra 75 lei (în loc de 85), cu calendar 20x30, fotografii, felicitări și format digital inclus.',
   url: `${SITE_URL}/oferta-scoli`,
   type: 'website',
   images: [{ url: `${SITE_URL}/oferta/calendar.webp`, width: 933, height: 1400, alt: 'Calendar de Crăciun 2027' }],

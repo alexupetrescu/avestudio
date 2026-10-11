@@ -78,7 +78,7 @@ class ChildOrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Child
         fields = ['id', 'first_name', 'last_name', 'package_a', 'package_b', 'package_c', 'package_d',
-                  'notes', 'total_lei']
+                  'package_e', 'notes', 'total_lei']
         read_only_fields = ['id']
 
     def validate(self, attrs):
@@ -86,6 +86,10 @@ class ChildOrderSerializer(serializers.ModelSerializer):
         last = attrs.get('last_name', getattr(self.instance, 'last_name', '')).strip()
         if not first or not last:
             raise serializers.ValidationError('Completați numele și prenumele.')
+        pkg_a = attrs.get('package_a', getattr(self.instance, 'package_a', False))
+        pkg_b = attrs.get('package_b', getattr(self.instance, 'package_b', False))
+        if pkg_a and pkg_b:
+            raise serializers.ValidationError('Alegeți fie Pachetul Standard (A), fie Pachetul Extra (B), nu amândouă.')
         from schools.models import fold_name
         school_class = self.context.get('school_class')
         if school_class:
@@ -134,4 +138,4 @@ class ChildAlbumSerializer(serializers.ModelSerializer):
     class Meta:
         model = Child
         fields = ['id', 'first_name', 'last_name', 'full_name', 'class_name', 'school_name',
-                  'package_a', 'package_b', 'package_c', 'package_d', 'packages', 'photos']
+                  'package_a', 'package_b', 'package_c', 'package_d', 'package_e', 'packages', 'photos']

@@ -1,27 +1,99 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import Reveal from '@/components/offer/Reveal';
+import CountUp from '@/components/offer/CountUp';
+import HeroVisual from '@/components/offer/HeroVisual';
+import SlideNav from '@/components/offer/SlideNav';
+import PrintButton from '@/components/offer/PrintButton';
+import DigitalPopup from '@/components/offer/DigitalPopup';
+import '@/components/offer/offer.css';
 
 export type OfferVariant = 'new' | 'returning';
 
-export const LIST_PRICE = 85;
-export const PRICES: Record<OfferVariant, number> = { new: 75, returning: 70 };
-export const EXTRA_PRICES = { b: 40, c: 25, d: 105 };
-export const PERIOD = '9 noiembrie - 5 decembrie 2026';
+// Keep in sync with schools/pricing.py
 export const SEASON = 2026;
+export const PERIOD = '9 noiembrie - 5 decembrie 2026';
 
-const BASE_PRODUCTS = [
-  { src: '/oferta/calendar.webp', w: 933, h: 1400, title: 'Calendar 20x30 cm', sub: `cu design ${SEASON + 1}` },
-  { src: '/oferta/poza-20x30.webp', w: 567, h: 850, title: 'Fotografie 20x30 cm', sub: 'tablou mare' },
-  { src: '/oferta/poza-15x20.webp', w: 425, h: 595, title: 'Fotografie 15x20 cm', sub: 'print premium' },
-  { src: '/oferta/felicitare-15x21.webp', w: 1000, h: 1400, title: 'Felicitare 15x21 cm', sub: 'cu design de Crăciun' },
-  { src: '/oferta/felicitare-21x15.webp', w: 1400, h: 1000, title: 'Felicitare 21x15 cm', sub: 'cu design de Crăciun' },
-  { src: '/oferta/poza-retro-10x12.webp', w: 1167, h: 1400, title: 'Fotografie retro 10x12 cm', sub: 'stil polaroid' },
+type PackageKey = 'a' | 'b';
+
+interface PackageItem {
+  qty: number;
+  title: string;
+  sub: string;
+  src: string;
+}
+
+interface PackageDef {
+  letter: string;
+  name: string;
+  list: number;
+  prices: Record<OfferVariant, number>;
+  tagline: string;
+  items: PackageItem[];
+}
+
+const IMG = {
+  calendar: '/oferta/calendar.webp',
+  p2030: '/oferta/poza-20x30.webp',
+  p1520: '/oferta/poza-15x20.webp',
+  f1521: '/oferta/felicitare-15x21.webp',
+  f2115: '/oferta/felicitare-21x15.webp',
+  retro: '/oferta/poza-retro-10x12.webp',
+};
+
+export const PACKAGES: Record<PackageKey, PackageDef> = {
+  a: {
+    letter: 'A',
+    name: 'Standard',
+    list: 65,
+    prices: { new: 50, returning: 45 },
+    tagline: 'Esențialul, frumos tipărit',
+    items: [
+      { qty: 1, title: 'Calendar 20x30 cm', sub: `Design ${SEASON + 1}, 12 luni`, src: IMG.calendar },
+      { qty: 2, title: 'Fotografie 15x20 cm', sub: 'Print simplu, fără grafică', src: IMG.p1520 },
+      { qty: 1, title: 'Fotografie retro 10x12 cm', sub: 'Stil polaroid', src: IMG.retro },
+    ],
+  },
+  b: {
+    letter: 'B',
+    name: 'Extra',
+    list: 85,
+    prices: { new: 75, returning: 65 },
+    tagline: 'Toată colecția de Crăciun',
+    items: [
+      { qty: 1, title: 'Calendar 20x30 cm', sub: `Design ${SEASON + 1}, 12 luni`, src: IMG.calendar },
+      { qty: 1, title: 'Felicitare 15x21 cm', sub: 'Design de Crăciun', src: IMG.f1521 },
+      { qty: 1, title: 'Felicitare 21x15 cm', sub: 'Design de Crăciun', src: IMG.f2115 },
+      { qty: 1, title: 'Fotografie 20x30 cm', sub: 'Tablou mare', src: IMG.p2030 },
+      { qty: 2, title: 'Fotografie 15x20 cm', sub: 'Print premium', src: IMG.p1520 },
+      { qty: 2, title: 'Fotografie retro 10x12 cm', sub: 'Stil polaroid', src: IMG.retro },
+    ],
+  },
+};
+
+/** Every product mockup, with how many of each come in A and in B. */
+const GALLERY = [
+  { src: IMG.calendar, w: 933, h: 1400, title: 'Calendar 20x30 cm', sub: `Design ${SEASON + 1}, 12 luni`, a: 1, b: 1 },
+  { src: IMG.p1520, w: 425, h: 595, title: 'Fotografie 15x20 cm', sub: 'În A fără grafică, în B print premium', a: 2, b: 2 },
+  { src: IMG.retro, w: 1167, h: 1400, title: 'Fotografie retro 10x12 cm', sub: 'Stil polaroid', a: 1, b: 2 },
+  { src: IMG.p2030, w: 567, h: 850, title: 'Fotografie 20x30 cm', sub: 'Tablou mare', a: 0, b: 1 },
+  { src: IMG.f1521, w: 1000, h: 1400, title: 'Felicitare 15x21 cm', sub: 'Design de Crăciun', a: 0, b: 1 },
+  { src: IMG.f2115, w: 1400, h: 1000, title: 'Felicitare 21x15 cm', sub: 'Design de Crăciun', a: 0, b: 1 },
 ];
 
+export const EXTRA_PRICES = { c: 40, d: 20, e: 105 };
+
 const EXTRAS = [
-  { letter: 'B', src: '/oferta/breloc.webp', w: 431, h: 229, title: 'Breloc 7x5 cm', price: EXTRA_PRICES.b },
-  { letter: 'C', src: '/oferta/magnet.webp', w: 1024, h: 1024, title: 'Magnet frigider 6.5x6.5 cm', price: EXTRA_PRICES.c },
-  { letter: 'D', src: '/oferta/puzzle.webp', w: 435, h: 435, title: 'Puzzle 45 piese', price: EXTRA_PRICES.d },
+  { letter: 'C', src: '/oferta/breloc.webp', w: 431, h: 229, title: 'Breloc 7x5 cm', sub: 'Cu fotografia copilului, pe metal', price: EXTRA_PRICES.c },
+  { letter: 'D', src: '/oferta/magnet.webp', w: 1024, h: 1024, title: 'Magnet frigider 6.5x6.5 cm', sub: 'Amintirea de zi cu zi', price: EXTRA_PRICES.d },
+  { letter: 'E', src: '/oferta/puzzle.webp', w: 435, h: 435, title: 'Puzzle 45 piese', sub: 'Joc și fotografie, în cutie', price: EXTRA_PRICES.e },
+];
+
+const SLIDES = [
+  { id: 'start', label: 'Oferta' },
+  { id: 'pachete', label: 'Pachete A · B' },
+  { id: 'extra', label: 'Extra C · D · E' },
+  { id: 'contact', label: 'Programare' },
 ];
 
 export function Star({ className = '' }: { className?: string }) {
@@ -46,10 +118,26 @@ export function formatPhone(p: string) {
   return p.replace(/(\d{4})(\d{3})(\d{3})/, '$1 $2 $3');
 }
 
+function Eyebrow({ children, tone = 'gold' }: { children: React.ReactNode; tone?: 'gold' | 'burgundy' }) {
+  return (
+    <p className={`offer-eyebrow offer-eyebrow--${tone}`}>
+      <Star className="!w-2.5 !h-2.5" />
+      <span>{children}</span>
+    </p>
+  );
+}
+
+function qtyTag(a: number, b: number) {
+  return a ? `A ×${a} · B ×${b}` : `Doar în B · ×${b}`;
+}
+
 export default function SchoolOffer({ variant }: { variant: OfferVariant }) {
-  const price = PRICES[variant];
-  const saving = LIST_PRICE - price;
   const isReturning = variant === 'returning';
+  const plans = (['a', 'b'] as PackageKey[]).map((k) => {
+    const p = PACKAGES[k];
+    const price = p.prices[variant];
+    return { key: k, ...p, price, saving: p.list - price };
+  });
 
   const alexName = process.env.NEXT_PUBLIC_CONTACT_ALEX_NAME || 'Alexandru';
   const alexPhone = process.env.NEXT_PUBLIC_CONTACT_ALEX_PHONE || '0756538455';
@@ -57,285 +145,375 @@ export default function SchoolOffer({ variant }: { variant: OfferVariant }) {
   const adinaPhone = process.env.NEXT_PUBLIC_CONTACT_ADINA_PHONE || '0746986415';
 
   return (
-    <div className="xmas min-h-screen">
-      {/* Hero */}
-      <section
-        className="xmas-hero relative overflow-hidden pt-32 pb-20 md:pt-40 md:pb-28 px-6"
-        style={{ background: 'var(--xmas-green)' }}
-      >
-        <div
-          className="absolute inset-0 opacity-[0.05] pointer-events-none"
-          style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, #fff 0.6px, transparent 0)', backgroundSize: '32px 32px' }}
-        />
-        <div className="relative max-w-5xl mx-auto">
-          <div className="xmas-frame p-8 md:p-14 text-center" style={{ borderColor: 'var(--xmas-gold)' }}>
-            <p className="text-[11px] md:text-xs font-semibold tracking-[0.3em] uppercase mb-6" style={{ color: 'var(--xmas-gold)' }}>
-              Ofertă foto Crăciun {SEASON} · Școli &amp; Grădinițe
-            </p>
+    <div className="xmas offer">
+      <SlideNav slides={SLIDES} />
+      <DigitalPopup triggerId="pachete" targetId="pachete" />
 
-            {isReturning && (
-              <div className="mb-6 flex justify-center">
-                <span className="xmas-ribbon">
-                  <Star className="!w-3 !h-3 !text-white" />
-                  Preț redus pentru clienții fideli
-                </span>
-              </div>
-            )}
-
-            <h1
-              className="text-4xl md:text-6xl lg:text-7xl font-semibold leading-[1.05] tracking-tight mb-8"
-              style={{ fontFamily: 'var(--font-heading)', color: 'var(--xmas-cream)' }}
-            >
-              Amintiri de sărbătoare,
-              <br />
-              <em className="font-normal italic" style={{ color: 'var(--xmas-gold)' }}>
-                pentru fiecare copil
-              </em>
-            </h1>
-
-            <div className="max-w-xs mx-auto mb-8">
-              <GoldRule>
-                <span className="text-sm tracking-[0.25em] uppercase" style={{ color: 'var(--xmas-gold)' }}>
-                  Standard
-                </span>
-              </GoldRule>
-            </div>
-
-            <div className="flex items-end justify-center gap-5 md:gap-8">
-              <div className="text-right">
-                <p className="text-[11px] tracking-[0.2em] uppercase mb-1" style={{ color: 'rgba(247,243,234,0.5)' }}>
-                  Preț de listă
-                </p>
-                <p
-                  className="xmas-strike text-3xl md:text-4xl font-light"
-                  style={{ color: 'var(--xmas-gold)', fontFamily: 'var(--font-heading)' }}
-                >
-                  {LIST_PRICE} lei
-                </p>
-              </div>
-              <div className="text-left">
-                <p className="text-[11px] tracking-[0.2em] uppercase mb-1" style={{ color: 'rgba(247,243,234,0.5)' }}>
-                  {isReturning ? 'Prețul dumneavoastră' : 'Preț ofertă'}
-                </p>
-                <p
-                  className="text-6xl md:text-8xl font-semibold leading-none"
-                  style={{ color: 'var(--xmas-cream)', fontFamily: 'var(--font-heading)' }}
-                >
-                  {price}
-                  <span className="text-2xl md:text-4xl font-normal ml-2" style={{ color: 'var(--xmas-gold)' }}>
-                    lei
-                  </span>
-                </p>
-              </div>
-            </div>
-
-            <p className="mt-6 text-sm md:text-base" style={{ color: 'rgba(247,243,234,0.7)' }}>
-              Economisiți <strong style={{ color: 'var(--xmas-gold)' }}>{saving} lei</strong> față de prețul de listă
-              {isReturning ? ', ca mulțumire pentru încrederea acordată și anul trecut.' : '.'}
-            </p>
-          </div>
+      {/* ───────────────────────── 01 · Hero ───────────────────────── */}
+      <section id="start" className="offer-hero xmas-hero">
+        <div className="offer-hero-bg" aria-hidden="true">
+          <span className="offer-hero-grain" />
+          <span className="offer-hero-aurora" />
         </div>
-      </section>
 
-      {/* Section A */}
-      <section className="py-20 md:py-28 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex items-center gap-5 mb-4">
-            <span className="xmas-letter">A</span>
-            <div>
-              <p className="text-[11px] font-semibold tracking-[0.25em] uppercase" style={{ color: 'var(--xmas-burgundy)' }}>
-                Secțiunea A
-              </p>
-              <h2
-                className="text-3xl md:text-5xl font-semibold tracking-tight"
-                style={{ fontFamily: 'var(--font-heading)', color: 'var(--xmas-green)' }}
-              >
-                Pachetul de bază · {price} lei
-              </h2>
-            </div>
-          </div>
-          <p className="text-base md:text-lg max-w-2xl mb-12" style={{ color: 'rgba(43,36,32,0.65)' }}>
-            Toate produsele sunt personalizate cu fotografia copilului dumneavoastră, realizată în studio mobil, la școală sau grădiniță.
-          </p>
+        <div className="offer-container relative">
+          <div className="offer-hero-grid">
+            <div className="offer-hero-copy">
+              <div className="h-in" style={{ '--d': '100ms' } as React.CSSProperties}>
+                <Eyebrow>
+                  Ofertă foto Crăciun {SEASON} · Școli &amp; Grădinițe
+                </Eyebrow>
+              </div>
 
-          <div className="xmas-card p-6 md:p-10">
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-6 md:gap-8">
-              {BASE_PRODUCTS.map((p) => (
-                <figure key={p.src} className="text-center">
-                  <div
-                    className="relative aspect-[3/4] flex items-center justify-center rounded-xl overflow-hidden"
-                    style={{ background: 'var(--xmas-cream)' }}
-                  >
-                    <Image
-                      src={p.src}
-                      alt={p.title}
-                      width={p.w}
-                      height={p.h}
-                      className="max-h-full w-auto object-contain p-3 drop-shadow-[0_12px_24px_rgba(31,58,46,0.18)]"
-                      sizes="(max-width: 768px) 45vw, 30vw"
-                    />
-                  </div>
-                  <figcaption className="mt-4">
-                    <p className="font-medium text-sm md:text-base" style={{ color: 'var(--xmas-green)' }}>
-                      {p.title}
-                    </p>
-                    <p className="text-xs md:text-sm" style={{ color: 'rgba(43,36,32,0.55)' }}>
-                      {p.sub}
-                    </p>
-                  </figcaption>
-                </figure>
-              ))}
-            </div>
-
-            <div
-              className="mt-10 pt-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
-              style={{ borderTop: '1px solid var(--xmas-gold-soft)' }}
-            >
-              <p
-                className="text-lg md:text-xl font-medium"
-                style={{ color: 'var(--xmas-burgundy)', fontFamily: 'var(--font-heading)' }}
-              >
-                + format digital
-                <span
-                  className="block text-sm font-normal mt-1"
-                  style={{ color: 'rgba(43,36,32,0.55)', fontFamily: 'var(--font-body)' }}
-                >
-                  Fotografiile în format digital, descărcabile din albumul online al copilului (link + PIN).
-                </span>
-              </p>
-              <p className="md:text-right">
-                <span className="block text-[11px] tracking-[0.2em] uppercase" style={{ color: 'rgba(43,36,32,0.5)' }}>
-                  Total pachet A
-                </span>
-                <span
-                  className="text-4xl font-semibold"
-                  style={{ color: 'var(--xmas-green)', fontFamily: 'var(--font-heading)' }}
-                >
-                  {price} lei
-                </span>
-                <span className="xmas-strike ml-3 text-lg" style={{ color: 'rgba(43,36,32,0.4)' }}>
-                  {LIST_PRICE} lei
-                </span>
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Extras B C D */}
-      <section className="py-20 md:py-28 px-6" style={{ background: 'var(--xmas-cream-deep)' }}>
-        <div className="max-w-6xl mx-auto">
-          <div className="max-w-md mb-4">
-            <GoldRule>
-              <span className="text-[11px] font-semibold tracking-[0.25em] uppercase" style={{ color: 'var(--xmas-burgundy)' }}>
-                Extra opțional
-              </span>
-            </GoldRule>
-          </div>
-          <h2
-            className="text-3xl md:text-5xl font-semibold tracking-tight mb-3"
-            style={{ fontFamily: 'var(--font-heading)', color: 'var(--xmas-green)' }}
-          >
-            Secțiunile B, C și D
-          </h2>
-          <p className="text-base md:text-lg max-w-2xl mb-12" style={{ color: 'rgba(43,36,32,0.65)' }}>
-            Se pot comanda separat sau toate trei, în plus față de pachetul de bază. Fiecare cu fotografia copilului.
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-            {EXTRAS.map((e) => (
-              <div key={e.letter} className="xmas-card p-6 md:p-8 flex flex-col">
-                <div className="flex items-center justify-between mb-6">
-                  <span className="xmas-letter">{e.letter}</span>
-                  <span
-                    className="text-2xl font-semibold"
-                    style={{ color: 'var(--xmas-burgundy)', fontFamily: 'var(--font-heading)' }}
-                  >
-                    {e.price} lei
+              {isReturning && (
+                <div className="h-in mt-5" style={{ '--d': '250ms' } as React.CSSProperties}>
+                  <span className="xmas-ribbon offer-ribbon">
+                    <Star className="!w-3 !h-3 !text-white" />
+                    Preț special pentru clienții fideli
                   </span>
                 </div>
-                <div
-                  className="relative aspect-square flex items-center justify-center rounded-xl overflow-hidden mb-6"
-                  style={{ background: 'var(--xmas-cream)' }}
-                >
+              )}
+
+              <h1 className="offer-h1">
+                <span className="offer-mask">
+                  <span className="offer-mask-line" style={{ '--d': '350ms' } as React.CSSProperties}>
+                    {isReturning ? 'Ne revedem' : 'Amintiri de'}
+                  </span>
+                </span>
+                <span className="offer-mask">
+                  <span className="offer-mask-line" style={{ '--d': '470ms' } as React.CSSProperties}>
+                    {isReturning ? 'de Crăciun,' : 'sărbătoare,'}
+                  </span>
+                </span>
+                <span className="offer-mask">
+                  <em className="offer-mask-line offer-h1-accent" style={{ '--d': '590ms' } as React.CSSProperties}>
+                    pentru fiecare copil
+                  </em>
+                </span>
+              </h1>
+
+              <p className="offer-lead h-in" style={{ '--d': '760ms' } as React.CSSProperties}>
+                {isReturning
+                  ? 'Vă mulțumim pentru încrederea de anul trecut. Revenim cu același studio mobil, aceeași grijă pentru fiecare copil și prețuri mai bune.'
+                  : 'Studio mobil în școală sau grădiniță, fotografie profesională și două pachete de produse personalizate, gata de pus sub brad.'}
+              </p>
+
+              <div className="offer-price offer-price--dual h-in" style={{ '--d': '900ms' } as React.CSSProperties}>
+                {plans.map((p, i) => (
+                  <a key={p.key} href="#pachete" className="offer-price-col">
+                    <span className="offer-price-label">
+                      <b>{p.letter}</b> Pachet {p.name}
+                    </span>
+                    <span className="offer-price-value">
+                      <CountUp to={p.price} from={p.list} duration={1500} delay={1100 + i * 180} />
+                      <span className="offer-price-unit">lei</span>
+                    </span>
+                    <span className="offer-price-was">
+                      <span className="offer-strike">{p.list} lei</span>
+                      <span className="offer-price-save">−{p.saving} lei</span>
+                    </span>
+                  </a>
+                ))}
+              </div>
+              <p className="offer-price-note h-in" style={{ '--d': '980ms' } as React.CSSProperties}>
+                Per copil · <strong>format digital inclus</strong> în ambele pachete
+              </p>
+
+              <div className="offer-cta h-in no-print" style={{ '--d': '1050ms' } as React.CSSProperties}>
+                <a href={`tel:${alexPhone}`} className="offer-btn offer-btn--gold">
+                  <PhoneIcon />
+                  Sunați pentru programare
+                </a>
+                <a href="#pachete" className="offer-btn offer-btn--ghost">
+                  Comparați pachetele
+                  <ArrowIcon />
+                </a>
+              </div>
+            </div>
+
+            <div className="offer-hero-side">
+              <HeroVisual />
+            </div>
+          </div>
+
+          <div className="offer-hero-meta h-in" style={{ '--d': '1300ms' } as React.CSSProperties}>
+            <div className="offer-hero-meta-item">
+              <span className="offer-hero-meta-k">Perioada</span>
+              <span className="offer-hero-meta-v">{PERIOD}</span>
+            </div>
+            <div className="offer-hero-meta-item">
+              <span className="offer-hero-meta-k">Oferta</span>
+              <span className="offer-hero-meta-v">2 pachete + 3 extra, digital inclus</span>
+            </div>
+            <div className="offer-hero-meta-item">
+              <span className="offer-hero-meta-k">Unde</span>
+              <span className="offer-hero-meta-v">Studio mobil, la școală sau grădiniță</span>
+            </div>
+            <a href="#pachete" className="offer-scroll-cue no-print" aria-label="Derulați">
+              <span />
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* ───────────────────────── 02 · Pachetele A și B ───────────────────────── */}
+      <section id="pachete" className="offer-slide offer-slide--cream">
+        <div className="offer-container">
+          <div className="offer-slide-head offer-slide-head--center">
+            <Reveal effect="up">
+              <span className="offer-index">01</span>
+              <Eyebrow tone="burgundy">Secțiunile A și B · alegeți unul</Eyebrow>
+            </Reveal>
+            <Reveal effect="up" delay={80}>
+              <h2 className="offer-h2">
+                Două pachete, <em>o singură alegere</em>
+              </h2>
+            </Reveal>
+            <Reveal effect="up" delay={160}>
+              <p className="offer-text">
+                Fiecare produs este personalizat cu fotografia copilului, realizată în studio mobil, cu fundal și lumină de studio, direct la
+                școală sau grădiniță.
+              </p>
+            </Reveal>
+          </div>
+
+          <div className="offer-plans">
+            {plans.map((p, i) => (
+              <Reveal
+                key={p.key}
+                effect="up"
+                delay={i * 140}
+                className={`offer-plan ${p.key === 'b' ? 'offer-plan--featured' : ''}`}
+              >
+                {p.key === 'b' && <span className="offer-plan-ribbon">Cel mai complet</span>}
+
+                <div className="offer-plan-head">
+                  <span className="xmas-letter">{p.letter}</span>
+                  <div>
+                    <p className="offer-plan-kicker">Pachet</p>
+                    <h3 className="offer-plan-name">{p.name}</h3>
+                    <p className="offer-plan-tagline">{p.tagline}</p>
+                  </div>
+                </div>
+
+                <div className="offer-plan-price">
+                  <span className="offer-strike offer-plan-old">{p.list} lei</span>
+                  <span className="offer-plan-value">
+                    {p.price}
+                    <small>lei</small>
+                  </span>
+                  <span className="offer-plan-save">Economisiți {p.saving} lei</span>
+                </div>
+
+                <div className="offer-plan-thumbs" aria-hidden="true">
+                  {p.items.map((it, j) => (
+                    <span key={`${it.src}-${j}`} className="offer-plan-thumb" style={{ '--i': j } as React.CSSProperties}>
+                      <Image src={it.src} alt="" width={120} height={150} sizes="64px" loading="eager" />
+                    </span>
+                  ))}
+                </div>
+
+                <ul className="offer-plan-items">
+                  {p.items.map((it, j) => (
+                    <li key={`${it.title}-${j}`}>
+                      <span className="offer-plan-qty">×{it.qty}</span>
+                      <span>
+                        <span className="offer-plan-item">{it.title}</span>
+                        <span className="offer-plan-sub">{it.sub}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+
+                <div className="offer-plan-digital">
+                  <CloudIcon />
+                  <span>
+                    <b>+ Format digital inclus</b>
+                    <small>Toate fotografiile, în albumul online al copilului</small>
+                  </span>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+
+          <Reveal effect="fade" delay={100} className="offer-plans-note">
+            <GoldRule>
+              <span>Un copil primește fie pachetul A, fie pachetul B</span>
+            </GoldRule>
+          </Reveal>
+
+          <div className="offer-gallery-head">
+            <Reveal effect="up">
+              <p className="offer-gallery-title">Produsele, în detaliu</p>
+            </Reveal>
+          </div>
+
+          <div className="offer-products">
+            {GALLERY.map((p, i) => (
+              <Reveal key={p.src} effect="up" delay={(i % 3) * 90} as="figure" className="offer-product">
+                <div className="offer-product-media">
+                  <span className={`offer-product-tag ${p.a ? '' : 'offer-product-tag--b'}`}>{qtyTag(p.a, p.b)}</span>
                   <Image
-                    src={e.src}
-                    alt={e.title}
-                    width={e.w}
-                    height={e.h}
-                    className="max-h-full w-auto object-contain p-4"
-                    sizes="(max-width: 768px) 90vw, 30vw"
+                    src={p.src}
+                    alt={p.title}
+                    width={p.w}
+                    height={p.h}
+                    sizes="(max-width: 640px) 46vw, (max-width: 1024px) 30vw, 22vw"
+                    loading="eager"
                   />
                 </div>
-                <p className="font-medium text-base md:text-lg" style={{ color: 'var(--xmas-green)' }}>
-                  {e.title}
-                </p>
-              </div>
+                <figcaption className="offer-product-caption">
+                  <span className="offer-product-num">{String(i + 1).padStart(2, '0')}</span>
+                  <span>
+                    <span className="offer-product-title">{p.title}</span>
+                    <span className="offer-product-sub">{p.sub}</span>
+                  </span>
+                </figcaption>
+              </Reveal>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Period + contact */}
-      <section className="py-20 md:py-28 px-6" style={{ background: 'var(--xmas-green-deep)' }}>
-        <div className="max-w-5xl mx-auto text-center">
-          <p className="text-[11px] font-semibold tracking-[0.3em] uppercase mb-6" style={{ color: 'var(--xmas-gold)' }}>
-            Perioadă pentru fotografiere
-          </p>
-          <p
-            className="text-3xl md:text-5xl font-semibold tracking-tight mb-10"
-            style={{ fontFamily: 'var(--font-heading)', color: 'var(--xmas-cream)' }}
-          >
-            {PERIOD}
-          </p>
-          <div className="max-w-xs mx-auto mb-10">
-            <GoldRule />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 max-w-lg mx-auto">
-            <div>
-              <p className="text-sm tracking-wide mb-1" style={{ color: 'rgba(247,243,234,0.6)' }}>
-                {alexName}
+      {/* ───────────────────────── 03 · Extra C D E ───────────────────────── */}
+      <section id="extra" className="offer-slide offer-slide--deep">
+        <div className="offer-container">
+          <div className="offer-slide-head">
+            <Reveal effect="up">
+              <span className="offer-index">02</span>
+              <Eyebrow tone="burgundy">Opțional · Secțiunile C, D și E</Eyebrow>
+            </Reveal>
+            <Reveal effect="up" delay={80}>
+              <h2 className="offer-h2">
+                Mici bucurii, <em>comandate separat</em>
+              </h2>
+            </Reveal>
+            <Reveal effect="up" delay={160}>
+              <p className="offer-text">
+                Se pot adăuga oricâte doriți, în plus față de pachetul ales sau chiar singure, fiecare cu fotografia copilului.
               </p>
-              <a
-                href={`tel:${alexPhone}`}
-                className="text-2xl md:text-3xl font-medium hover:opacity-80 transition-opacity"
-                style={{ color: 'var(--xmas-cream)', fontFamily: 'var(--font-heading)' }}
-              >
-                {formatPhone(alexPhone)}
-              </a>
-            </div>
-            <div>
-              <p className="text-sm tracking-wide mb-1" style={{ color: 'rgba(247,243,234,0.6)' }}>
-                {adinaName}
-              </p>
-              <a
-                href={`tel:${adinaPhone}`}
-                className="text-2xl md:text-3xl font-medium hover:opacity-80 transition-opacity"
-                style={{ color: 'var(--xmas-cream)', fontFamily: 'var(--font-heading)' }}
-              >
-                {formatPhone(adinaPhone)}
-              </a>
-            </div>
+            </Reveal>
           </div>
 
-          <div className="mt-14 pt-10 max-w-2xl mx-auto" style={{ borderTop: '1px solid rgba(200,164,93,0.3)' }}>
-            <p className="text-sm md:text-base leading-relaxed" style={{ color: 'rgba(247,243,234,0.65)' }}>
-              <strong style={{ color: 'var(--xmas-gold)' }}>Pentru cadre didactice:</strong> lista de comenzi se completează
-              online, pe pagina clasei dumneavoastră (link + PIN primite de la fotograf). Fiecare copil primește apoi
-              propriul album digital.
-            </p>
-            <div className="no-print mt-8 flex flex-wrap justify-center gap-4">
-              <Link
-                href={isReturning ? '/oferta-scoli' : '/oferta-scoli/clienti-fideli'}
-                className="text-xs tracking-[0.15em] uppercase hover:opacity-80 transition-opacity"
-                style={{ color: 'rgba(247,243,234,0.45)' }}
-              >
-                {isReturning ? 'Oferta pentru clienți noi' : 'Oferta pentru clienți fideli'}
-              </Link>
-            </div>
+          <div className="offer-extras">
+            {EXTRAS.map((e, i) => (
+              <Reveal key={e.letter} effect="up" delay={i * 120} className="offer-extra">
+                <span className="offer-extra-ghost" aria-hidden="true">
+                  {e.letter}
+                </span>
+                <div className="offer-extra-top">
+                  <span className="xmas-letter">{e.letter}</span>
+                  <span className="offer-extra-price">
+                    {e.price} <small>lei</small>
+                  </span>
+                </div>
+                <div className="offer-extra-media">
+                  <Image src={e.src} alt={e.title} width={e.w} height={e.h} sizes="(max-width: 768px) 80vw, 28vw" loading="eager" />
+                </div>
+                <p className="offer-extra-title">{e.title}</p>
+                <p className="offer-extra-sub">{e.sub}</p>
+              </Reveal>
+            ))}
           </div>
+
+          <Reveal effect="fade" delay={200} className="offer-extras-note">
+            <GoldRule>
+              <span>Exemple: A + C, B + D + E sau doar un extra</span>
+            </GoldRule>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ───────────────────────── 04 · Perioada & contact ───────────────────────── */}
+      <section id="contact" className="offer-slide offer-slide--green">
+        <div className="offer-container">
+          <div className="offer-contact-head">
+            <Reveal effect="up">
+              <span className="offer-index offer-index--light">03</span>
+              <Eyebrow>Perioada pentru fotografiere</Eyebrow>
+            </Reveal>
+            <Reveal effect="mask" delay={80}>
+              <p className="offer-date">{PERIOD}</p>
+            </Reveal>
+            <Reveal effect="line" delay={300} className="offer-date-rule" />
+            <Reveal effect="up" delay={380}>
+              <p className="offer-text offer-text--light">
+                Stabilim împreună ziua și intervalul potrivit clasei. Venim cu studioul mobil, fotografiem fiecare copil în câteva minute și
+                livrăm produsele înainte de vacanța de iarnă.
+              </p>
+            </Reveal>
+          </div>
+
+          <div className="offer-contacts">
+            {[
+              { name: alexName, phone: alexPhone },
+              { name: adinaName, phone: adinaPhone },
+            ].map((c, i) => (
+              <Reveal key={c.phone} effect="scale" delay={i * 120} as="a" className="offer-contact" href={`tel:${c.phone}`}>
+                <span className="offer-contact-name">{c.name}</span>
+                <span className="offer-contact-phone">{formatPhone(c.phone)}</span>
+                <span className="offer-contact-hint">
+                  <PhoneIcon />
+                  Apelați
+                </span>
+              </Reveal>
+            ))}
+          </div>
+
+          <Reveal effect="up" delay={120} className="offer-teacher">
+            <p>
+              <strong>Pentru cadrele didactice:</strong> lista de comenzi se completează online, pe pagina clasei dumneavoastră, cu
+              link-ul și PIN-ul primite de la fotograf. Bifați A sau B pentru fiecare copil, plus extra dorite. După fotografiere,
+              fiecare copil primește propriul album digital.
+            </p>
+          </Reveal>
+
+          <Reveal effect="fade" delay={200} className="offer-foot no-print">
+            <PrintButton className="offer-btn offer-btn--ghost-light">
+              <PrintIcon />
+              Salvați ca PDF
+            </PrintButton>
+            <Link href={isReturning ? '/oferta-scoli' : '/oferta-scoli/clienti-fideli'} className="offer-switch">
+              {isReturning ? 'Oferta pentru clienți noi' : 'Sunteți client fidel? Vedeți oferta dedicată'}
+              <ArrowIcon />
+            </Link>
+          </Reveal>
         </div>
       </section>
     </div>
+  );
+}
+
+function PhoneIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z" />
+    </svg>
+  );
+}
+
+function ArrowIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M5 12h14M13 6l6 6-6 6" />
+    </svg>
+  );
+}
+
+function PrintIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+      <path d="M6 14h12v7H6z" />
+    </svg>
+  );
+}
+
+function CloudIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M7 18a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 8a4 4 0 0 1 .8 7.9" />
+      <path d="M12 12v9M8.5 16.5 12 13l3.5 3.5" />
+    </svg>
   );
 }
