@@ -340,3 +340,159 @@
     background: linear-gradient(90deg, transparent, rgba(0,0,0,0.08), transparent);
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* Christmas luxury palette (school offer pages, teacher order form)   */
+/* ------------------------------------------------------------------ */
+.xmas {
+  --xmas-cream: #F7F3EA;
+  --xmas-cream-deep: #EFE8D8;
+  --xmas-green: #1F3A2E;
+  --xmas-green-deep: #15291F;
+  --xmas-burgundy: #7D1C27;
+  --xmas-gold: #C8A45D;
+  --xmas-gold-soft: rgba(200, 164, 93, 0.45);
+  --xmas-ink: #2B2420;
+  background: var(--xmas-cream);
+  color: var(--xmas-ink);
+}
+
+.xmas-frame {
+  position: relative;
+  border: 1px solid var(--xmas-gold-soft);
+}
+.xmas-frame::after {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border: 1px solid var(--xmas-gold-soft);
+  pointer-events: none;
+}
+
+.xmas-rule {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  color: var(--xmas-gold);
+}
+.xmas-rule::before,
+.xmas-rule::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--xmas-gold);
+  opacity: 0.6;
+}
+
+.xmas-star {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  color: var(--xmas-gold);
+}
+
+.xmas-strike {
+  position: relative;
+  display: inline-block;
+}
+.xmas-strike::after {
+  content: "";
+  position: absolute;
+  left: -4%;
+  right: -4%;
+  top: 52%;
+  height: 2px;
+  background: currentColor;
+  transform: rotate(-8deg);
+  opacity: 0.85;
+}
+
+.xmas-card {
+  background: #fff;
+  border: 1px solid var(--xmas-gold-soft);
+  border-radius: 18px;
+  box-shadow: 0 10px 40px rgba(31, 58, 46, 0.08);
+}
+
+.xmas-letter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 9999px;
+  border: 1px solid var(--xmas-gold);
+  color: var(--xmas-gold);
+  font-family: var(--font-heading);
+  font-size: 20px;
+  font-weight: 600;
+  flex: none;
+}
+
+.xmas-ribbon {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  border-radius: 9999px;
+  background: var(--xmas-burgundy);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.xmas-check {
+  accent-color: var(--xmas-green);
+  width: 22px;
+  height: 22px;
+}
+
+.xmas-input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--xmas-gold-soft);
+  background: #fff;
+  color: var(--xmas-ink);
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+.xmas-input:focus {
+  border-color: var(--xmas-green);
+}
+
+.xmas-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: 9999px;
+  background: var(--xmas-green);
+  color: var(--xmas-cream);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  border: none;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.3s ease, opacity 0.3s ease;
+}
+.xmas-btn:hover { background: var(--xmas-green-deep); transform: translateY(-1px); }
+.xmas-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+.xmas-btn-outline {
+  background: transparent;
+  color: var(--xmas-green);
+  border: 1px solid var(--xmas-green);
+}
+.xmas-btn-outline:hover { background: var(--xmas-green); color: var(--xmas-cream); }
+
+@media print {
+  nav, footer, .no-print { display: none !important; }
+  main { padding: 0 !important; }
+  .xmas { background: #fff !important; }
+  .xmas-hero { padding-top: 24px !important; }
+  @page { size: A4; margin: 10mm; }
+}

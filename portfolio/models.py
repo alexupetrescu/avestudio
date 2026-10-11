@@ -13,7 +13,9 @@ class Category(models.Model):
 
 class PortfolioImage(models.Model):
     title = models.CharField(max_length=200)
-    image = models.ImageField(upload_to='portfolio/')
+    image = models.ImageField(upload_to='portfolio/', width_field='width', height_field='height')
+    width = models.PositiveIntegerField(default=0, editable=False)
+    height = models.PositiveIntegerField(default=0, editable=False)
     category = models.ForeignKey(Category, related_name='images', on_delete=models.CASCADE)
     description = models.TextField(blank=True, null=True, help_text="Short emotional description or moment")
     sort_order = models.PositiveIntegerField(

@@ -8,6 +8,7 @@ from backend.sitemap import sitemaps
 from portfolio.views import PortfolioViewSet, CategoryViewSet, site_settings
 from clients.views import ClientAlbumViewSet, GoogleDriveAlbumViewSet, verify_pin, download_album, proxy_google_drive_image
 from backend.views import list_google_drive_images, get_google_drive_folder_info
+from schools import views as school_views
 
 router = DefaultRouter()
 router.register(r'portfolio', PortfolioViewSet)
@@ -27,4 +28,13 @@ urlpatterns = [
     path('api/google-drive/images/', list_google_drive_images, name='google-drive-images'),
     path('api/google-drive/folder-info/', get_google_drive_folder_info, name='google-drive-folder-info'),
     path('api/google-drive/image/<str:file_id>/', proxy_google_drive_image, name='google-drive-image-proxy'),
+    # Schools app (teacher order list + child albums)
+    path('api/schools/prices/', school_views.offer_prices, name='schools-prices'),
+    path('api/schools/class/<uuid:class_id>/verify-pin/', school_views.class_verify_pin, name='schools-class-verify-pin'),
+    path('api/schools/class/<uuid:class_id>/', school_views.class_detail, name='schools-class-detail'),
+    path('api/schools/class/<uuid:class_id>/children/', school_views.class_add_child, name='schools-class-add-child'),
+    path('api/schools/class/<uuid:class_id>/children/<uuid:child_id>/', school_views.class_child_detail, name='schools-class-child'),
+    path('api/schools/child/verify-pin/', school_views.child_verify_pin, name='schools-child-verify-pin'),
+    path('api/schools/child/download/', school_views.child_download, name='schools-child-download'),
+    path('api/schools/child/<uuid:child_id>/', school_views.child_detail, name='schools-child-detail'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

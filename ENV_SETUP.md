@@ -66,3 +66,32 @@ This project uses environment variables to manage configuration settings. Follow
 - [ ] Use secure database credentials
 - [ ] Use HTTPS URLs in production
 
+
+## Schools app (season offer, teacher order list, face grouping)
+
+New Django app `schools` (the older `clients` app and its albums are untouched and still work).
+
+**Face recognition (optional, CPU only):**
+```bash
+venv\Scripts\pip install torch --index-url https://download.pytorch.org/whl/cpu
+venv\Scripts\pip install facenet-pytorch
+```
+The first run downloads the VGGFace2 weights (~107 MB) into the user cache. Without these packages
+everything still works, but photos are only matched by the `nume prenume (1).jpg` filename convention.
+
+Tuning (in `.env`):
+- `FACE_MATCH_THRESHOLD` (default `0.9`): max embedding distance to accept a match. Lower = stricter.
+- `FACE_MATCH_MARGIN` (default `0.15`): best match must beat the runner-up by this much (avoids siblings).
+- `IMAGE_WEB_MAX` / `IMAGE_THUMB_MAX` (default `1600` / `400`): long side of the generated variants.
+
+**Workflow:**
+1. Admin → Schools → add the school (tick *returning customer* for the 70 lei tier) and its classes.
+2. Print the class card (teacher link + PIN) from the class page; the teacher fills the children + packages at `/scoala/<id>`.
+3. After the shoot: *Bulk upload* → pick the class → drop the reference portraits (`Nume-Prenume.jpg`) and all photos.
+4. *Face review* shows unassigned / low-confidence photos for a manual fix; *Print QR cards* gives one card per child; *Export CSV* is the order list.
+5. Children open `/copil/<id>` with their PIN to view and download photos.
+
+Commands: `python manage.py process_faces --class <uuid> [--reset]`, `python manage.py rebuild_variants [--class <uuid>] [--missing-only]`.
+
+**Offer pages:** `/oferta-scoli` (new clients, 75 lei) and `/oferta-scoli/clienti-fideli` (returning, 70 lei).
+Product mockups come from `designs/` (gitignored) via `python scripts/prepare_offer_images.py` → `frontend/public/oferta/`.

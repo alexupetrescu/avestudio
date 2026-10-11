@@ -68,3 +68,6 @@ frontend/public/360s/*.png
 !frontend/.env.example
 !frontend/.env.local.example
 
+
+# Design files
+/designs/

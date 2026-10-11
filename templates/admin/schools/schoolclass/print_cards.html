@@ -1,0 +1,68 @@
+{% load static %}<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<title>Carduri acces — {{ school_class }}</title>
+<style>
+    * { box-sizing: border-box; }
+    body { font-family: Georgia, 'Times New Roman', serif; margin: 0; padding: 24px; color: #2B2420; background: #fff; }
+    .toolbar { margin-bottom: 20px; font-family: -apple-system, Segoe UI, sans-serif; font-size: 14px; }
+    .toolbar button { padding: 8px 16px; font-size: 14px; cursor: pointer; }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10mm; }
+    .card {
+        border: 1px solid #C8A45D; border-radius: 10px; padding: 7mm 6mm; text-align: center;
+        break-inside: avoid; page-break-inside: avoid; background: #FBF8F1; position: relative;
+    }
+    .card::after { content: ''; position: absolute; inset: 3mm; border: 1px solid rgba(200,164,93,0.5); border-radius: 6px; pointer-events: none; }
+    .card.teacher { grid-column: 1 / -1; background: #1F3A2E; color: #F7F3EA; border-color: #C8A45D; }
+    .brand { font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase; color: #C8A45D; margin-bottom: 4mm; }
+    .name { font-size: 17px; font-weight: 600; margin-bottom: 3mm; }
+    .sub { font-size: 11px; color: #7a7066; margin-bottom: 3mm; }
+    .card.teacher .sub { color: rgba(247,243,234,0.7); }
+    .qr { width: 32mm; height: 32mm; margin: 0 auto 3mm; display: block; background: #fff; padding: 2mm; border-radius: 4px; }
+    .card.teacher .qr { width: 36mm; height: 36mm; }
+    .pin-label { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: #7D1C27; }
+    .card.teacher .pin-label { color: #C8A45D; }
+    .pin { font-size: 26px; font-weight: 700; letter-spacing: 0.3em; margin: 1mm 0 2mm; }
+    .url { font-family: ui-monospace, Menlo, monospace; font-size: 9px; word-break: break-all; color: #7a7066; }
+    .card.teacher .url { color: rgba(247,243,234,0.6); }
+    .packages { font-size: 11px; margin-top: 2mm; color: #1F3A2E; }
+    @media print {
+        body { padding: 0; }
+        .toolbar { display: none; }
+        @page { size: A4; margin: 10mm; }
+    }
+</style>
+</head>
+<body>
+<div class="toolbar">
+    <button onclick="window.print()">Print / Save as PDF</button>
+    <span style="margin-left:12px">{{ school_class.school }} · {{ school_class.name }} · {{ cards|length }} children</span>
+</div>
+
+<div class="grid">
+    <div class="card teacher">
+        <div class="brand">AVE Studio · {{ site_url }}</div>
+        <div class="name">{{ school_class.school.name }} — {{ school_class.name }}</div>
+        <div class="sub">Lista de comenzi online{% if school_class.teacher_name %} · {{ school_class.teacher_name }}{% endif %}</div>
+        {% if class_qr_url %}<img class="qr" src="{{ class_qr_url }}" alt="QR">{% endif %}
+        <div class="pin-label">PIN clasă</div>
+        <div class="pin">{{ school_class.pin }}</div>
+        <div class="url">{{ school_class.teacher_url }}</div>
+    </div>
+
+    {% for card in cards %}{% with child=card.child %}
+    <div class="card">
+        <div class="brand">AVE Studio</div>
+        <div class="name">{{ child.full_name }}</div>
+        <div class="sub">{{ school_class.name }} · albumul tău foto</div>
+        {% if card.qr_url %}<img class="qr" src="{{ card.qr_url }}" alt="QR">{% endif %}
+        <div class="pin-label">PIN</div>
+        <div class="pin">{{ child.pin }}</div>
+        <div class="url">{{ child.album_url }}</div>
+        {% if child.packages != '-' %}<div class="packages">Pachet: {{ child.packages }}</div>{% endif %}
+    </div>
+    {% endwith %}{% endfor %}
+</div>
+</body>
+</html>

@@ -1,0 +1,178 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
+&rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+&rsaquo; <a href="{% url 'admin:schools_schoolclass_changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+&rsaquo; <a href="{% url 'admin:schools_schoolclass_change' school_class.pk %}">{{ school_class }}</a>
+&rsaquo; {% translate 'Face review' %}
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main" class="ave-upload-page" style="max-width:1200px">
+    <h1>{{ title }}</h1>
+
+    <div class="ave-actions" style="margin:0 0 20px">
+        <a href="{% url 'admin:schools_schoolclass_upload' school_class.pk %}" class="button">Upload more</a>
+        <a href="{% url 'admin:schools_schoolclass_print_cards' school_class.pk %}" class="button" target="_blank" rel="noopener">Print QR cards</a>
+        <a href="{% url 'admin:schools_schoolclass_export' school_class.pk %}" class="button">Export CSV</a>
+        <form method="post" action="{% url 'admin:schools_schoolclass_faces_rerun' school_class.pk %}" style="display:inline">
+            {% csrf_token %}
+            <button type="submit" class="button" {% if job_active %}disabled{% endif %}>Match unprocessed ({{ unprocessed }})</button>
+            <button type="submit" name="reset" value="1" class="button" {% if job_active %}disabled{% endif %}
+                    onclick="return confirm('Re-run matching for ALL photos? Manual assignments are kept.')">Re-run all</button>
+        </form>
+    </div>
+
+    {% if not face_available %}
+    <div class="ave-status ave-status-error" style="margin-bottom:20px">
+        <strong>Face recognition not installed</strong> — <code class="ave-code">{{ face_reason }}</code>
+    </div>
+    {% endif %}
+
+    {% if job %}
+    <div class="ave-job" id="job" data-active="{{ job_active|yesno:'1,0' }}"
+         data-url="{% url 'admin:schools_schoolclass_faces_status' school_class.pk %}">
+        <div class="ave-job-head">
+            <strong>Last matching run</strong>
+            <span class="ave-job-status is-{{ job.status }}" id="job-status">{{ job.get_status_display }}</span>
+        </div>
+        <div class="ave-progress is-visible">
+            <div class="ave-progress-track"><div class="ave-progress-fill" id="job-fill"
+                 style="width:{% if job.total %}{% widthratio job.processed job.total 100 %}{% else %}0{% endif %}%"></div></div>
+            <div class="ave-progress-label" id="job-label">{{ job.processed }} / {{ job.total }} photos · {{ job.matched_photos }} matched · {{ job.unmatched_photos }} to review</div>
+        </div>
+        <details><summary class="ave-muted" style="cursor:pointer">Log</summary><div class="ave-job-log" id="job-log">{{ job.log }}</div></details>
+    </div>
+    {% endif %}
+
+    <div class="ave-section-head">
+        <h2>Children ({{ children|length }})</h2>
+        <span class="ave-muted">{{ total_photos }} photos in this class</span>
+    </div>
+    <table class="ave-children-table">
+        <thead><tr><th>Child</th><th>Packages</th><th>Photos</th><th>Refs</th><th>PIN</th><th></th></tr></thead>
+        <tbody>
+        {% for child in children %}
+        <tr>
+            <td><a href="{% url 'admin:schools_child_change' child.pk %}">{{ child.full_name }}</a></td>
+            <td>{{ child.packages }}</td>
+            <td><div class="ave-mini-thumbs">{% for t in child.sample_thumbs %}<img src="{{ t }}" alt="" loading="lazy">{% endfor %}
+                <span class="ave-muted" style="align-self:center;margin-left:6px">{{ child.photo_total }}</span></div></td>
+            <td>{{ child.face_references.count }}</td>
+            <td><span class="ave-pin">{{ child.pin }}</span></td>
+            <td><a href="{{ child.album_url }}" target="_blank" rel="noopener">album</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="ave-muted">No children yet — upload reference faces or let the teacher fill the list.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="ave-section-head">
+        <h2>Needs review — unassigned ({{ unmatched|length }})</h2>
+        <span class="ave-muted">no child recognised; assign manually or mark as whole-class photo</span>
+    </div>
+    <div class="ave-review-grid" id="grid-unmatched">
+        {% for photo in unmatched %}{% include "admin/schools/schoolclass/_review_card.html" %}{% empty %}
+        <p class="ave-muted">Nothing to review.</p>{% endfor %}
+    </div>
+
+    <div class="ave-section-head">
+        <h2>Low confidence ({{ low_conf|length }})</h2>
+        <span class="ave-muted">matched by face but under {{ low_threshold }} confidence — please confirm</span>
+    </div>
+    <div class="ave-review-grid" id="grid-low">
+        {% for photo in low_conf %}{% include "admin/schools/schoolclass/_review_card.html" %}{% empty %}
+        <p class="ave-muted">None.</p>{% endfor %}
+    </div>
+
+    <details style="margin-top:32px">
+        <summary style="cursor:pointer"><strong>Assigned photos ({{ matched|length }})</strong> — expand to adjust</summary>
+        <div class="ave-review-grid" style="margin-top:14px">
+            {% for photo in matched %}{% include "admin/schools/schoolclass/_review_card.html" %}{% endfor %}
+        </div>
+    </details>
+</div>
+
+<script>
+'use strict';
+(function () {
+    const CHILDREN = {{ children_json|safe }};
+    const ASSIGN_URL = "{% url 'admin:schools_schoolclass_faces_assign' school_class.pk %}";
+    const CSRF = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    // --- job polling ------------------------------------------------------
+    const job = document.getElementById('job');
+    if (job && job.dataset.active === '1') {
+        const tick = () => fetch(job.dataset.url, { credentials: 'same-origin' })
+            .then((r) => r.json())
+            .then((d) => {
+                if (d.status === 'none') return;
+                const pct = d.total ? Math.round(d.processed / d.total * 100) : 0;
+                document.getElementById('job-fill').style.width = pct + '%';
+                document.getElementById('job-label').textContent =
+                    d.processed + ' / ' + d.total + ' photos · ' + d.matched + ' matched · ' + d.unmatched + ' to review';
+                document.getElementById('job-log').textContent = d.log;
+                const st = document.getElementById('job-status');
+                st.textContent = d.status; st.className = 'ave-job-status is-' + d.status;
+                if (d.status === 'done' || d.status === 'failed') window.location.reload();
+                else setTimeout(tick, 2000);
+            })
+            .catch(() => setTimeout(tick, 4000));
+        setTimeout(tick, 1500);
+    }
+
+    // --- assignment ---------------------------------------------------------
+    function post(payload) {
+        return fetch(ASSIGN_URL, {
+            method: 'POST', credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+            body: JSON.stringify(payload),
+        }).then((r) => r.json());
+    }
+
+    function renderChips(card, matches) {
+        const box = card.querySelector('.ave-chips');
+        box.innerHTML = '';
+        matches.forEach((m) => {
+            const chip = document.createElement('span');
+            chip.className = 'ave-chip' + (m.source === 'face' && m.confidence < {{ low_threshold }} ? ' is-low' : '');
+            chip.title = m.source + (m.source === 'face' ? ' · ' + m.confidence : '');
+            chip.textContent = m.name + ' ';
+            const x = document.createElement('button');
+            x.type = 'button'; x.textContent = '×'; x.title = 'Remove';
+            x.addEventListener('click', () => post({ photo_id: card.dataset.photo, mode: 'remove', child_id: m.child_id }).then((d) => renderChips(card, d.matches)));
+            chip.appendChild(x);
+            box.appendChild(chip);
+        });
+        if (!matches.length) box.innerHTML = '<span class="ave-muted">unassigned</span>';
+        card.classList.toggle('is-saved', matches.length > 0);
+    }
+
+    document.querySelectorAll('.ave-review-card').forEach((card) => {
+        const select = card.querySelector('select');
+        CHILDREN.forEach((c) => {
+            const o = document.createElement('option'); o.value = c.id; o.textContent = c.name; select.appendChild(o);
+        });
+        card.querySelector('[data-act=assign]').addEventListener('click', () => {
+            const ids = Array.from(select.selectedOptions).map((o) => o.value);
+            if (!ids.length) return;
+            post({ photo_id: card.dataset.photo, mode: 'add', child_ids: ids }).then((d) => { renderChips(card, d.matches); select.selectedIndex = -1; });
+        });
+        card.querySelector('[data-act=all]').addEventListener('click', () => {
+            post({ photo_id: card.dataset.photo, mode: 'all' }).then((d) => renderChips(card, d.matches));
+        });
+        card.querySelector('[data-act=clear]').addEventListener('click', () => {
+            post({ photo_id: card.dataset.photo, mode: 'clear' }).then((d) => renderChips(card, d.matches));
+        });
+        renderChips(card, JSON.parse(card.dataset.matches));
+    });
+})();
+</script>
+{% endblock %}

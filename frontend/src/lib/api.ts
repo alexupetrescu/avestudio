@@ -99,3 +99,156 @@ export async function downloadAlbum(id: string, pin: string) {
     window.URL.revokeObjectURL(url);
     document.body.removeChild(a);
 }
+// ---------------------------------------------------------------------------
+// Schools app: teacher order list + child albums
+// ---------------------------------------------------------------------------
+
+async function parseError(res: Response, fallback: string): Promise<never> {
+    let message = fallback;
+    try {
+        const data = await res.json();
+        if (typeof data === 'string') message = data;
+        else if (data.error) message = data.error;
+        else if (data.detail) message = data.detail;
+        else if (data.non_field_errors) message = data.non_field_errors.join(' ');
+        else {
+            const first = Object.values(data)[0];
+            if (Array.isArray(first)) message = first.join(' ');
+        }
+    } catch {
+        /* non-JSON body */
+    }
+    throw new Error(message);
+}
+
+export interface ChildOrder {
+    id: string;
+    first_name: string;
+    last_name: string;
+    package_a: boolean;
+    package_b: boolean;
+    package_c: boolean;
+    package_d: boolean;
+    notes: string;
+    total_lei: number;
+}
+
+export interface SchoolClassOrder {
+    id: string;
+    name: string;
+    teacher_name: string;
+    school_name: string;
+    is_returning: boolean;
+    prices: { list: number; a: number; b: number; c: number; d: number };
+    period: string;
+    children: ChildOrder[];
+}
+
+export async function verifyClassPin(classId: string, pin: string): Promise<boolean> {
+    const res = await fetch(`${API_URL}/schools/class/${classId}/verify-pin/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin }),
+    });
+    return res.ok;
+}
+
+export async function fetchSchoolClass(classId: string, pin: string): Promise<SchoolClassOrder> {
+    const res = await fetch(`${API_URL}/schools/class/${classId}/?pin=${encodeURIComponent(pin)}`, { cache: 'no-store' });
+    if (!res.ok) await parseError(res, 'Nu am putut încărca clasa');
+    return res.json();
+}
+
+export async function addChild(classId: string, pin: string, data: Partial<ChildOrder>): Promise<ChildOrder> {
+    const res = await fetch(`${API_URL}/schools/class/${classId}/children/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...data, pin }),
+    });
+    if (!res.ok) await parseError(res, 'Nu am putut adăuga copilul');
+    return res.json();
+}
+
+export async function updateChild(classId: string, pin: string, childId: string, data: Partial<ChildOrder>): Promise<ChildOrder> {
+    const res = await fetch(`${API_URL}/schools/class/${classId}/children/${childId}/`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...data, pin }),
+    });
+    if (!res.ok) await parseError(res, 'Nu am putut salva modificarea');
+    return res.json();
+}
+
+export async function deleteChild(classId: string, pin: string, childId: string): Promise<void> {
+    const res = await fetch(`${API_URL}/schools/class/${classId}/children/${childId}/`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin }),
+    });
+    if (!res.ok) await parseError(res, 'Nu am putut șterge copilul');
+}
+
+export interface ChildPhoto {
+    id: number;
+    image: string;
+    web: string | null;
+    thumb: string | null;
+    width: number;
+    height: number;
+}
+
+export interface ChildAlbum {
+    id: string;
+    first_name: string;
+    last_name: string;
+    full_name: string;
+    class_name: string;
+    school_name: string;
+    package_a: boolean;
+    package_b: boolean;
+    package_c: boolean;
+    package_d: boolean;
+    packages: string;
+    photos: ChildPhoto[];
+}
+
+export async function verifyChildPin(childId: string, pin: string): Promise<boolean> {
+    const res = await fetch(`${API_URL}/schools/child/verify-pin/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ child_id: childId, pin }),
+    });
+    return res.ok;
+}
+
+export async function fetchChildAlbum(childId: string, pin: string): Promise<ChildAlbum> {
+    const res = await fetch(`${API_URL}/schools/child/${childId}/?pin=${encodeURIComponent(pin)}`, { cache: 'no-store' });
+    if (!res.ok) await parseError(res, 'Nu am putut încărca albumul');
+    return res.json();
+}
+
+export async function downloadChildAlbum(childId: string, pin: string, fallbackName: string) {
+    const res = await fetch(`${API_URL}/schools/child/download/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ child_id: childId, pin }),
+    });
+    if (!res.ok) await parseError(res, 'Eroare la descărcarea albumului');
+
+    let filename = `${fallbackName}.zip`;
+    const disposition = res.headers.get('Content-Disposition') || '';
+    const utf8 = disposition.match(/filename\*=UTF-8''([^;\r\n]+)/i);
+    const plain = disposition.match(/filename="([^"]+)"/i);
+    if (utf8 && utf8[1]) filename = decodeURIComponent(utf8[1]);
+    else if (plain && plain[1]) filename = plain[1];
+
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+}

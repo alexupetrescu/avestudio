@@ -1,0 +1,16 @@
+{% load schools_extras %}
+<div class="ave-review-card" data-photo="{{ photo.pk }}" data-matches='{{ photo|matches_json }}'>
+    <a href="{% if photo.web %}{{ photo.web.url }}{% else %}{{ photo.image.url }}{% endif %}" target="_blank" rel="noopener">
+        <img src="{% if photo.thumb %}{{ photo.thumb.url }}{% else %}{{ photo.image.url }}{% endif %}" alt="" loading="lazy">
+    </a>
+    <div class="ave-review-card-body">
+        <div class="ave-review-card-name">{{ photo.filename }}</div>
+        <div class="ave-chips"></div>
+        <select multiple size="4" aria-label="Children"></select>
+        <div class="ave-row">
+            <button type="button" class="button default" data-act="assign">Assign</button>
+            <button type="button" class="button" data-act="all" title="Group photo: add to every child">Whole class</button>
+            <button type="button" class="button" data-act="clear">Clear</button>
+        </div>
+    </div>
+</div>

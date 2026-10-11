@@ -13,7 +13,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const firstImage = extractFirstImage(portfolioArray);
 
   return generateSEOMetadata({
-    title: 'AVE Studio - Fotografie Profesională | Capturând Momente, Creând Amintiri',
+    title: 'AVE Studio | Ei cresc. Fotografiile rămân.',
     description: 'Fotografie profesională pentru evenimente speciale. Capturăm momentele care nu se mai întorc - nunti, botezuri, evenimente corporative. Oferim servicii complete de fotografie în România.',
     images: [{ url: firstImage, width: 1200, height: 630, alt: 'AVE Studio - Fotografie Profesională' }],
     url: SITE_URL,

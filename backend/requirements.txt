@@ -9,3 +9,8 @@ google-auth-oauthlib>=1.1.0
 google-auth-httplib2>=0.1.1
 Pillow>=10.0.0
 
+numpy
+# Face recognition (schools app). CPU-only torch wheel keeps the download small:
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+#   pip install facenet-pytorch
+# Optional: without them the app still works (filename matching only).

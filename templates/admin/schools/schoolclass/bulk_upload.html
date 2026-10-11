@@ -1,0 +1,266 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
+&rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+&rsaquo; <a href="{% url 'admin:schools_schoolclass_changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+&rsaquo; {{ title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main" class="ave-upload-page">
+    <h1>{{ title }}</h1>
+
+    <div class="ave-hint">
+        <strong>How it works</strong>
+        <ul>
+            <li>Pick the <strong>school</strong> and <strong>class</strong> (or type a new class name).</li>
+            <li><strong>Reference faces</strong>: one clear portrait per child, file named <strong>Nume-Prenume.jpg</strong>
+                (e.g. <em>Popescu-Ana.jpg</em>). A child is created for each new name, or linked to the one the teacher already added.</li>
+            <li><strong>Class photos</strong>: everything from the shoot. Each photo gets web + thumbnail variants and is matched to children by face
+                (and by the old <em>nume (1).jpg</em> naming, if used).</li>
+            <li>Photos nobody is recognised in land on the <strong>Face review</strong> page for a quick manual assignment.</li>
+        </ul>
+        {% if not face_available %}
+        <div class="ave-status ave-status-error" style="margin-top:10px">
+            <strong>Face recognition is not installed on this server</strong> — only filename matching will run.
+            <code class="ave-code">{{ face_reason }}</code>
+        </div>
+        {% endif %}
+    </div>
+
+    <form method="post" enctype="multipart/form-data" id="upload-form">
+        {% csrf_token %}
+
+        <div class="ave-two-col">
+            <div class="ave-field">
+                <label for="id_school">School</label>
+                <select name="school_id" id="id_school">
+                    <option value="">— choose —</option>
+                    {% for school in schools %}
+                    <option value="{{ school.pk }}" {% if preselected and preselected.school_id == school.pk %}selected{% endif %}>
+                        {{ school }} · {{ school.price_a }} lei
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="ave-field">
+                <label for="id_class">Class</label>
+                <select name="class_id" id="id_class">
+                    <option value="">— new class (fill below) —</option>
+                    {% for school in schools %}{% for cls in school.classes.all %}
+                    <option value="{{ cls.pk }}" data-school="{{ school.pk }}" {% if preselected and preselected.pk == cls.pk %}selected{% endif %}>
+                        {{ cls.name }}{% if cls.teacher_name %} — {{ cls.teacher_name }}{% endif %}
+                    </option>
+                    {% endfor %}{% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div id="new-class-fields" class="ave-two-col" style="display:none">
+            <div class="ave-field">
+                <label for="id_new_class_name">New class name</label>
+                <input type="text" name="new_class_name" id="id_new_class_name" maxlength="120" placeholder="e.g. Grupa Mare" autocomplete="off">
+            </div>
+            <div class="ave-field">
+                <label for="id_new_teacher_name">Teacher</label>
+                <input type="text" name="new_teacher_name" id="id_new_teacher_name" maxlength="120" placeholder="Name" autocomplete="off">
+                <input type="text" name="new_teacher_phone" id="id_new_teacher_phone" maxlength="40" placeholder="Phone" autocomplete="off" style="margin-top:6px">
+            </div>
+        </div>
+
+        <div class="ave-two-col">
+            <div>
+                <div class="ave-field"><label>Reference faces (Nume-Prenume.jpg)</label></div>
+                <div class="ave-dropzone ave-dropzone-sm" id="dropzone-refs" tabindex="0" role="button" aria-label="Select reference faces">
+                    <div class="ave-dropzone-icon">&#128100;</div>
+                    <div class="ave-dropzone-title">Drop reference portraits</div>
+                    <div class="ave-dropzone-sub">one per child, named after the child</div>
+                    <input type="file" id="id_references" multiple accept="image/*">
+                </div>
+                <div class="ave-selection-bar" id="selection-bar-refs">
+                    <span class="ave-selection-count" id="selection-count-refs"></span>
+                    <button type="button" class="ave-clear-btn" id="clear-refs">Clear</button>
+                </div>
+                <div class="ave-groups" id="refs-preview"></div>
+            </div>
+            <div>
+                <div class="ave-field"><label>Class photos</label></div>
+                <div class="ave-dropzone ave-dropzone-sm" id="dropzone-photos" tabindex="0" role="button" aria-label="Select class photos">
+                    <div class="ave-dropzone-icon">&#10514;</div>
+                    <div class="ave-dropzone-title">Drop class photos</div>
+                    <div class="ave-dropzone-sub">hundreds at once is fine</div>
+                    <input type="file" id="id_images" multiple accept="image/*">
+                </div>
+                <div class="ave-selection-bar" id="selection-bar-photos">
+                    <span class="ave-selection-count" id="selection-count-photos"></span>
+                    <button type="button" class="ave-clear-btn" id="clear-photos">Clear</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="ave-field" style="margin-top:18px">
+            <label class="ave-check">
+                <input type="checkbox" name="run_faces" id="id_run_faces" checked>
+                Run face matching after upload
+                <span class="ave-muted">(runs in the background; you can keep working)</span>
+            </label>
+        </div>
+
+        <div class="ave-progress" id="upload-progress">
+            <div class="ave-progress-track"><div class="ave-progress-fill" id="progress-fill"></div></div>
+            <div class="ave-progress-label" id="progress-label"></div>
+        </div>
+
+        <div class="ave-actions">
+            <input type="submit" value="Upload" class="default" id="submit-btn" disabled>
+            <a href="{% url 'admin:schools_schoolclass_changelist' %}" class="button">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<script>
+'use strict';
+(function () {
+    const schoolSel = document.getElementById('id_school');
+    const classSel = document.getElementById('id_class');
+    const newFields = document.getElementById('new-class-fields');
+    const form = document.getElementById('upload-form');
+    const submitBtn = document.getElementById('submit-btn');
+    const progress = document.getElementById('upload-progress');
+    const progressFill = document.getElementById('progress-fill');
+    const progressLabel = document.getElementById('progress-label');
+
+    function filterClasses() {
+        const sid = schoolSel.value;
+        Array.from(classSel.options).forEach((opt) => {
+            if (!opt.dataset.school) return;
+            opt.hidden = sid && opt.dataset.school !== sid;
+            if (opt.hidden && opt.selected) classSel.value = '';
+        });
+        newFields.style.display = classSel.value ? 'none' : 'grid';
+    }
+    classSel.addEventListener('change', () => {
+        const opt = classSel.selectedOptions[0];
+        if (opt && opt.dataset.school) schoolSel.value = opt.dataset.school;
+        filterClasses();
+    });
+    schoolSel.addEventListener('change', filterClasses);
+    filterClasses();
+
+    function formatSize(bytes) {
+        const mb = bytes / (1024 * 1024);
+        return mb >= 1 ? mb.toFixed(1) + ' MB' : Math.max(1, Math.round(bytes / 1024)) + ' KB';
+    }
+
+    const buckets = {};
+    function bucket(key, cfg) {
+        const dz = document.getElementById(cfg.dropzone);
+        const input = document.getElementById(cfg.input);
+        const bar = document.getElementById(cfg.bar);
+        const count = document.getElementById(cfg.count);
+        const clear = document.getElementById(cfg.clear);
+        const state = { files: [] };
+        buckets[key] = state;
+
+        function refresh() {
+            const total = state.files.reduce((s, f) => s + f.size, 0);
+            bar.classList.toggle('is-visible', state.files.length > 0);
+            count.textContent = state.files.length + ' file' + (state.files.length === 1 ? '' : 's') + ' · ' + formatSize(total);
+            if (cfg.onChange) cfg.onChange(state.files);
+            updateSubmit();
+        }
+        function add(list) {
+            for (const f of list) {
+                if (!f.type.startsWith('image/')) continue;
+                if (!state.files.some((x) => x.name === f.name && x.size === f.size)) state.files.push(f);
+            }
+            refresh();
+        }
+        dz.addEventListener('click', () => input.click());
+        dz.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click(); } });
+        input.addEventListener('change', () => { add(input.files); input.value = ''; });
+        ['dragenter', 'dragover'].forEach((n) => dz.addEventListener(n, (e) => { e.preventDefault(); dz.classList.add('is-dragover'); }));
+        ['dragleave', 'drop'].forEach((n) => dz.addEventListener(n, (e) => { e.preventDefault(); dz.classList.remove('is-dragover'); }));
+        dz.addEventListener('drop', (e) => { if (e.dataTransfer && e.dataTransfer.files) add(e.dataTransfer.files); });
+        clear.addEventListener('click', () => { state.files = []; refresh(); });
+        refresh();
+    }
+
+    const refsPreview = document.getElementById('refs-preview');
+    const urls = [];
+    bucket('references', {
+        dropzone: 'dropzone-refs', input: 'id_references', bar: 'selection-bar-refs', count: 'selection-count-refs', clear: 'clear-refs',
+        onChange: (files) => {
+            urls.forEach(URL.revokeObjectURL); urls.length = 0;
+            refsPreview.innerHTML = '';
+            files.slice().sort((a, b) => a.name.localeCompare(b.name)).forEach((f) => {
+                const card = document.createElement('div');
+                card.className = 'ave-group-card';
+                const head = document.createElement('div');
+                head.className = 'ave-group-card-head';
+                const t = document.createElement('span');
+                t.className = 'ave-group-card-title';
+                t.textContent = f.name.replace(/\.[^.]+$/, '');
+                head.appendChild(t);
+                const thumbs = document.createElement('div');
+                thumbs.className = 'ave-group-card-thumbs';
+                const url = URL.createObjectURL(f); urls.push(url);
+                const img = document.createElement('img'); img.src = url; img.alt = f.name;
+                thumbs.appendChild(img);
+                card.append(head, thumbs);
+                refsPreview.appendChild(card);
+            });
+        }
+    });
+    bucket('images', {
+        dropzone: 'dropzone-photos', input: 'id_images', bar: 'selection-bar-photos', count: 'selection-count-photos', clear: 'clear-photos'
+    });
+
+    function updateSubmit() {
+        const any = Object.values(buckets).some((b) => b.files.length);
+        submitBtn.disabled = !any;
+    }
+
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (!classSel.value && !document.getElementById('id_new_class_name').value.trim()) {
+            window.alert('Choose a class or type a name for a new one.');
+            return;
+        }
+        const fd = new FormData(form);
+        Object.entries(buckets).forEach(([field, b]) => b.files.forEach((f) => fd.append(field, f, f.name)));
+        submitBtn.disabled = true;
+        progress.classList.add('is-visible');
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', form.action || window.location.href);
+        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+        xhr.upload.addEventListener('progress', (ev) => {
+            if (!ev.lengthComputable) return;
+            const pct = Math.round((ev.loaded / ev.total) * 100);
+            progressFill.style.width = pct + '%';
+            progressLabel.textContent = pct < 100 ? 'Uploading… ' + pct + '%' : 'Generating variants & starting face matching…';
+        });
+        xhr.addEventListener('load', () => {
+            let redirect = null;
+            try { redirect = JSON.parse(xhr.responseText).redirect; } catch (err) { /* ignore */ }
+            if (xhr.status >= 200 && xhr.status < 300 && redirect) window.location.assign(redirect);
+            else fail();
+        });
+        xhr.addEventListener('error', fail);
+        function fail() {
+            progress.classList.remove('is-visible');
+            progressFill.style.width = '0%';
+            submitBtn.disabled = false;
+            window.alert('Upload failed. Please try again.');
+        }
+        xhr.send(fd);
+    });
+})();
+</script>
+{% endblock %}

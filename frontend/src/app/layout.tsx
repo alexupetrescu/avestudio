@@ -10,7 +10,7 @@ import { generateOrganization } from "@/lib/structured-data";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "AVE Studio - Fotografie Profesională",
+    default: "AVE Studio | Ei cresc. Fotografiile rămân.",
     template: "%s | AVE Studio",
   },
   description: "Fotografie profesională pentru evenimente speciale. Capturăm momentele care nu se mai întorc - nunti, botezuri, evenimente corporative. Oferim servicii complete de fotografie în România.",
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
     locale: 'ro_RO',
     url: SITE_URL,
     siteName: 'AVE Studio',
-    title: 'AVE Studio - Fotografie Profesională',
+    title: 'AVE Studio | Ei cresc. Fotografiile rămân.',
     description: 'Fotografie profesională pentru evenimente speciale. Capturăm momentele care nu se mai întorc.',
     images: [
       {
@@ -56,7 +56,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'AVE Studio - Fotografie Profesională',
+    title: 'AVE Studio | Ei cresc. Fotografiile rămân.',
     description: 'Fotografie profesională pentru evenimente speciale. Capturăm momentele care nu se mai întorc.',
     images: [DEFAULT_IMAGE],
     creator: '@avestudio',

@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'portfolio',
     'clients',
+    'schools',
 ]
 
 MIDDLEWARE = [
@@ -171,3 +172,12 @@ DATA_UPLOAD_MAX_NUMBER_FILES = 500
 DATA_UPLOAD_MAX_MEMORY_SIZE = 100 * 1024 * 1024  # 100 MB
 # Increase file upload max size (default is 2.5MB, set to 50MB per file)
 FILE_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024  # 50 MB
+# Image variants generated on upload (schools app). Max long side in px.
+IMAGE_WEB_MAX = int(os.getenv('IMAGE_WEB_MAX', '1600'))
+IMAGE_THUMB_MAX = int(os.getenv('IMAGE_THUMB_MAX', '400'))
+
+# Face matching (schools app). L2 distance between facenet embeddings:
+# lower = stricter. A photo face is assigned to a child only when the best
+# distance is under the threshold AND beats the runner-up by the margin.
+FACE_MATCH_THRESHOLD = float(os.getenv('FACE_MATCH_THRESHOLD', '0.9'))
+FACE_MATCH_MARGIN = float(os.getenv('FACE_MATCH_MARGIN', '0.15'))
