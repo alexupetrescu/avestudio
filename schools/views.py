@@ -23,7 +23,7 @@ from backend.serializers import (
 )
 from . import pricing
 from .models import Child, SchoolClass
-from .pdf import class_list_filename, render_class_list_pdf
+from .pdf import class_list_filename, offer_filename, render_class_list_pdf, render_offer_pdf
 
 
 def _pin_from(request) -> str:
@@ -106,8 +106,10 @@ def class_child_detail(request, class_id, child_id):
 
 
 def pdf_response(school_class, inline: bool) -> HttpResponse:
-    content = render_class_list_pdf(school_class)
-    filename = class_list_filename(school_class)
+    return _pdf_file(render_class_list_pdf(school_class), class_list_filename(school_class), inline)
+
+
+def _pdf_file(content: bytes, filename: str, inline: bool) -> HttpResponse:
     response = HttpResponse(content, content_type='application/pdf')
     ascii_fallback = filename.encode('ascii', 'ignore').decode('ascii') or 'lista.pdf'
     disposition = 'inline' if inline else 'attachment'
@@ -126,6 +128,15 @@ def class_list_pdf(request, class_id):
     if not school_class:
         return _invalid_pin()
     return pdf_response(school_class, inline=request.query_params.get('inline') == '1')
+
+
+@api_view(['GET'])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def offer_pdf(request):
+    """Public offer as PDF (/oferta-scoli "Salvați ca PDF"). ?variant=returning for returning classes."""
+    is_returning = request.query_params.get('variant') == 'returning'
+    return _pdf_file(render_offer_pdf(is_returning), offer_filename(is_returning), inline=False)
 
 
 # --------------------------------------------------------------------------

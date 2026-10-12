@@ -4,8 +4,8 @@ import Reveal from '@/components/offer/Reveal';
 import CountUp from '@/components/offer/CountUp';
 import HeroVisual from '@/components/offer/HeroVisual';
 import SlideNav from '@/components/offer/SlideNav';
-import PrintButton from '@/components/offer/PrintButton';
 import DigitalPopup from '@/components/offer/DigitalPopup';
+import { offerPdfUrl } from '@/lib/api';
 import '@/components/offer/offer.css';
 
 export type OfferVariant = 'new' | 'returning';
@@ -128,7 +128,7 @@ function Eyebrow({ children, tone = 'gold' }: { children: React.ReactNode; tone?
 }
 
 function qtyTag(a: number, b: number) {
-  return a ? `A ×${a} · B ×${b}` : `Doar în B · ×${b}`;
+  return a ? `A ×${a} · B ×${b}` : `Doar în Extra · ×${b}`;
 }
 
 export default function SchoolOffer({ variant }: { variant: OfferVariant }) {
@@ -169,7 +169,7 @@ export default function SchoolOffer({ variant }: { variant: OfferVariant }) {
                 <div className="h-in mt-5" style={{ '--d': '250ms' } as React.CSSProperties}>
                   <span className="xmas-ribbon offer-ribbon">
                     <Star className="!w-3 !h-3 !text-white" />
-                    Preț special pentru clienții fideli
+                    Preț special pentru clasele care revin
                   </span>
                 </div>
               )}
@@ -216,7 +216,7 @@ export default function SchoolOffer({ variant }: { variant: OfferVariant }) {
                 ))}
               </div>
               <p className="offer-price-note h-in" style={{ '--d': '980ms' } as React.CSSProperties}>
-                Per copil · <strong>format digital inclus</strong> în ambele pachete
+                Per copil · <strong>obligatoriu unul dintre pachete</strong> · format digital inclus în ambele
               </p>
 
               <div className="offer-cta h-in no-print" style={{ '--d': '1050ms' } as React.CSSProperties}>
@@ -243,7 +243,7 @@ export default function SchoolOffer({ variant }: { variant: OfferVariant }) {
             </div>
             <div className="offer-hero-meta-item">
               <span className="offer-hero-meta-k">Oferta</span>
-              <span className="offer-hero-meta-v">2 pachete + 3 extra, digital inclus</span>
+              <span className="offer-hero-meta-v">Pachet A sau B + extra opționale C, D, E</span>
             </div>
             <div className="offer-hero-meta-item">
               <span className="offer-hero-meta-k">Unde</span>
@@ -262,7 +262,7 @@ export default function SchoolOffer({ variant }: { variant: OfferVariant }) {
           <div className="offer-slide-head offer-slide-head--center">
             <Reveal effect="up">
               <span className="offer-index">01</span>
-              <Eyebrow tone="burgundy">Secțiunile A și B · alegeți unul</Eyebrow>
+              <Eyebrow tone="burgundy">Obligatoriu · alegeți pachetul A sau B</Eyebrow>
             </Reveal>
             <Reveal effect="up" delay={80}>
               <h2 className="offer-h2">
@@ -338,7 +338,7 @@ export default function SchoolOffer({ variant }: { variant: OfferVariant }) {
 
           <Reveal effect="fade" delay={100} className="offer-plans-note">
             <GoldRule>
-              <span>Un copil primește fie pachetul A, fie pachetul B</span>
+              <span>Fiecare copil primește obligatoriu unul dintre pachete: A sau B</span>
             </GoldRule>
           </Reveal>
 
@@ -381,16 +381,16 @@ export default function SchoolOffer({ variant }: { variant: OfferVariant }) {
           <div className="offer-slide-head">
             <Reveal effect="up">
               <span className="offer-index">02</span>
-              <Eyebrow tone="burgundy">Opțional · Secțiunile C, D și E</Eyebrow>
+              <Eyebrow tone="burgundy">Opțional · Extra C, D și E</Eyebrow>
             </Reveal>
             <Reveal effect="up" delay={80}>
               <h2 className="offer-h2">
-                Mici bucurii, <em>comandate separat</em>
+                Mici bucurii, <em>în plus față de pachet</em>
               </h2>
             </Reveal>
             <Reveal effect="up" delay={160}>
               <p className="offer-text">
-                Se pot adăuga oricâte doriți, în plus față de pachetul ales sau chiar singure, fiecare cu fotografia copilului.
+                Opționale: se pot adăuga oricâte doriți, numai împreună cu pachetul ales (A sau B), fiecare cu fotografia copilului.
               </p>
             </Reveal>
           </div>
@@ -418,7 +418,7 @@ export default function SchoolOffer({ variant }: { variant: OfferVariant }) {
 
           <Reveal effect="fade" delay={200} className="offer-extras-note">
             <GoldRule>
-              <span>Exemple: A + C, B + D + E sau doar un extra</span>
+              <span>Exemple: A, A + C, B + D + E</span>
             </GoldRule>
           </Reveal>
         </div>
@@ -462,21 +462,26 @@ export default function SchoolOffer({ variant }: { variant: OfferVariant }) {
 
           <Reveal effect="up" delay={120} className="offer-teacher">
             <p>
-              <strong>Pentru cadrele didactice:</strong> lista de comenzi se completează online, pe pagina clasei dumneavoastră, cu
-              link-ul și PIN-ul primite de la fotograf. Bifați A sau B pentru fiecare copil, plus extra dorite. După fotografiere,
-              fiecare copil primește propriul album digital.
+              <strong>Pentru cadrele didactice:</strong> Completați lista de comenzi bifând pachetul A sau B pentru fiecare copil, precum
+              și eventualele produse suplimentare dorite.
+            </p>
+            <p className="mt-3">
+              După fotografiere, fiecare copil primește, pe lângă fotografiile tipărite din pachetul ales, și propriul album digital,
+              fiecare separat cu PIN.
             </p>
           </Reveal>
 
           <Reveal effect="fade" delay={200} className="offer-foot no-print">
-            <PrintButton className="offer-btn offer-btn--ghost-light">
-              <PrintIcon />
+            <a href={offerPdfUrl(variant)} download className="offer-btn offer-btn--ghost-light">
+              <DownloadIcon />
               Salvați ca PDF
-            </PrintButton>
-            <Link href={isReturning ? '/oferta-scoli' : '/oferta-scoli/clienti-fideli'} className="offer-switch">
-              {isReturning ? 'Oferta pentru clienți noi' : 'Sunteți client fidel? Vedeți oferta dedicată'}
-              <ArrowIcon />
-            </Link>
+            </a>
+            {isReturning && (
+              <Link href="/oferta-scoli" className="offer-switch">
+                Oferta pentru clienți noi
+                <ArrowIcon />
+              </Link>
+            )}
           </Reveal>
         </div>
       </section>
@@ -500,11 +505,11 @@ function ArrowIcon() {
   );
 }
 
-function PrintIcon() {
+function DownloadIcon() {
   return (
     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-      <path d="M6 14h12v7H6z" />
+      <path d="M12 3v12M7 10l5 5 5-5" />
+      <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
     </svg>
   );
 }

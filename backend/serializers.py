@@ -90,6 +90,9 @@ class ChildOrderSerializer(serializers.ModelSerializer):
         pkg_b = attrs.get('package_b', getattr(self.instance, 'package_b', False))
         if pkg_a and pkg_b:
             raise serializers.ValidationError('Alegeți fie Pachetul Standard (A), fie Pachetul Extra (B), nu amândouă.')
+        has_extra = any(attrs.get(f'package_{k}', getattr(self.instance, f'package_{k}', False)) for k in 'cde')
+        if has_extra and not (pkg_a or pkg_b):
+            raise serializers.ValidationError('Extra C, D și E se comandă doar împreună cu Pachetul Standard (A) sau Extra (B).')
         from schools.models import fold_name
         school_class = self.context.get('school_class')
         if school_class:

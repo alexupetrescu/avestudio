@@ -155,6 +155,11 @@ export function classListPdfUrl(classId: string, pin: string, inline: boolean): 
     return `${API_URL}/schools/class/${classId}/list.pdf?${params.toString()}`;
 }
 
+/** URL of the school offer as a downloadable PDF. */
+export function offerPdfUrl(variant: 'new' | 'returning'): string {
+    return `${API_URL}/schools/offer.pdf?variant=${variant}`;
+}
+
 export async function verifyClassPin(classId: string, pin: string): Promise<boolean> {
     const res = await fetch(`${API_URL}/schools/class/${classId}/verify-pin/`, {
         method: 'POST',

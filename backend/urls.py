@@ -30,6 +30,7 @@ urlpatterns = [
     path('api/google-drive/image/<str:file_id>/', proxy_google_drive_image, name='google-drive-image-proxy'),
     # Schools app (teacher order list + child albums)
     path('api/schools/prices/', school_views.offer_prices, name='schools-prices'),
+    path('api/schools/offer.pdf', school_views.offer_pdf, name='schools-offer-pdf'),
     path('api/schools/class/<uuid:class_id>/verify-pin/', school_views.class_verify_pin, name='schools-class-verify-pin'),
     path('api/schools/class/<uuid:class_id>/', school_views.class_detail, name='schools-class-detail'),
     path('api/schools/class/<uuid:class_id>/list.pdf', school_views.class_list_pdf, name='schools-class-list-pdf'),

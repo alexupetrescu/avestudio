@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<title>Ofertă foto Crăciun {{ season }} - AVE Studio</title>
+<style>
+    @page {
+        size: A4 portrait;
+        margin: 1.1cm 1.4cm 1.4cm 1.4cm;
+        @frame footer { -pdf-frame-content: footer; bottom: 0.6cm; margin-left: 1.4cm; margin-right: 1.4cm; height: 0.8cm; }
+    }
+    body { font-family: 'DejaVu'; font-size: 9.5pt; color: #2B2420; }
+    p { margin: 0; }
+    .brand { font-size: 8pt; color: #C8A45D; letter-spacing: 2pt; text-transform: uppercase; margin: 0 0 4pt 0; }
+    h1 { font-size: 20pt; color: #1F3A2E; margin: 0 0 4pt 0; }
+    .ribbon { background-color: #7D1C27; color: #FFFFFF; font-size: 9pt; font-weight: bold; padding: 3pt 6pt 1pt 6pt; margin: 0 0 6pt 0; }
+    .lead { font-size: 10pt; margin: 0 0 8pt 0; }
+    .rule {
+        background-color: #1F3A2E; color: #F7F3EA; font-size: 10pt; text-align: center;
+        padding: 5pt 6pt 3pt 6pt; margin: 0 0 8pt 0;
+    }
+    .rule b { color: #E4C88A; }
+    h2 { font-size: 12pt; color: #7D1C27; margin: 6pt 0 4pt 0; }
+    h2 small { font-size: 8.5pt; color: #777; font-weight: normal; }
+
+    table.plans { width: 100%; border-collapse: collapse; }
+    table.plans td.plan { border: 0.8pt solid #C8A45D; padding: 6pt 8pt 4pt 8pt; vertical-align: top; background-color: #FBF8F1; }
+    table.plans td.gap { width: 3%; border: none; }
+    .plan-name { font-size: 13pt; font-weight: bold; color: #1F3A2E; }
+    .plan-letter { color: #C8A45D; }
+    .plan-price { font-size: 18pt; font-weight: bold; color: #7D1C27; margin: 2pt 0 0 0; }
+    .strike { text-decoration: line-through; color: #999; font-size: 10pt; font-weight: normal; }
+    .save { font-size: 8pt; color: #1F3A2E; margin: 0 0 4pt 0; }
+    .item { font-size: 9pt; margin: 0; padding: 1pt 0; }
+    .qty { color: #7D1C27; font-weight: bold; }
+    .digital { font-size: 8.5pt; color: #1F3A2E; font-weight: bold; margin: 4pt 0 0 0; }
+
+    table.products { width: 100%; border-collapse: collapse; margin-top: 2pt; }
+    table.products td { text-align: center; vertical-align: bottom; padding: 2pt; }
+    .p-title { font-size: 7.5pt; color: #2B2420; }
+    .p-tag { font-size: 7pt; color: #7D1C27; font-weight: bold; }
+
+    table.extras { width: 100%; border-collapse: collapse; }
+    table.extras td { border: 0.6pt solid #E6DCC6; padding: 4pt; text-align: center; vertical-align: middle; }
+    .x-letter { font-size: 12pt; font-weight: bold; color: #C8A45D; }
+    .x-title { font-size: 9pt; color: #2B2420; }
+    .x-price { font-size: 12pt; font-weight: bold; color: #7D1C27; }
+    .x-note { font-size: 8.5pt; color: #555; margin: 4pt 0 0 0; }
+
+    .contact { border-top: 0.8pt solid #C8A45D; padding-top: 6pt; margin-top: 8pt; font-size: 9.5pt; }
+    .contact p { margin: 0 0 3pt 0; }
+    .contact b { color: #1F3A2E; }
+    .period { font-size: 11pt; color: #7D1C27; font-weight: bold; }
+    #footer { font-size: 7.5pt; color: #888; text-align: center; }
+</style>
+</head>
+<body>
+    <p class="brand">AVE Studio · Ofertă foto Crăciun {{ season }} · Școli &amp; Grădinițe</p>
+    <h1>Amintiri de sărbătoare, pentru fiecare copil</h1>
+    {% if is_returning %}<p class="ribbon">Preț special pentru clasele care revin</p>{% endif %}
+    <p class="lead">
+        Studio mobil în școală sau grădiniță, fotografie profesională și produse personalizate.
+    </p>
+
+    <div class="rule">
+        <b>Obligatoriu:</b> un pachet pentru fiecare copil, <b>A</b> sau <b>B</b> &nbsp;·&nbsp;
+        <b>Opțional:</b> extra <b>C</b>, <b>D</b>, <b>E</b>, în plus
+    </div>
+
+    <h2>Pachetele A și B <small>· obligatoriu unul dintre ele, prețuri per copil</small></h2>
+    <table class="plans">
+        <tr>
+            {% for p in packages %}
+            {% if not forloop.first %}<td class="gap"></td>{% endif %}
+            <td class="plan" width="48%">
+                <div class="plan-name"><span class="plan-letter">{{ p.letter }}</span> &nbsp;{{ p.name }}</div>
+                <p class="plan-price"><span class="strike">{{ p.list }} lei</span> &nbsp;{{ p.price }} lei</p>
+                <p class="save">Economisiți {{ p.saving }} lei</p>
+                {% for qty, name in p.items %}
+                <p class="item"><span class="qty">×{{ qty }}</span> &nbsp;{{ name }}</p>
+                {% endfor %}
+                <p class="digital">+ Format digital inclus, album online cu PIN</p>
+            </td>
+            {% endfor %}
+        </tr>
+    </table>
+
+    <table class="products">
+        <tr>
+            {% for img, title, tag in products %}
+            <td width="16.6%"><img src="oferta/{{ img }}" height="56"></td>
+            {% endfor %}
+        </tr>
+        <tr>
+            {% for img, title, tag in products %}
+            <td width="16.6%"><span class="p-title">{{ title }}</span><br><span class="p-tag">{{ tag }}</span></td>
+            {% endfor %}
+        </tr>
+    </table>
+
+    <h2>Extra C, D și E <small>· opționale, numai împreună cu pachetul A sau B</small></h2>
+    <table class="extras">
+        <tr>
+            {% for e in extras %}
+            <td width="33.3%">
+                <img src="{{ e.img }}" height="46"><br>
+                <span class="x-letter">{{ e.letter }}</span> &nbsp;<span class="x-title">{{ e.label }}</span><br>
+                <span class="x-price">{{ e.price }} lei</span>
+            </td>
+            {% endfor %}
+        </tr>
+    </table>
+    <p class="x-note">Exemple de comandă: A · A + C · B + D + E. Fiecare produs extra poartă fotografia copilului.</p>
+
+    <div class="contact">
+        <p class="period">Perioada pentru fotografiere: {{ period }}</p>
+        <p>Programări: <b>Alexandru</b> 0756 538 455 &nbsp;·&nbsp; <b>Adina</b> 0746 986 415</p>
+        <p><b>Pentru cadrele didactice:</b> Completați lista de comenzi bifând pachetul A sau B pentru fiecare copil, precum
+        și eventualele produse suplimentare dorite.</p>
+        <p>După fotografiere, fiecare copil primește, pe lângă fotografiile tipărite din pachetul ales, și propriul album digital,
+        fiecare separat cu PIN.</p>
+    </div>
+
+    <div id="footer">AVE Studio · www.avestudio.ro</div>
+</body>
+</html>

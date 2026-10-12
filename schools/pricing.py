@@ -1,8 +1,8 @@
 """
 Season pricing for the school / kindergarten offer (lei).
 
-A and B are alternative packages (a child gets one or the other);
-C, D and E are add-ons that can be ordered on their own or on top.
+A and B are alternative packages: every child gets exactly one of them.
+C, D and E are optional add-ons, ordered on top of the chosen package.
 """
 
 SEASON = 2026
