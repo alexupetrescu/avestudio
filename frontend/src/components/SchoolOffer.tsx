@@ -5,6 +5,7 @@ import CountUp from '@/components/offer/CountUp';
 import HeroVisual from '@/components/offer/HeroVisual';
 import SlideNav from '@/components/offer/SlideNav';
 import DigitalPopup from '@/components/offer/DigitalPopup';
+import { LightboxGroup, LightboxTrigger, type OfferSlide } from '@/components/offer/OfferLightbox';
 import { offerPdfUrl } from '@/lib/api';
 import '@/components/offer/offer.css';
 
@@ -86,8 +87,34 @@ export const EXTRA_PRICES = { c: 40, d: 20, e: 105 };
 const EXTRAS = [
   { letter: 'C', src: '/oferta/breloc.webp', w: 431, h: 229, title: 'Breloc 7x5 cm', sub: 'Cu fotografia copilului, pe metal', price: EXTRA_PRICES.c },
   { letter: 'D', src: '/oferta/magnet.webp', w: 1024, h: 1024, title: 'Magnet frigider 6.5x6.5 cm', sub: 'Amintirea de zi cu zi', price: EXTRA_PRICES.d },
-  { letter: 'E', src: '/oferta/puzzle.webp', w: 435, h: 435, title: 'Puzzle 45 piese', sub: 'Joc și fotografie, în cutie', price: EXTRA_PRICES.e },
+  {
+    letter: 'E',
+    src: '/oferta/puzzle.webp',
+    w: 435,
+    h: 435,
+    title: 'Puzzle 45 piese',
+    sub: 'Joc și fotografie, în cutie',
+    price: EXTRA_PRICES.e,
+    alt: { src: '/oferta/puzzle-2.webp', w: 435, h: 435 },
+  },
 ];
+
+const GALLERY_SLIDES: OfferSlide[] = GALLERY.map((p) => ({
+  src: p.src,
+  width: p.w,
+  height: p.h,
+  title: p.title,
+  description: `${p.sub} · ${qtyTag(p.a, p.b)}`,
+}));
+
+/** Extras in card order; a card's second picture follows its first. */
+const EXTRA_SLIDES: OfferSlide[] = EXTRAS.flatMap((e) => {
+  const caption = { title: `${e.letter} · ${e.title}`, description: `${e.sub} · ${e.price} lei` };
+  const main = { src: e.src, width: e.w, height: e.h, ...caption };
+  return e.alt ? [main, { src: e.alt.src, width: e.alt.w, height: e.alt.h, ...caption }] : [main];
+});
+
+const extraSlideIndex = (src: string) => EXTRA_SLIDES.findIndex((s) => s.src === src);
 
 const SLIDES = [
   { id: 'start', label: 'Oferta' },
@@ -348,30 +375,32 @@ export default function SchoolOffer({ variant }: { variant: OfferVariant }) {
             </Reveal>
           </div>
 
-          <div className="offer-products">
-            {GALLERY.map((p, i) => (
-              <Reveal key={p.src} effect="up" delay={(i % 3) * 90} as="figure" className="offer-product">
-                <div className="offer-product-media">
-                  <span className={`offer-product-tag ${p.a ? '' : 'offer-product-tag--b'}`}>{qtyTag(p.a, p.b)}</span>
-                  <Image
-                    src={p.src}
-                    alt={p.title}
-                    width={p.w}
-                    height={p.h}
-                    sizes="(max-width: 640px) 46vw, (max-width: 1024px) 30vw, 22vw"
-                    loading="eager"
-                  />
-                </div>
-                <figcaption className="offer-product-caption">
-                  <span className="offer-product-num">{String(i + 1).padStart(2, '0')}</span>
-                  <span>
-                    <span className="offer-product-title">{p.title}</span>
-                    <span className="offer-product-sub">{p.sub}</span>
-                  </span>
-                </figcaption>
-              </Reveal>
-            ))}
-          </div>
+          <LightboxGroup slides={GALLERY_SLIDES}>
+            <div className="offer-products">
+              {GALLERY.map((p, i) => (
+                <Reveal key={p.src} effect="up" delay={(i % 3) * 90} as="figure" className="offer-product">
+                  <LightboxTrigger index={i} label={p.title} className="offer-product-media">
+                    <span className={`offer-product-tag ${p.a ? '' : 'offer-product-tag--b'}`}>{qtyTag(p.a, p.b)}</span>
+                    <Image
+                      src={p.src}
+                      alt={p.title}
+                      width={p.w}
+                      height={p.h}
+                      sizes="(max-width: 640px) 46vw, (max-width: 1024px) 30vw, 22vw"
+                      loading="eager"
+                    />
+                  </LightboxTrigger>
+                  <figcaption className="offer-product-caption">
+                    <span className="offer-product-num">{String(i + 1).padStart(2, '0')}</span>
+                    <span>
+                      <span className="offer-product-title">{p.title}</span>
+                      <span className="offer-product-sub">{p.sub}</span>
+                    </span>
+                  </figcaption>
+                </Reveal>
+              ))}
+            </div>
+          </LightboxGroup>
         </div>
       </section>
 
@@ -395,26 +424,35 @@ export default function SchoolOffer({ variant }: { variant: OfferVariant }) {
             </Reveal>
           </div>
 
-          <div className="offer-extras">
-            {EXTRAS.map((e, i) => (
-              <Reveal key={e.letter} effect="up" delay={i * 120} className="offer-extra">
-                <span className="offer-extra-ghost" aria-hidden="true">
-                  {e.letter}
-                </span>
-                <div className="offer-extra-top">
-                  <span className="xmas-letter">{e.letter}</span>
-                  <span className="offer-extra-price">
-                    {e.price} <small>lei</small>
+          <LightboxGroup slides={EXTRA_SLIDES}>
+            <div className="offer-extras">
+              {EXTRAS.map((e, i) => (
+                <Reveal key={e.letter} effect="up" delay={i * 120} className="offer-extra">
+                  <span className="offer-extra-ghost" aria-hidden="true">
+                    {e.letter}
                   </span>
-                </div>
-                <div className="offer-extra-media">
-                  <Image src={e.src} alt={e.title} width={e.w} height={e.h} sizes="(max-width: 768px) 80vw, 28vw" loading="eager" />
-                </div>
-                <p className="offer-extra-title">{e.title}</p>
-                <p className="offer-extra-sub">{e.sub}</p>
-              </Reveal>
-            ))}
-          </div>
+                  <div className="offer-extra-top">
+                    <span className="xmas-letter">{e.letter}</span>
+                    <span className="offer-extra-price">
+                      {e.price} <small>lei</small>
+                    </span>
+                  </div>
+                  <div className="offer-extra-media">
+                    <LightboxTrigger index={extraSlideIndex(e.src)} label={e.title} className="offer-extra-main">
+                      <Image src={e.src} alt={e.title} width={e.w} height={e.h} sizes="(max-width: 768px) 80vw, 28vw" loading="eager" />
+                    </LightboxTrigger>
+                    {e.alt && (
+                      <LightboxTrigger index={extraSlideIndex(e.alt.src)} label={`${e.title}, a doua fotografie`} className="offer-extra-alt">
+                        <Image src={e.alt.src} alt={`${e.title}, altă imagine`} width={e.alt.w} height={e.alt.h} sizes="120px" loading="eager" />
+                      </LightboxTrigger>
+                    )}
+                  </div>
+                  <p className="offer-extra-title">{e.title}</p>
+                  <p className="offer-extra-sub">{e.sub}</p>
+                </Reveal>
+              ))}
+            </div>
+          </LightboxGroup>
 
           <Reveal effect="fade" delay={200} className="offer-extras-note">
             <GoldRule>

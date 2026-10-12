@@ -34,6 +34,7 @@ FILES = {
     "extras/breloc 7x5 40 lei.png": "breloc.webp",
     "extras/magnet cauciuc frigider 6.5x6.5 25 lei.jpg": "magnet.webp",
     "extras/puzzle 45 bucati 105 lei.jpg": "puzzle.webp",
+    "extras/okragle-02_6a1fd28086e35.jpg": "puzzle-2.webp",
 }
 
 
