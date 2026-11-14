@@ -24,7 +24,9 @@ interface PortfolioMasonryProps {
     hasNextPage?: boolean;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+const API_URL = typeof window === 'undefined'
+  ? process.env.DJANGO_INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
+  : process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 const DEFAULT_RATIO = 3 / 4; // width / height used until the real size is known
 
 /** Column count for a container width (same breakpoints as the rest of the site). */

@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
 import { generateMetadata as generateSEOMetadata, extractFirstImage, SITE_URL } from '@/lib/seo';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+const API_URL = typeof window === 'undefined'
+  ? process.env.DJANGO_INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
+  : process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
 async function getAlbumData(id: string) {
   try {

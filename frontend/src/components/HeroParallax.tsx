@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+const API_URL = typeof window === 'undefined'
+  ? process.env.DJANGO_INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
+  : process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
 const DEFAULT_HERO_DESKTOP = '/avestudio-heroimage.jpg';
 const DEFAULT_HERO_MOBILE = '/avestudio-heroimage-mobile.jpg';

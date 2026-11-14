@@ -71,3 +71,15 @@ frontend/public/360s/*.png
 
 # Design files
 /designs/
+
+# Local VPS migration backups (contain production data and credentials)
+/backup/
+
+# GitHub release build and local deployment cache
+/.release/
+/.deploy/
+!ops/**
+
+# Local dotenv files
+.env*
+!**/.env.example

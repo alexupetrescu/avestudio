@@ -12,6 +12,10 @@ const getApiDomain = () => {
 };
 
 const nextConfig: NextConfig = {
+  async rewrites() {
+    const target = process.env.DJANGO_API_PROXY_TARGET;
+    return target ? [{ source: '/media/:path*', destination: `${target}/media/:path*` }] : [];
+  },
   images: {
     remotePatterns: [
       {

@@ -27,7 +27,9 @@ interface GoogleDriveAlbum {
     images: GoogleDriveImage[];
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+const API_URL = typeof window === 'undefined'
+  ? process.env.DJANGO_INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
+  : process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
 async function fetchDriveAlbum(id: string): Promise<GoogleDriveAlbum> {
     const res = await fetch(`${API_URL}/drive-albums/${id}/`, { cache: 'no-store' });

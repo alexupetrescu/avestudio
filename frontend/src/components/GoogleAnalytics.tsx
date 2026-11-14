@@ -12,7 +12,8 @@ declare global {
 }
 
 export default function GoogleAnalytics() {
-  const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || 'G-VHJTMBBL43';
+  const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_DISABLE_ANALYTICS === '1'
+    ? '' : process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || 'G-VHJTMBBL43';
   const [hasConsent, setHasConsent] = useState(false);
   const [scriptsLoaded, setScriptsLoaded] = useState(false);
   const pathname = usePathname();
@@ -95,7 +96,7 @@ export default function GoogleAnalytics() {
     }
   }, [pathname, hasConsent, scriptsLoaded, GA_MEASUREMENT_ID]);
 
-  if (!hasConsent) {
+  if (!hasConsent || !GA_MEASUREMENT_ID) {
     return null;
   }
 
