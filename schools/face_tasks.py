@@ -99,7 +99,15 @@ def process_photo(photo: ClassPhoto, references: dict, children_by_key: dict, lo
     return photo.matches.count()
 
 
+_face_job_lock = threading.Lock()
+
+
 def run_job(job_id: int):
+    with _face_job_lock:
+        return _run_job_serialized(job_id)
+
+
+def _run_job_serialized(job_id: int):
     close_old_connections()
     job = FaceJob.objects.select_related('school_class').get(pk=job_id)
     school_class = job.school_class
