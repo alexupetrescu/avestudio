@@ -4,6 +4,7 @@ import re
 import uuid
 
 from django.contrib import admin, messages
+from django.core.exceptions import PermissionDenied
 from django.db.models import Count, Q
 from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect
@@ -15,6 +16,7 @@ from django.views.decorators.csrf import csrf_protect
 
 from . import face_engine, pricing
 from .face_tasks import add_match, start_face_job
+from .forms import ChildReferencePhotoForm
 from .pdf import class_list_filename, render_class_list_pdf
 from .models import (
     Child, ClassPhoto, FaceJob, FaceReference, PhotoMatch, School, SchoolClass, fold_name,
@@ -85,12 +87,36 @@ class ChildInline(admin.TabularInline):
     model = Child
     extra = 0
     fields = ('last_name', 'first_name', 'package_a', 'package_b', 'package_c', 'package_d', 'package_e',
-              'pin', 'photo_count', 'album_link')
-    readonly_fields = ('pin', 'photo_count', 'album_link')
+              'pin', 'reference_photo', 'photo_count', 'album_link')
+    readonly_fields = ('pin', 'reference_photo', 'photo_count', 'album_link')
     show_change_link = True
 
     def get_queryset(self, request):
-        return super().get_queryset(request).annotate(_photo_count=Count('photos', distinct=True))
+        return super().get_queryset(request).annotate(
+            _photo_count=Count('photos', distinct=True),
+        ).prefetch_related('face_references')
+
+    def get_fields(self, request, obj=None):
+        fields = super().get_fields(request, obj)
+        if not (self.has_change_permission(request, obj)
+                and request.user.has_perm('schools.add_facereference')):
+            return [field for field in fields if field != 'reference_photo']
+        return fields
+
+    def reference_photo(self, obj):
+        if obj._state.adding:
+            return 'Save the child first.'
+        references = list(obj.face_references.all())
+        preview = (
+            format_html('<img src="{}" class="ave-thumb ave-thumb-sm" alt="Reference photo" loading="lazy"> ',
+                        references[-1].image.url)
+            if references else ''
+        )
+        return format_html(
+            '{}<a href="{}">Upload / Camera</a>', preview,
+            reverse('admin:schools_child_upload_reference', args=[obj.pk]),
+        )
+    reference_photo.short_description = 'Reference photo'
 
     def photo_count(self, obj):
         return getattr(obj, '_photo_count', 0) if obj.pk else '-'
@@ -379,6 +405,10 @@ class SchoolClassAdmin(admin.ModelAdmin):
             'face_available': face_engine.available(),
             'face_reason': face_engine.unavailable_reason(),
             'low_threshold': LOW_CONFIDENCE,
+            'can_upload_reference': (
+                request.user.has_perm('schools.change_child')
+                and request.user.has_perm('schools.add_facereference')
+            ),
         }
         return TemplateResponse(request, 'admin/schools/schoolclass/faces.html', context)
 
@@ -497,12 +527,55 @@ class ChildAdmin(admin.ModelAdmin):
     readonly_fields = ('pin', 'qr_code', 'album_panel', 'match_key', 'created_at')
     inlines = [FaceReferenceInline]
     actions = ['print_cards']
+    change_form_template = 'admin/schools/child/change_form.html'
     fieldsets = (
         ('Child', {'fields': ('school_class', 'last_name', 'first_name', 'notes')}),
         ('Order', {'fields': (('package_a', 'package_b', 'package_c', 'package_d', 'package_e'),),
                    'description': 'A (Standard) and B (Extra) are alternatives: tick only one of them.'}),
         ('Album access', {'fields': ('album_panel', 'pin', 'qr_code', 'match_key')}),
     )
+
+    def can_upload_reference(self, request, obj=None):
+        return (
+            self.has_change_permission(request, obj)
+            and request.user.has_perm('schools.add_facereference')
+        )
+
+    def get_urls(self):
+        return [
+            path('<uuid:child_id>/reference-photo/',
+                 self.admin_site.admin_view(self.upload_reference),
+                 name='schools_child_upload_reference'),
+        ] + super().get_urls()
+
+    def render_change_form(self, request, context, add=False, change=False, form_url='', obj=None):
+        context['can_upload_reference'] = bool(obj and self.can_upload_reference(request, obj))
+        return super().render_change_form(request, context, add, change, form_url, obj)
+
+    def upload_reference(self, request, child_id):
+        child = get_object_or_404(self.get_queryset(request), pk=child_id)
+        if not self.can_upload_reference(request, child):
+            raise PermissionDenied
+        form = ChildReferencePhotoForm(
+            request.POST if request.method == 'POST' else None,
+            request.FILES if request.method == 'POST' else None,
+        )
+        if request.method == 'POST' and form.is_valid():
+            FaceReference.objects.create(child=child, image=form.cleaned_data['reference_image'])
+            messages.success(request, f'Reference photo added for {child.full_name}.')
+            if form.cleaned_data['run_matching']:
+                start_face_job(child.school_class, reset=True)
+                messages.info(request, 'Face matching started in the background.')
+            return redirect('admin:schools_schoolclass_change', child.school_class_id)
+        context = {
+            **self.admin_site.each_context(request),
+            'title': f'Reference photo — {child.full_name}',
+            'opts': self.model._meta,
+            'child': child,
+            'form': form,
+            'reference': child.face_references.last(),
+        }
+        return TemplateResponse(request, 'admin/schools/child/reference_photo.html', context)
 
     def get_queryset(self, request):
         return super().get_queryset(request).annotate(_photo_count=Count('photos', distinct=True))

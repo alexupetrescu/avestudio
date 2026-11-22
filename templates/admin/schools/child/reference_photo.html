@@ -1,0 +1,39 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
+    &rsaquo; <a href="{% url 'admin:schools_schoolclass_change' child.school_class_id %}">{{ child.school_class }}</a>
+    &rsaquo; <a href="{% url 'admin:schools_child_change' child.pk %}">{{ child.full_name }}</a>
+    &rsaquo; {% translate 'Reference photo' %}
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main" class="ave-upload-page">
+    <h1>{{ title }}</h1>
+    <p>Upload a clear portrait or take one with your phone. This photo helps match class photos to {{ child.full_name }}.</p>
+    {% if reference %}
+    <p>Latest reference photo:</p>
+    <img src="{{ reference.image.url }}" alt="Reference photo for {{ child.full_name }}" class="ave-preview" style="max-width:240px;max-height:240px;object-fit:contain">
+    {% endif %}
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <fieldset class="module aligned">
+            {% for field in form %}
+            <div class="form-row">
+                {{ field.errors }}
+                <div>{{ field.label_tag }} {{ field }}</div>
+                {% if field.help_text %}<p class="help">{{ field.help_text }}</p>{% endif %}
+            </div>
+            {% endfor %}
+        </fieldset>
+        <div class="submit-row">
+            <input type="submit" value="Save reference photo" class="default">
+            <a href="{% url 'admin:schools_schoolclass_change' child.school_class_id %}" class="closelink">Back to class</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

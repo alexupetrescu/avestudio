@@ -126,6 +126,15 @@ Poți încărca în mai multe reprize. Pozele noi se potrivesc doar cu portretel
 
 Convenția veche (`nume prenume (1).jpg`) funcționează și ea: poza se leagă de copilul cu acel nume chiar fără recunoaștere facială.
 
+Pentru un singur copil, deschide clasa în admin și apasă **Upload / Camera** în coloana
+**Reference photo** de pe rândul lui (disponibil și în **Face review** sau din pagina copilului).
+Alege o fotografie existentă cu **Choose a photo** sau folosește **Take a photo** pentru camera
+telefonului, apoi apasă **Save reference photo**. Pe telefoanele compatibile se deschide camera;
+pe calculator poți selecta un fișier. Fotografia se salvează ca portret de referință pentru
+recunoașterea facială. Implicit se reia potrivirea pozelor clasei; poți debifa opțiunea.
+Controlul este disponibil doar în admin, cu permisiunile de modificare a copiilor și de adăugare
+a portretelor de referință. PIN-ul educatoarei sau al părintelui nu acordă acces.
+
 ---
 
 ## 5. Face review: verificarea potrivirilor

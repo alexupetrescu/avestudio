@@ -65,7 +65,11 @@
             <td>{{ child.packages }}</td>
             <td><div class="ave-mini-thumbs">{% for t in child.sample_thumbs %}<img src="{{ t }}" alt="" loading="lazy">{% endfor %}
                 <span class="ave-muted" style="align-self:center;margin-left:6px">{{ child.photo_total }}</span></div></td>
-            <td>{{ child.face_references.count }}</td>
+            <td>{{ child.face_references.count }}
+                {% if can_upload_reference %}
+                · <a href="{% url 'admin:schools_child_upload_reference' child.pk %}">Upload / Camera</a>
+                {% endif %}
+            </td>
             <td><span class="ave-pin">{{ child.pin }}</span></td>
             <td><a href="{{ child.album_url }}" target="_blank" rel="noopener">album</a></td>
         </tr>
