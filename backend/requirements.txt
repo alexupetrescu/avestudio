@@ -8,6 +8,7 @@ google-auth>=2.23.0
 google-auth-oauthlib>=1.1.0
 google-auth-httplib2>=0.1.1
 Pillow>=10.0.0
+boto3>=1.44.9,<1.45
 
 numpy
 # Face recognition (schools app), optional: without it the app still works (filename matching only).

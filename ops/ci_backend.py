@@ -22,7 +22,7 @@ django.setup()
 from django.core.management import call_command
 call_command("check")
 call_command("makemigrations", check=True, dry_run=True, verbosity=1)
-labels = ["portfolio", "clients", "schools", "ops.tests.test_private_delivery"] if cfg["project"] == "avestudio" else []
+labels = ["portfolio", "clients", "schools", "ops.tests.test_private_delivery", "ops.tests.test_r2_setup"] if cfg["project"] == "avestudio" else []
 call_command("test", *labels, interactive=False, verbosity=1)
 if cfg["project"] == "avestudio":
     import torch

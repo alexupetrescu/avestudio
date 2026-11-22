@@ -58,4 +58,5 @@ class SessionMigrationPreservationTests(TransactionTestCase):
             self.assertEqual(restored.get_model('schools', 'Child').objects.count(), 2)
             self.assertEqual(restored.get_model('schools', 'PhotoMatch').objects.get().child_id, ids[0])
         finally:
-            MigrationExecutor(connection).migrate(new_target)
+            latest = MigrationExecutor(connection)
+            latest.migrate(latest.loader.graph.leaf_nodes())

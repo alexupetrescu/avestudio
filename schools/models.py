@@ -19,6 +19,7 @@ from django.db import models, transaction
 from django.utils import timezone
 
 from backend.image_variants import build_variants
+from backend.school_storage import school_media_storage
 from . import pricing
 
 
@@ -296,9 +297,9 @@ def upload_ref(instance, filename):
 
 class ClassPhoto(models.Model):
     school_class = models.ForeignKey(SchoolClass, related_name='photos', on_delete=models.CASCADE)
-    image = models.ImageField('Original', upload_to=upload_orig)
-    web = models.ImageField(upload_to=upload_web, blank=True, null=True, editable=False)
-    thumb = models.ImageField(upload_to=upload_thumb, blank=True, null=True, editable=False)
+    image = models.ImageField('Original', upload_to=upload_orig, storage=school_media_storage, max_length=500)
+    web = models.ImageField(upload_to=upload_web, storage=school_media_storage, max_length=500, blank=True, null=True, editable=False)
+    thumb = models.ImageField(upload_to=upload_thumb, storage=school_media_storage, max_length=500, blank=True, null=True, editable=False)
     width = models.PositiveIntegerField(default=0, editable=False)
     height = models.PositiveIntegerField(default=0, editable=False)
     faces_processed = models.BooleanField(default=False, db_index=True)
@@ -363,7 +364,7 @@ class PhotoMatch(models.Model):
 
 class FaceReference(models.Model):
     child = models.ForeignKey(Child, related_name='face_references', on_delete=models.CASCADE)
-    image = models.ImageField(upload_to=upload_ref)
+    image = models.ImageField(upload_to=upload_ref, storage=school_media_storage, max_length=500)
     embedding = models.JSONField(null=True, blank=True, editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
 

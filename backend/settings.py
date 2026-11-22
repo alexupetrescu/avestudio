@@ -57,6 +57,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'backend.school_media.SchoolR2MediaMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -184,3 +185,11 @@ IMAGE_THUMB_MAX = int(os.getenv('IMAGE_THUMB_MAX', '400'))
 # distance is under the threshold AND beats the runner-up by the margin.
 FACE_MATCH_THRESHOLD = float(os.getenv('FACE_MATCH_THRESHOLD', '0.9'))
 FACE_MATCH_MARGIN = float(os.getenv('FACE_MATCH_MARGIN', '0.15'))
+
+# Opt-in storage for new school originals, variants and face references only.
+# Keep default media storage local for Client albums, portfolio and QR codes.
+SCHOOLS_R2_ENABLED = os.getenv('SCHOOLS_R2_ENABLED', 'false').lower() == 'true'
+SCHOOLS_R2_ENDPOINT = os.getenv('SCHOOLS_R2_ENDPOINT', '')
+SCHOOLS_R2_BUCKET = os.getenv('SCHOOLS_R2_BUCKET', '')
+SCHOOLS_R2_ACCESS_KEY_ID = os.getenv('SCHOOLS_R2_ACCESS_KEY_ID', '')
+SCHOOLS_R2_SECRET_ACCESS_KEY = os.getenv('SCHOOLS_R2_SECRET_ACCESS_KEY', '')

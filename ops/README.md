@@ -256,3 +256,106 @@ Replace `RUN_ID` with the numeric ID shown by `gh run list`.
 Official references: [publishing Docker images](https://docs.github.com/en/actions/tutorials/publish-packages/publish-docker-images),
 [private registry authentication](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry),
 [running workflows](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow).
+
+## Private R2 for new school photos
+
+R2 support is disabled by default. It applies to new school originals, web images,
+thumbnails and face-reference portraits. Existing school paths stay local. Client
+albums, Google-linked albums, portfolio images and QR codes retain their current
+storage. No bulk migration is performed.
+
+1. In Cloudflare **R2 object storage**, open **avestudio-schools** and keep
+   **Standard** storage and public access disabled. Its verified S3 endpoint uses
+   the **default jurisdiction**, so the commands below specify that explicitly.
+   Leave the r2.dev endpoint and custom public domains disabled.
+2. In R2 **Manage API tokens**, create an **Object Read & Write** token scoped only
+   to that bucket. Keep its Access Key ID and Secret Access Key in your private
+   credential store. The configuration command prompts locally; do not paste
+   keys into chat, source code or GitHub Actions secrets.
+3. From the project virtual environment, install the small, pinned SDK tool set:
+
+   ~~~powershell
+   Set-Location D:\Web\avestudio
+   python -m pip install --require-hashes -r .\ops\r2-requirements.lock
+   python .\ops\configure_school_r2.py --jurisdiction default
+   ~~~
+
+   Enter the Cloudflare **account ID** and R2 keys when prompted. This bucket's
+   endpoint is https://ACCOUNT_ID.r2.cloudflarestorage.com. This performs a
+   write/read/delete check using one uniquely named temporary object, then lists
+   bucket usage. It does not alter server settings.
+4. After any current deployment finishes, save the verified configuration:
+
+   ~~~powershell
+   python .\ops\configure_school_r2.py --apply --jurisdiction default
+   ~~~
+
+   This repeats the access check and prompts for the VPS sudo password. It uses
+   the deployment lock, verifies the active backend environment file, preserves
+   unrelated settings, and keeps a root-only backup before atomically writing
+   the R2 variables. Keys travel through SSH stdin and are not saved on the PC.
+   No containers are restarted. A running deployment prevents this change.
+   For a separately created EU-jurisdiction bucket, use **--jurisdiction eu**.
+   A European location hint is separate from an EU jurisdiction.
+5. Deploy a successful backend release containing the R2 code and the additive
+   **schools.0005_optional_r2_photo_storage** migration through the normal plan and
+   deploy workflow. Review the plan and use **--migrate** for that schema change.
+   The next backend container reads the saved configuration and starts new school
+   photo writes in R2. No frontend or host-mounted production adapter change is
+   needed for this feature.
+
+The bucket stays private. The existing child PIN flow authorizes each photo path
+before a 60-second R2 GET URL is issued. Reference portraits require an active staff
+session. Browser CORS rules are unnecessary for server uploads and image redirects.
+To stop new R2 writes, set **SCHOOLS_R2_ENABLED=false** and redeploy the backend;
+keep its R2 credentials configured so existing R2 images remain readable.
+
+Inside the deployed backend, **python manage.py check_school_r2 --probe --usage**
+checks access and reports the bucket's object count and stored bytes. It does not
+print credentials and removes only its own temporary probe object.
+
+Cloudflare's free Standard allowance is **10 GB-month/month**, **1 million Class A**
+operations and **10 million Class B** operations per account. Egress is free.
+This is an allowance rather than a hard spending/storage cap: original files,
+web versions, thumbnails and references all count, together with other buckets
+in the account. The application does not promise zero charges or automatically
+delete photos to control usage. Existing VPS backups cover the database and local
+media; R2 object backups need their own copy.
+
+Official references: [R2 pricing](https://developers.cloudflare.com/r2/pricing/),
+[bucket jurisdiction](https://developers.cloudflare.com/r2/reference/data-location/),
+[R2 API tokens](https://developers.cloudflare.com/r2/api/tokens/).
+
+## Download all older Client album originals
+
+Run this later from the PC when the deployment has finished:
+
+~~~powershell
+Set-Location D:\Web\avestudio
+python .\ops\download_client_albums.py --destination D:\PhotoArchive\ClientAlbums --plan
+python .\ops\download_client_albums.py --destination D:\PhotoArchive\ClientAlbums
+~~~
+
+Choose any destination with enough free space. Each command prompts locally for
+the VPS sudo password; it is never stored or placed in command arguments. The
+script uses the existing SSH config and known-host verification. It sends the
+read-only exporter to the running backend in memory, so it also works before this
+export feature has been deployed to the server.
+
+Only **ClientAlbum/AlbumImage** originals are indexed, including every album
+currently listed in **Client albums**. Google Drive/Google Photos linked albums,
+school albums, QR codes and thumbnails are excluded. No Google API is called and
+no image is copied to R2. Source photos and database rows are never deleted or
+changed. Photos added after the index starts are picked up on the next run.
+
+**--plan** hashes the server's originals and shows the total size without downloading
+photo contents. The export creates a folder per album, adds IDs to distinguish
+repeated names and writes **client-albums-export.json** with original names, source
+keys and SHA-256 checksums. PINs and credentials are excluded from the manifest.
+
+The transfer streams directly over SSH, with no large ZIP/TAR file created on the
+VPS. Each photo is verified before becoming a final local file. Running the same
+command again hashes the source and skips verified local copies, so interruptions
+can be resumed. A changed source gets its own checksum-specific filename. Existing
+conflicting local files are not overwritten. Missing/unreadable originals produce
+an incomplete manifest and a nonzero exit status instead of a false success.

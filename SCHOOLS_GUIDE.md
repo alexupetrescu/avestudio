@@ -234,6 +234,20 @@ UUID-ul clasei e în adresa paginii ei din admin.
 
 ---
 
-## 9. Pasul următor planificat
+## 9. Stocare opțională Cloudflare R2
 
-Mutarea pozelor pe Cloudflare (R2 / Images). Variantele se generează deja prin API-ul de storage al Django, deci trecerea înseamnă configurarea unui backend de storage, fără modificări în logica de upload.
+Pentru fotografiile școlare noi se poate activa un bucket R2 privat, cu stocare **Standard**.
+Instrucțiunile sunt în ops/README.md, secțiunea **Private R2 for new school photos**.
+Se salvează în R2 originalele, variantele web, thumbnails și portretele de referință încărcate
+după activare. Fotografiile existente continuă să fie citite din locul lor actual; migrarea
+**schools.0005_optional_r2_photo_storage** nu copiază și nu șterge fișiere.
+
+Albumele din **Client albums**, albumele Google, portofoliul și codurile QR nu folosesc
+acest bucket. Albumele părinților rămân protejate cu PIN, iar portretele de referință sunt
+accesibile numai personalului autentificat. Bucket-ul nu are nevoie de acces public sau CORS
+pentru încărcările făcute de server.
+
+R2 Standard include **10 GB-month pe lună pentru întregul cont**, împreună cu limite gratuite
+pentru operațiuni. Nu este un plafon automat: spațiul consumat de toate cele patru tipuri
+de fișiere se adună, iar depășirea limitelor poate fi facturată. Comanda **check_school_r2 --usage**
+arată spațiul bucket-ului, nu consumul tuturor bucket-urilor din cont.
