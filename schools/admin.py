@@ -5,21 +5,24 @@ import uuid
 
 from django.contrib import admin, messages
 from django.core.exceptions import PermissionDenied
-from django.db.models import Count, Q
+from django.db.models import Count, Prefetch, Q
+from django.core.paginator import Paginator
 from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
-from django.utils.html import format_html
+from django.utils.html import format_html, format_html_join
 from django.utils.safestring import mark_safe
 from django.views.decorators.csrf import csrf_protect
 
 from . import face_engine, pricing
 from .face_tasks import add_match, start_face_job
-from .forms import ChildReferencePhotoForm
+from .forms import ChildReferencePhotoForm, ExistingChildForm, NewSessionRosterForm
+from .sessions import album_enrollments, copy_roster
+from .uploads import ClassUploadAdminMixin
 from .pdf import class_list_filename, render_class_list_pdf
 from .models import (
-    Child, ClassPhoto, FaceJob, FaceReference, PhotoMatch, School, SchoolClass, fold_name,
+    Child, ChildProfile, ClassPhoto, FaceJob, FaceReference, PhotoMatch, PhotoSession, School, SchoolClass, fold_name,
 )
 
 LOW_CONFIDENCE = 0.35
@@ -67,7 +70,7 @@ def _child_from_reference_name(school_class: SchoolClass, filename: str, childre
 class SchoolClassInline(admin.TabularInline):
     model = SchoolClass
     extra = 0
-    fields = ('name', 'teacher_name', 'teacher_phone', 'shoot_date', 'shoot_time', 'pin', 'links')
+    fields = ('name', 'session', 'teacher_name', 'teacher_phone', 'shoot_date', 'shoot_time', 'pin', 'links')
     readonly_fields = ('pin', 'links')
     show_change_link = True
 
@@ -104,9 +107,12 @@ class ChildInline(admin.TabularInline):
         return fields
 
     def reference_photo(self, obj):
-        if obj._state.adding:
+        if not obj or obj._state.adding:
             return 'Save the child first.'
         references = list(obj.face_references.all())
+        if not references and obj.profile_id:
+            previous = FaceReference.objects.filter(child__profile_id=obj.profile_id).last()
+            references = [previous] if previous else []
         preview = (
             format_html('<img src="{}" class="ave-thumb ave-thumb-sm" alt="Reference photo" loading="lazy"> ',
                         references[-1].image.url)
@@ -195,15 +201,15 @@ class SchoolAdmin(admin.ModelAdmin):
 # ---------------------------------------------------------------------------
 
 @admin.register(SchoolClass)
-class SchoolClassAdmin(admin.ModelAdmin):
-    list_display = ('name', 'school', 'teacher_name', 'shoot_display', 'pin_display', 'child_count', 'photo_count', 'orders_summary', 'tools')
-    list_filter = ('school', 'shoot_date')
+class SchoolClassAdmin(ClassUploadAdminMixin, admin.ModelAdmin):
+    list_display = ('name', 'school', 'session', 'teacher_name', 'shoot_display', 'pin_display', 'child_count', 'photo_count', 'orders_summary', 'tools')
+    list_filter = ('session__year', 'session', 'school', 'shoot_date')
     search_fields = ('name', 'teacher_name', 'school__name', 'pin')
-    list_select_related = ('school',)
+    list_select_related = ('school', 'session')
     readonly_fields = ('pin', 'qr_code', 'access_panel', 'created_at')
     inlines = [ChildInline]
     fieldsets = (
-        ('Class', {'fields': ('school', 'name', 'teacher_name', 'teacher_phone')}),
+        ('Class', {'fields': ('school', 'name', 'session', 'teacher_name', 'teacher_phone')}),
         ('Photo session', {'fields': (('shoot_date', 'shoot_time'),),
                            'description': 'Shown to the teacher on the order page and on the printed class card.'}),
         ('Teacher access', {'fields': ('access_panel', 'pin', 'qr_code'),
@@ -276,6 +282,8 @@ class SchoolClassAdmin(admin.ModelAdmin):
         urls = super().get_urls()
         wrap = self.admin_site.admin_view
         custom = [
+            path('<uuid:class_id>/new-session/', wrap(self.new_session), name='schools_schoolclass_new_session'),
+            path('<uuid:class_id>/existing-child/', wrap(self.existing_child), name='schools_schoolclass_existing_child'),
             path('bulk-upload/', wrap(self.bulk_upload), name='schools_schoolclass_bulk_upload'),
             path('<uuid:class_id>/upload/', wrap(self.bulk_upload), name='schools_schoolclass_upload'),
             path('<uuid:class_id>/faces/', wrap(self.faces_page), name='schools_schoolclass_faces'),
@@ -288,8 +296,58 @@ class SchoolClassAdmin(admin.ModelAdmin):
         ]
         return custom + urls
 
+    def render_change_form(self, request, context, add=False, change=False, form_url='', obj=None):
+        context['can_copy_roster'] = bool(
+            obj and self.has_change_permission(request, obj) and self.has_add_permission(request)
+            and request.user.has_perm('schools.add_child')
+        )
+        context['can_add_existing_child'] = bool(
+            obj and self.has_change_permission(request, obj) and request.user.has_perm('schools.add_child')
+        )
+        return super().render_change_form(request, context, add, change, form_url, obj)
+
+    def new_session(self, request, class_id):
+        source = get_object_or_404(SchoolClass.objects.select_related('school', 'session'), pk=class_id)
+        if not (self.has_change_permission(request, source) and self.has_add_permission(request)
+                and request.user.has_perm('schools.add_child')):
+            raise PermissionDenied
+        form = NewSessionRosterForm(request.POST if request.method == 'POST' else None, initial={'name': source.name})
+        if request.method == 'POST' and form.is_valid():
+            if form.cleaned_data['session'].pk == source.session_id:
+                form.add_error('session', 'Choose a different photo session for the copied roster.')
+            else:
+                target = copy_roster(source, **form.cleaned_data)
+                messages.success(request, 'Roster copied. Remove children who left and add newcomers. Package choices start empty.')
+                return redirect('admin:schools_schoolclass_change', target.pk)
+        return self._roster_form(request, source, form, 'New session from this class', 'Copy roster')
+
+    def existing_child(self, request, class_id):
+        school_class = get_object_or_404(SchoolClass.objects.select_related('school'), pk=class_id)
+        if not (self.has_change_permission(request, school_class) and request.user.has_perm('schools.add_child')):
+            raise PermissionDenied
+        form = ExistingChildForm(request.POST if request.method == 'POST' else None, school_class=school_class)
+        if request.method == 'POST' and form.is_valid():
+            profile = form.cleaned_data['child']
+            if school_class.children.filter(match_key=fold_name(profile.full_name)).exists():
+                form.add_error('child', 'A child with this name is already in this roster. Check the existing entry.')
+            else:
+                Child.objects.create(school_class=school_class, profile=profile,
+                                     first_name=profile.first_name, last_name=profile.last_name)
+                messages.success(request, 'Existing child added with the same parent link and PIN.')
+                return redirect('admin:schools_schoolclass_change', school_class.pk)
+        return self._roster_form(request, school_class, form, 'Add an existing child', 'Add to this roster')
+
+    def _roster_form(self, request, school_class, form, title, submit_label):
+        return TemplateResponse(request, 'admin/schools/schoolclass/roster_form.html', {
+            **self.admin_site.each_context(request), 'opts': self.model._meta,
+            'school_class': school_class, 'form': form, 'title': title, 'submit_label': submit_label,
+            'can_add_session': request.user.has_perm('schools.add_photosession'),
+        })
+
     # --- bulk upload ------------------------------------------------------
     def bulk_upload(self, request, class_id=None):
+        if not (self.has_change_permission(request) or self.has_add_permission(request)):
+            raise PermissionDenied
         preselected = get_object_or_404(SchoolClass, pk=class_id) if class_id else None
 
         if request.method == 'POST':
@@ -335,10 +393,15 @@ class SchoolClassAdmin(admin.ModelAdmin):
                 messages.info(request, 'Face matching started in the background.')
             return _upload_response(request, reverse('admin:schools_schoolclass_faces', args=[school_class.pk]))
 
-        schools = School.objects.prefetch_related('classes').order_by('-season', 'name')
+        schools = School.objects.prefetch_related(Prefetch(
+            'classes', queryset=SchoolClass.objects.select_related('school', 'session'),
+        )).order_by('-season', 'name')
         context = {
             **self.admin_site.each_context(request),
             'title': f'Upload photos — {preselected}' if preselected else 'Bulk upload',
+            'sessions': PhotoSession.objects.all(),
+            'can_upload_photos': request.user.has_perm('schools.add_classphoto'),
+            'can_upload_references': request.user.has_perm('schools.add_facereference'),
             'opts': self.model._meta,
             'schools': schools,
             'preselected': preselected,
@@ -357,11 +420,20 @@ class SchoolClassAdmin(admin.ModelAdmin):
         school_id = request.POST.get('school_id', '').strip()
         new_name = request.POST.get('new_class_name', '').strip()
         if school_id and new_name:
+            if not self.has_add_permission(request):
+                raise PermissionDenied
+            try:
+                session = PhotoSession.objects.filter(pk=int(request.POST.get('session_id', ''))).first()
+                school_id = int(school_id)
+            except (ValueError, TypeError):
+                return None
+            if not session:
+                return None
             school = School.objects.filter(pk=school_id).first()
             if not school:
                 return None
             return SchoolClass.objects.create(
-                school=school, name=new_name,
+                school=school, name=new_name, session=session,
                 teacher_name=request.POST.get('new_teacher_name', '').strip(),
                 teacher_phone=request.POST.get('new_teacher_phone', '').strip(),
             )
@@ -376,17 +448,30 @@ class SchoolClassAdmin(admin.ModelAdmin):
             school_class.children.annotate(photo_total=Count('photos', distinct=True)).order_by('last_name', 'first_name')
         )
         for child in children:
-            child.sample_thumbs = [p.thumb.url for p in child.photos.exclude(thumb='')[:4]]
+            child.sample_thumbs = [p.thumb.url for p in child.photos.filter(thumb__isnull=False).exclude(thumb='')[:4]]
 
         photos = (
             school_class.photos.prefetch_related('matches__child')
-            .annotate(_match_count=Count('matches'))
-            .order_by('id')
+            .annotate(_match_count=Count('matches', distinct=True))
+            .order_by('-id')
         )
-        unmatched = [p for p in photos if p._match_count == 0]
-        low_conf = [p for p in photos if p._match_count and
-                    any(m.source == PhotoMatch.SOURCE_FACE and m.confidence < LOW_CONFIDENCE for m in p.matches.all())]
-        matched = [p for p in photos if p._match_count and p not in low_conf]
+        low_ids = PhotoMatch.objects.filter(
+            photo__school_class=school_class, source=PhotoMatch.SOURCE_FACE, confidence__lt=LOW_CONFIDENCE,
+        ).values('photo_id')
+        groups = {
+            'unmatched': photos.filter(_match_count=0),
+            'low': photos.filter(pk__in=low_ids),
+            'assigned': photos.filter(_match_count__gt=0).exclude(pk__in=low_ids),
+        }
+        review_filter = request.GET.get('status', 'all')
+        page = Paginator(groups.get(review_filter, photos), 48).get_page(request.GET.get('page'))
+        page_photos = list(page.object_list)
+        unmatched = [photo for photo in page_photos if photo._match_count == 0]
+        low_conf = [photo for photo in page_photos if photo._match_count and any(
+            match.source == PhotoMatch.SOURCE_FACE and match.confidence < LOW_CONFIDENCE
+            for match in photo.matches.all()
+        )]
+        matched = [photo for photo in page_photos if photo._match_count and photo not in low_conf]
 
         context = {
             **self.admin_site.each_context(request),
@@ -400,8 +485,13 @@ class SchoolClassAdmin(admin.ModelAdmin):
             'unmatched': unmatched,
             'low_conf': low_conf,
             'matched': matched,
-            'total_photos': len(photos),
-            'unprocessed': sum(1 for p in photos if not p.faces_processed),
+            'total_photos': photos.count(),
+            'unprocessed': school_class.photos.filter(faces_processed=False).count(),
+            'review_page': page,
+            'review_filter': review_filter,
+            'unmatched_count': groups['unmatched'].count(),
+            'low_count': groups['low'].count(),
+            'assigned_count': groups['assigned'].count(),
             'face_available': face_engine.available(),
             'face_reason': face_engine.unavailable_reason(),
             'low_threshold': LOW_CONFIDENCE,
@@ -521,18 +611,22 @@ class SchoolClassAdmin(admin.ModelAdmin):
 class ChildAdmin(admin.ModelAdmin):
     list_display = ('last_name', 'first_name', 'school_class', 'packages_display', 'total_display',
                     'pin_display', 'photo_count', 'album_link')
-    list_filter = ('school_class__school', 'school_class', 'package_a', 'package_b', 'package_c', 'package_d', 'package_e')
+    list_filter = ('school_class__session__year', 'school_class__session', 'school_class__school',
+                   ('school_class', admin.RelatedOnlyFieldListFilter),
+                   'package_a', 'package_b', 'package_c', 'package_d', 'package_e')
     search_fields = ('first_name', 'last_name', 'pin', 'school_class__name', 'school_class__school__name')
-    list_select_related = ('school_class__school',)
-    readonly_fields = ('pin', 'qr_code', 'album_panel', 'match_key', 'created_at')
+    list_select_related = ('school_class__school', 'school_class__session', 'profile')
+    readonly_fields = ('pin', 'qr_code', 'album_panel', 'match_key', 'created_at', 'session_history')
+    autocomplete_fields = ('profile',)
     inlines = [FaceReferenceInline]
     actions = ['print_cards']
     change_form_template = 'admin/schools/child/change_form.html'
     fieldsets = (
-        ('Child', {'fields': ('school_class', 'last_name', 'first_name', 'notes')}),
+        ('Child', {'fields': ('school_class', 'last_name', 'first_name', 'notes', 'profile')}),
         ('Order', {'fields': (('package_a', 'package_b', 'package_c', 'package_d', 'package_e'),),
                    'description': 'A (Standard) and B (Extra) are alternatives: tick only one of them.'}),
         ('Album access', {'fields': ('album_panel', 'pin', 'qr_code', 'match_key')}),
+        ('Photo sessions', {'fields': ('session_history',)}),
     )
 
     def can_upload_reference(self, request, obj=None):
@@ -573,7 +667,8 @@ class ChildAdmin(admin.ModelAdmin):
             'opts': self.model._meta,
             'child': child,
             'form': form,
-            'reference': child.face_references.last(),
+            'reference': (FaceReference.objects.filter(child__profile_id=child.profile_id).last()
+                          if child.profile_id else child.face_references.last()),
         }
         return TemplateResponse(request, 'admin/schools/child/reference_photo.html', context)
 
@@ -583,6 +678,15 @@ class ChildAdmin(admin.ModelAdmin):
     def packages_display(self, obj):
         return obj.packages
     packages_display.short_description = 'Packages'
+
+    def session_history(self, obj):
+        if not obj or obj._state.adding:
+            return 'Save the child first.'
+        return format_html('<ul>{}</ul>', format_html_join('', '<li><a href="{}">{} · {}</a> · {} photos</li>', (
+            (reverse('admin:schools_child_change', args=[row.pk]), row.school_class.session_label,
+             row.school_class.name, row.photo_count) for row in album_enrollments(obj)
+        )))
+    session_history.short_description = 'Sessions for this child'
 
     def total_display(self, obj):
         return f"{obj.total_lei} lei"
@@ -667,3 +771,42 @@ class FaceJobAdmin(admin.ModelAdmin):
     list_display = ('id', 'school_class', 'status', 'processed', 'total', 'matched_photos', 'unmatched_photos', 'created_at')
     list_filter = ('status',)
     readonly_fields = [f.name for f in FaceJob._meta.fields]
+
+
+@admin.register(PhotoSession)
+class PhotoSessionAdmin(admin.ModelAdmin):
+    list_display = ('name', 'year', 'date')
+    list_filter = ('year',)
+    search_fields = ('name',)
+
+
+@admin.register(ChildProfile)
+class ChildProfileAdmin(admin.ModelAdmin):
+    list_display = ('full_name', 'session_count', 'parent_album')
+    search_fields = ('first_name', 'last_name', 'id', 'enrollments__school_class__school__name')
+    list_filter = ('enrollments__school_class__school', 'enrollments__school_class__session__year')
+    readonly_fields = ('id', 'pin', 'parent_album', 'session_history', 'created_at')
+    fields = ('first_name', 'last_name', 'parent_album', 'pin', 'session_history', 'id', 'created_at')
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).annotate(_sessions=Count('enrollments', distinct=True))
+
+    @admin.display(description='Sessions')
+    def session_count(self, obj):
+        return obj._sessions
+
+    @admin.display(description='Parent album')
+    def parent_album(self, obj):
+        if not obj or obj._state.adding:
+            return 'Save first.'
+        return format_html('<a href="{}" target="_blank" rel="noopener">Open album</a>', obj.album_url)
+
+    @admin.display(description='Photo sessions')
+    def session_history(self, obj):
+        if not obj or obj._state.adding:
+            return 'Save first.'
+        return format_html('<ul>{}</ul>', format_html_join('', '<li><a href="{}">{} · {}</a></li>', (
+            (reverse('admin:schools_child_change', args=[row.pk]), row.school_class.session_label,
+             row.school_class.name)
+            for row in obj.enrollments.select_related('school_class__session', 'school_class__school')
+        )))

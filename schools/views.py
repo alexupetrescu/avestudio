@@ -9,6 +9,7 @@ import os
 import re
 import urllib.parse
 import zipfile
+import uuid
 from io import BytesIO
 
 from django.http import HttpResponse
@@ -24,6 +25,7 @@ from backend.serializers import (
 from . import pricing
 from .models import Child, SchoolClass
 from .pdf import class_list_filename, offer_filename, render_class_list_pdf, render_offer_pdf
+from .sessions import resolve_album
 
 
 def _pin_from(request) -> str:
@@ -148,11 +150,13 @@ def _get_child(request, child_id=None) -> Child | None:
     child_id = child_id or request.data.get('child_id') or request.query_params.get('child_id')
     if not pin or not child_id:
         return None
-    return (
-        Child.objects.select_related('school_class__school')
-        .filter(id=child_id, pin=pin)
-        .first()
-    )
+    session_id = request.data.get('session_id') or request.query_params.get('session_id')
+    try:
+        child_id = uuid.UUID(str(child_id))
+        session_id = uuid.UUID(str(session_id)) if session_id else None
+    except (ValueError, TypeError):
+        return None
+    return resolve_album(child_id, pin, session_id)
 
 
 @api_view(['POST'])
@@ -183,7 +187,7 @@ def child_download(request):
     if not child:
         return Response({'error': 'PIN invalid pentru acest album'}, status=status.HTTP_400_BAD_REQUEST)
 
-    photos = child.photos.all()
+    photos = child.photos.filter(school_class_id=child.school_class_id)
     if not photos.exists():
         return Response({'error': 'Nu există fotografii în acest album'}, status=status.HTTP_404_NOT_FOUND)
 

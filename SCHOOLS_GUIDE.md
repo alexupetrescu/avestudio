@@ -86,6 +86,36 @@ Pentru PDF: deschide pagina în browser, Ctrl+P, "Salvează ca PDF". Meniul și 
 
 ## 3. Înainte de ședința foto: școala, clasele, cadrele didactice
 
+### Sesiuni, ani și liste de copii
+
+În **Photo sessions**, creează ședința cu nume și an, de exemplu **Crăciun 2026**,
+**Martie 2027** sau **Vară 2027**. Data ședinței stabilește ordinea în același an;
+data programată pe clasă are prioritate. Școala rămâne aceeași în anii următori.
+Numele clasei poate rămâne **Grupa A**: sesiunea și anul sunt câmpuri separate.
+
+Pentru următoarea ședință, deschide clasa precedentă și apasă **New session / Copy roster**.
+Alege sesiunea nouă și salvează. Lista se copiază cu aceiași copii și aceleași linkuri/PIN-uri
+pentru părinți, dar cu opțiunile de pachete goale. Șterge din lista nouă copiii care au plecat
+și adaugă-i pe cei noi; lista veche și fotografiile ei rămân intacte. Pentru un copil care
+există deja într-o altă clasă a școlii, folosește **Add existing child**. Nu transforma un copil
+plecat în alt copil prin schimbarea numelui pe rândul copiat.
+
+În **Children**, filtrele din dreapta includ școala, clasa, sesiunea și anul. Fiecare rând
+reprezintă participarea unui copil la o sesiune. În pagina copilului apar toate sesiunile lui.
+**Child albums** afișează identitățile permanente, cu istoricul sesiunilor și linkul părintelui.
+Copiii cu același nume nu sunt uniți automat. Asocierea între sesiuni este explicită, prin
+copierea listei sau alegerea albumului existent.
+
+Părintele folosește un singur link și PIN: se deschide sesiunea cea mai recentă, iar butoanele
+permit alegerea celor anterioare. Fotografiile și descărcarea ZIP sunt limitate la sesiunea
+selectată. Portretele de referință ale aceluiași copil se pot reutiliza la potrivirea fețelor.
+
+Actualizarea păstrează ID-urile, PIN-urile, QR-urile și fotografiile existente. Listele vechi
+primesc eticheta **Sesiune existentă** și anul școlii; redenumește acea sesiune după caz.
+Nu aplică automat o împărțire a fotografiilor istorice care au fost deja încărcate împreună.
+Publicarea acestei actualizări necesită migrarea **schools.0004_sessions_and_child_albums**
+și actualizarea atât a backend-ului, cât și a frontend-ului.
+
 1. Admin → **Schools & Kindergartens → Schools → Add**.
    Bifează **Is returning customer** dacă am mai lucrat cu ei (asta dă 45 / 65 lei în loc de 50 / 75).
 2. În aceeași pagină adaugă clasele (nume, educatoare / învățătoare, telefon). Salvează.
@@ -115,12 +145,23 @@ Apoi:
 
 1. Admin → **Classes → Bulk upload photos** (sau butonul **Upload photos** de pe pagina clasei).
 2. Alege școala și clasa. Dacă clasa nu există încă, lasă "new class" și scrie numele ei.
-3. Trage portretele în caseta **Reference faces** și pozele în caseta **Class photos**.
+3. Selectează portretele și pozele în casetele **Select reference portraits** și **Select class photos**.
    - Dacă educatoarea a adăugat deja copilul în listă, portretul se leagă de el după nume.
    - Dacă nu, copilul se creează automat din numele fișierului.
 4. Lasă bifat **Run face matching after upload** și apasă **Upload**.
 
-La upload se generează automat varianta web (1600 px) și thumbnail (400 px) pentru fiecare poză. Potrivirea fețelor rulează în fundal și ești dus pe pagina **Face review**.
+Fișierele se încarcă pe rând, fără previzualizări locale care să consume memoria browserului.
+Bara de progres arată transferul și numărul de fișiere salvate. Poți întrerupe după fișierul
+curent cu **Pause after this file**, apoi continua cu **Resume / Retry upload**. Păstrează pagina
+deschisă până la final. Fișierele deja salvate nu se retrimit; reîncercarea aceluiași fișier nu
+creează duplicate. Limita este de **64 MB pentru fiecare imagine**, fără o limită comună de
+64 MB pentru întreaga selecție.
+
+La salvare se generează varianta web (1600 px) și thumbnail (400 px) pentru fiecare poză.
+Erorile sunt afișate separat, pe fișier. Poți reîncerca sau termina doar cu fișierele deja
+salvate. După finalizarea transferului pornește potrivirea fețelor, dacă opțiunea este bifată.
+Dacă există deja o potrivire în curs pentru clasă, pagina așteaptă terminarea ei. **Face review**
+arată apoi rezultatele, cu cel mult **48 de fotografii pe pagină** și filtre de verificare.
 
 Poți încărca în mai multe reprize. Pozele noi se potrivesc doar cu portretele existente; dacă adaugi portrete noi, potrivirea se reia pentru toată clasa.
 

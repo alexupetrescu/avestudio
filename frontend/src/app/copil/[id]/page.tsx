@@ -15,12 +15,18 @@ export default function ChildAlbumPage({ params }: { params: Promise<{ id: strin
     const [downloading, setDownloading] = useState(false);
     const [lightboxOpen, setLightboxOpen] = useState(false);
     const [lightboxIndex, setLightboxIndex] = useState(0);
+    const [loadingSession, setLoadingSession] = useState(false);
 
-    const load = useCallback(async (p: string) => {
+    const load = useCallback(async (p: string, sessionId?: string) => {
+        setLoadingSession(true);
+        setError('');
+        setLightboxOpen(false);
         try {
-            setAlbum(await fetchChildAlbum(id, p));
+            setAlbum(await fetchChildAlbum(id, p, sessionId));
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Eroare la încărcarea albumului');
+        } finally {
+            setLoadingSession(false);
         }
     }, [id]);
 
@@ -34,7 +40,7 @@ export default function ChildAlbumPage({ params }: { params: Promise<{ id: strin
         setDownloading(true);
         setError('');
         try {
-            await downloadChildAlbum(id, pin, `album_${album.last_name}_${album.first_name}`);
+            await downloadChildAlbum(id, pin, `album_${album.last_name}_${album.first_name}_${album.session_label}`, album.selected_session_id);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Eroare la descărcare');
         } finally {
@@ -64,18 +70,34 @@ export default function ChildAlbumPage({ params }: { params: Promise<{ id: strin
                         </h1>
                         <div className="luxury-line mb-6" />
                         {album && (
+                            <nav aria-label="Ședințe foto" className="mb-8 flex flex-wrap gap-3">
+                                {album.sessions.map((session, index) => (
+                                    <button
+                                        key={session.id}
+                                        type="button"
+                                        aria-pressed={session.id === album.selected_session_id}
+                                        disabled={loadingSession || downloading}
+                                        onClick={() => load(pin, session.id)}
+                                        className={`rounded-full border px-5 py-3 text-base transition-colors disabled:opacity-50 ${session.id === album.selected_session_id ? 'bg-black text-white border-black' : 'bg-white text-black border-black/15 hover:border-black/50'}`}
+                                    >
+                                        {session.label}{index === 0 ? ' · Cea mai recentă' : ''}
+                                    </button>
+                                ))}
+                            </nav>
+                        )}
+                        {album && (
                             <div className="flex items-center justify-between flex-wrap gap-4">
                                 <p className="text-sm text-black/40">
-                                    {album.photos.length} Fotografii
+                                    {album.session_label} · {album.photos.length} Fotografii
                                     {album.packages !== '-' && <span className="ml-3 text-black/30">· Pachet {album.packages}</span>}
                                 </p>
                                 {album.photos.length > 0 && (
                                     <button
                                         onClick={handleDownload}
-                                        disabled={downloading}
+                                        disabled={downloading || loadingSession}
                                         className="inline-flex items-center gap-2 px-6 py-3 bg-[var(--accent)] text-white text-sm font-medium tracking-[0.03em] rounded-full hover:bg-[#333] transition-all duration-500 disabled:opacity-40 disabled:cursor-not-allowed"
                                     >
-                                        {downloading ? 'Se descarcă...' : 'Descarcă toate pozele'}
+                                        {downloading ? 'Se descarcă...' : 'Descarcă pozele din această ședință'}
                                     </button>
                                 )}
                             </div>
@@ -87,7 +109,7 @@ export default function ChildAlbumPage({ params }: { params: Promise<{ id: strin
                 </section>
 
                 {album && (
-                    <section className="py-8 px-4 md:px-8 lg:px-12">
+                    <section aria-busy={loadingSession} className={`py-8 px-4 md:px-8 lg:px-12 ${loadingSession ? 'opacity-50 pointer-events-none' : ''}`}>
                         <div className="max-w-7xl mx-auto">
                             {album.photos.length > 0 ? (
                                 <div className="columns-2 md:columns-3 xl:columns-4 gap-3 md:gap-5">

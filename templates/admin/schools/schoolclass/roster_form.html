@@ -1,0 +1,17 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<div id="content-main" class="ave-upload-page">
+    <h1>{{ title }}</h1>
+    <p>{{ school_class }}</p>
+    <p>Each session has its own roster and orders. Existing children keep the same parent album link and PIN.</p>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        {% if can_add_session %}<p><a href="{% url 'admin:schools_photosession_add' %}" target="_blank" rel="noopener">Add a photo session</a> · Refresh this page after creating it.</p>{% endif %}
+        <div class="submit-row">
+            <input type="submit" value="{{ submit_label }}" class="default">
+            <a href="{% url 'admin:schools_schoolclass_change' school_class.pk %}" class="closelink">Back to class</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

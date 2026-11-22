@@ -42,6 +42,7 @@
 <body>
     <div class="brand">AVE Studio · Ofertă foto Crăciun {{ season }}</div>
     <h1>{{ school.name }}{% if school.city %} ({{ school.city }}){% endif %} — {{ school_class.name }}</h1>
+    <p>{{ school_class.session_label }}</p>
     <p class="meta">
         {% if school_class.teacher_name %}<b>Cadru didactic:</b> {{ school_class.teacher_name }}{% if school_class.teacher_phone %} · {{ school_class.teacher_phone }}{% endif %} &nbsp;&nbsp;{% endif %}
         <b>Copii în listă:</b> {{ count }}

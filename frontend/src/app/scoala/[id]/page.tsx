@@ -150,7 +150,7 @@ export default function TeacherOrderPage({ params }: { params: Promise<{ id: str
                                     {data.school_name}
                                 </h1>
                                 <p className="text-lg" style={{ color: 'rgba(43,36,32,0.65)' }}>
-                                    {data.name}{data.teacher_name ? ` · ${data.teacher_name}` : ''}
+                                    {data.name} · {data.session_label}{data.teacher_name ? ` · ${data.teacher_name}` : ''}
                                 </p>
                                 <div className="xmas-rule max-w-[160px] my-6" />
                                 {data.shoot_display && (

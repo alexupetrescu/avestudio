@@ -37,13 +37,14 @@
 <body>
 <div class="toolbar">
     <button onclick="window.print()">Print / Save as PDF</button>
-    <span style="margin-left:12px">{{ school_class.school }} · {{ school_class.name }} · {{ cards|length }} children</span>
+    <span style="margin-left:12px">{{ school_class.school }} · {{ school_class.name }} · {{ school_class.session_label }} · {{ cards|length }} children</span>
 </div>
 
 <div class="grid">
     <div class="card teacher">
         <div class="brand">AVE Studio · {{ site_url }}</div>
         <div class="name">{{ school_class.school.name }} — {{ school_class.name }}</div>
+        <div class="sub">{{ school_class.session_label }}</div>
         <div class="sub">Lista de comenzi online{% if school_class.teacher_name %} · {{ school_class.teacher_name }}{% endif %}</div>
         {% if school_class.shoot_display %}<div class="sub" style="color:#C8A45D">Ședința foto: {{ school_class.shoot_display }}</div>{% endif %}
         {% if class_qr_url %}<img class="qr" src="{{ class_qr_url }}" alt="QR">{% endif %}

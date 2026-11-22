@@ -79,8 +79,19 @@
         </tbody>
     </table>
 
+    <nav class="ave-actions" aria-label="Photo review filters" style="margin:24px 0">
+        <a href="?status=all" class="button">All ({{ total_photos }})</a>
+        <a href="?status=unmatched" class="button">Unassigned ({{ unmatched_count }})</a>
+        <a href="?status=low" class="button">Low confidence ({{ low_count }})</a>
+        <a href="?status=assigned" class="button">Assigned ({{ assigned_count }})</a>
+    </nav>
+    <p>Page {{ review_page.number }} of {{ review_page.paginator.num_pages }} · up to 48 photos per page.
+        {% if review_page.has_previous %}<a href="?status={{ review_filter|urlencode }}&amp;page={{ review_page.previous_page_number }}">Previous page</a>{% endif %}
+        {% if review_page.has_next %}<a href="?status={{ review_filter|urlencode }}&amp;page={{ review_page.next_page_number }}">Next page</a>{% endif %}
+    </p>
+
     <div class="ave-section-head">
-        <h2>Needs review — unassigned ({{ unmatched|length }})</h2>
+        <h2>Needs review — unassigned ({{ unmatched_count }})</h2>
         <span class="ave-muted">no child recognised; assign manually or mark as whole-class photo</span>
     </div>
     <div class="ave-review-grid" id="grid-unmatched">
@@ -89,7 +100,7 @@
     </div>
 
     <div class="ave-section-head">
-        <h2>Low confidence ({{ low_conf|length }})</h2>
+        <h2>Low confidence ({{ low_count }})</h2>
         <span class="ave-muted">matched by face but under {{ low_threshold }} confidence — please confirm</span>
     </div>
     <div class="ave-review-grid" id="grid-low">
@@ -98,7 +109,7 @@
     </div>
 
     <details style="margin-top:32px">
-        <summary style="cursor:pointer"><strong>Assigned photos ({{ matched|length }})</strong> — expand to adjust</summary>
+        <summary style="cursor:pointer"><strong>Assigned photos ({{ assigned_count }})</strong> — expand to adjust this page</summary>
         <div class="ave-review-grid" style="margin-top:14px">
             {% for photo in matched %}{% include "admin/schools/schoolclass/_review_card.html" %}{% endfor %}
         </div>

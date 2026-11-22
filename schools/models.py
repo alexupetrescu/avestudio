@@ -15,7 +15,7 @@ import qrcode
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.files import File
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 
 from backend.image_variants import build_variants
@@ -94,9 +94,46 @@ class School(models.Model):
         return f"{self.name}{f' ({self.city})' if self.city else ''}"
 
 
+class PhotoSession(models.Model):
+    name = models.CharField(max_length=120, help_text='Christmas, March, Summer, etc.')
+    year = models.PositiveIntegerField(default=pricing.SEASON)
+    date = models.DateField(null=True, blank=True, help_text='Used to order sessions within a year.')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-year', '-date', '-created_at']
+
+    def __str__(self):
+        return f'{self.name} {self.year}'
+
+
+class ChildProfile(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    first_name = models.CharField(max_length=120)
+    last_name = models.CharField(max_length=120)
+    pin = models.CharField(max_length=4, default=generate_pin)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['last_name', 'first_name']
+        verbose_name = 'Child album'
+
+    @property
+    def full_name(self):
+        return f'{self.last_name} {self.first_name}'.strip()
+
+    @property
+    def album_url(self):
+        return _frontend_url(f'/copil/{self.pk}')
+
+    def __str__(self):
+        return f'{self.full_name} · {str(self.pk)[:8]}'
+
+
 class SchoolClass(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     school = models.ForeignKey(School, related_name='classes', on_delete=models.CASCADE)
+    session = models.ForeignKey(PhotoSession, related_name='classes', on_delete=models.PROTECT, null=True)
     name = models.CharField(max_length=120, help_text='e.g. "Grupa Mare", "Clasa a II-a B"')
     teacher_name = models.CharField(max_length=120, blank=True)
     teacher_phone = models.CharField(max_length=40, blank=True)
@@ -114,6 +151,10 @@ class SchoolClass(models.Model):
     @property
     def teacher_url(self) -> str:
         return _frontend_url(f"/scoala/{self.id}")
+
+    @property
+    def session_label(self):
+        return str(self.session) if self.session_id else f'Sesiune {self.school.season}'
 
     @property
     def prices(self) -> dict:
@@ -146,12 +187,16 @@ class SchoolClass(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.school.name} - {self.name}"
+        return f"{self.school.name} - {self.name} · {self.session_label}"
 
 
 class Child(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     school_class = models.ForeignKey(SchoolClass, related_name='children', on_delete=models.CASCADE)
+    profile = models.ForeignKey(
+        ChildProfile, related_name='enrollments', on_delete=models.PROTECT, null=True, blank=True,
+        help_text='Reuse the same child album for later sessions. Leave empty for a new child.',
+    )
     first_name = models.CharField('Prenume', max_length=120)
     last_name = models.CharField('Nume', max_length=120)
     match_key = models.CharField(max_length=255, editable=False, db_index=True, blank=True)
@@ -170,6 +215,7 @@ class Child(models.Model):
         verbose_name_plural = 'Children'
         constraints = [
             models.UniqueConstraint(fields=['school_class', 'match_key'], name='unique_child_per_class'),
+            models.UniqueConstraint(fields=['school_class', 'profile'], name='unique_child_profile_per_class'),
         ]
 
     @property
@@ -178,7 +224,7 @@ class Child(models.Model):
 
     @property
     def album_url(self) -> str:
-        return _frontend_url(f"/copil/{self.id}")
+        return _frontend_url(f"/copil/{self.profile_id or self.id}")
 
     def has(self, key: str) -> bool:
         return bool(getattr(self, f'package_{key}'))
@@ -208,9 +254,19 @@ class Child(models.Model):
         self.match_key = fold_name(f"{self.last_name} {self.first_name}")
         if self.package_a and self.package_b:
             raise ValidationError('Alegeți fie Pachetul Standard (A), fie Pachetul Extra (B), nu amândouă.')
-        if not self.qr_code:
-            self.generate_qr_code()
-        super().save(*args, **kwargs)
+        with transaction.atomic():
+            previous_profile = (
+                type(self).objects.filter(pk=self.pk).values_list('profile_id', flat=True).first()
+                if not self._state.adding else None
+            )
+            if not self.profile_id:
+                self.profile = ChildProfile.objects.create(
+                    id=self.pk, first_name=self.first_name, last_name=self.last_name, pin=self.pin,
+                )
+            self.pin = self.profile.pin
+            if not self.qr_code or (previous_profile and previous_profile != self.profile_id):
+                self.generate_qr_code()
+            super().save(*args, **kwargs)
 
     def __str__(self):
         return self.full_name
@@ -346,3 +402,23 @@ class FaceJob(models.Model):
 
     def __str__(self):
         return f"FaceJob {self.id} ({self.status}) - {self.school_class}"
+
+
+class ClassUpload(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    school_class = models.ForeignKey(SchoolClass, on_delete=models.CASCADE)
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    run_matching = models.BooleanField(default=True)
+    finished = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class UploadReceipt(models.Model):
+    upload = models.ForeignKey(ClassUpload, related_name='receipts', on_delete=models.CASCADE)
+    key = models.UUIDField()
+    kind = models.CharField(max_length=12)
+    filename = models.CharField(max_length=255)
+    size = models.PositiveBigIntegerField()
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['upload', 'key'], name='unique_class_upload_file')]

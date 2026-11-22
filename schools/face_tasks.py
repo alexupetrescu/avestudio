@@ -13,6 +13,7 @@ import threading
 
 import numpy as np
 from django.db import close_old_connections, connection, transaction
+from django.db.models import Q
 from django.utils import timezone
 from PIL import Image, ImageOps
 
@@ -40,7 +41,11 @@ def embed_references(school_class: SchoolClass, log=None) -> dict:
     references: dict = {}
     if not face_engine.available():
         return references
-    refs = FaceReference.objects.filter(child__school_class=school_class).select_related('child')
+    roster = list(school_class.children.only('id', 'profile_id'))
+    by_profile = {child.profile_id: child.id for child in roster if child.profile_id}
+    refs = FaceReference.objects.filter(
+        Q(child__school_class=school_class) | Q(child__profile_id__in=by_profile),
+    ).select_related('child')
     for ref in refs:
         if ref.embedding is None:
             try:
@@ -56,7 +61,8 @@ def embed_references(school_class: SchoolClass, log=None) -> dict:
                 continue
             ref.embedding = [float(v) for v in emb]
             ref.save(update_fields=['embedding'])
-        references.setdefault(ref.child_id, []).append(np.asarray(ref.embedding, dtype=np.float32))
+        target_id = by_profile.get(ref.child.profile_id, ref.child_id)
+        references.setdefault(target_id, []).append(np.asarray(ref.embedding, dtype=np.float32))
     return references
 
 

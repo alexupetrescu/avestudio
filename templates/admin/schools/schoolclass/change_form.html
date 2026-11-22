@@ -3,6 +3,8 @@
 
 {% block object-tools-items %}
 {% if original.pk %}
+{% if can_copy_roster %}<li><a href="{% url 'admin:schools_schoolclass_new_session' original.pk %}">{% translate 'New session / Copy roster' %}</a></li>{% endif %}
+{% if can_add_existing_child %}<li><a href="{% url 'admin:schools_schoolclass_existing_child' original.pk %}">{% translate 'Add existing child' %}</a></li>{% endif %}
 <li><a href="{% url 'admin:schools_schoolclass_upload' original.pk %}" class="addlink">{% translate 'Upload photos' %}</a></li>
 <li><a href="{% url 'admin:schools_schoolclass_faces' original.pk %}">{% translate 'Face review' %}</a></li>
 <li><a href="{% url 'admin:schools_schoolclass_print_cards' original.pk %}" target="_blank" rel="noopener">{% translate 'Print QR cards' %}</a></li>

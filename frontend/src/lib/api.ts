@@ -137,6 +137,7 @@ export interface ChildOrder {
 }
 
 export interface SchoolClassOrder {
+    session_label: string;
     id: string;
     name: string;
     teacher_name: string;
@@ -229,6 +230,16 @@ export interface ChildAlbum {
     package_e: boolean;
     packages: string;
     photos: ChildPhoto[];
+    selected_session_id: string;
+    session_label: string;
+    sessions: Array<{
+        id: string;
+        label: string;
+        year: number;
+        class_name: string;
+        school_name: string;
+        photo_count: number;
+    }>;
 }
 
 export async function verifyChildPin(childId: string, pin: string): Promise<boolean> {
@@ -240,17 +251,19 @@ export async function verifyChildPin(childId: string, pin: string): Promise<bool
     return res.ok;
 }
 
-export async function fetchChildAlbum(childId: string, pin: string): Promise<ChildAlbum> {
-    const res = await fetch(`${API_URL}/schools/child/${childId}/?pin=${encodeURIComponent(pin)}`, { cache: 'no-store' });
+export async function fetchChildAlbum(childId: string, pin: string, sessionId?: string): Promise<ChildAlbum> {
+    const query = new URLSearchParams({ pin });
+    if (sessionId) query.set('session_id', sessionId);
+    const res = await fetch(`${API_URL}/schools/child/${childId}/?${query}`, { cache: 'no-store' });
     if (!res.ok) await parseError(res, 'Nu am putut încărca albumul');
     return res.json();
 }
 
-export async function downloadChildAlbum(childId: string, pin: string, fallbackName: string) {
+export async function downloadChildAlbum(childId: string, pin: string, fallbackName: string, sessionId?: string) {
     const res = await fetch(`${API_URL}/schools/child/download/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ child_id: childId, pin }),
+        body: JSON.stringify({ child_id: childId, pin, session_id: sessionId }),
     });
     if (!res.ok) await parseError(res, 'Eroare la descărcarea albumului');
 

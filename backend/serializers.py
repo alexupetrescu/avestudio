@@ -111,12 +111,13 @@ class SchoolClassOrderSerializer(serializers.ModelSerializer):
     prices = serializers.SerializerMethodField()
     period = serializers.SerializerMethodField()
     shoot_display = serializers.CharField(read_only=True)
+    session_label = serializers.CharField(read_only=True)
     children = ChildOrderSerializer(many=True, read_only=True)
 
     class Meta:
         model = SchoolClass
         fields = ['id', 'name', 'teacher_name', 'school_name', 'is_returning', 'prices', 'period',
-                  'shoot_date', 'shoot_time', 'shoot_display', 'children']
+                  'shoot_date', 'shoot_time', 'shoot_display', 'session_label', 'children']
 
     def get_prices(self, obj):
         return school_pricing.prices_for(obj.school.is_returning_customer)
@@ -132,7 +133,10 @@ class ClassPhotoSerializer(serializers.ModelSerializer):
 
 
 class ChildAlbumSerializer(serializers.ModelSerializer):
-    photos = ClassPhotoSerializer(many=True, read_only=True)
+    photos = serializers.SerializerMethodField()
+    sessions = serializers.SerializerMethodField()
+    selected_session_id = serializers.UUIDField(source='id', read_only=True)
+    session_label = serializers.CharField(source='school_class.session_label', read_only=True)
     class_name = serializers.CharField(source='school_class.name', read_only=True)
     school_name = serializers.CharField(source='school_class.school.name', read_only=True)
     packages = serializers.CharField(read_only=True)
@@ -141,4 +145,21 @@ class ChildAlbumSerializer(serializers.ModelSerializer):
     class Meta:
         model = Child
         fields = ['id', 'first_name', 'last_name', 'full_name', 'class_name', 'school_name',
-                  'package_a', 'package_b', 'package_c', 'package_d', 'package_e', 'packages', 'photos']
+                  'package_a', 'package_b', 'package_c', 'package_d', 'package_e', 'packages', 'photos',
+                  'sessions', 'selected_session_id', 'session_label']
+
+    def get_photos(self, obj):
+        return ClassPhotoSerializer(
+            obj.photos.filter(school_class_id=obj.school_class_id), many=True, context=self.context,
+        ).data
+
+    def get_sessions(self, obj):
+        from schools.sessions import album_enrollments
+        return [{
+            'id': str(row.pk),
+            'label': row.school_class.session_label,
+            'year': row.school_class.session.year if row.school_class.session_id else row.school_class.school.season,
+            'class_name': row.school_class.name,
+            'school_name': row.school_class.school.name,
+            'photo_count': row.photo_count,
+        } for row in album_enrollments(obj)]
