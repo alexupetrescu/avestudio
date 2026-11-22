@@ -4,6 +4,7 @@ import argparse
 import datetime as dt
 import fcntl
 import hashlib
+import http.client
 import json
 import os
 from pathlib import Path
@@ -277,7 +278,8 @@ def deploy(args):
                 print(plan.decode()[:20000])
         if args.plan:
             print(json.dumps({"status": "release-plan-ready", "project": project, "commit": release["commit"],
-                              "services": services, "schema_migrations_pending": pending, "production_changed": False}, indent=2))
+                              "services": services, "restart_services": ["backend", "frontend"] if pending else services,
+                              "schema_migrations_pending": pending, "production_changed": False}, indent=2))
             return
         if pending and not args.migrate:
             raise RuntimeError("Review the migration plan, then explicitly use --migrate for a schema release")
@@ -295,6 +297,7 @@ def deploy(args):
                 run(["tar", "--create", "--gzip", "--file", str(folder / "static-before.tar.gz"), "--directory", str(static), "."])
         worker = worker_running(project)
         journal = {"status": "applying", "project": project, "commit": release["commit"], "services": services,
+                   "restart_services": ["backend", "frontend"] if pending else services,
                    "worker_was_running": worker, "migration_started": False, "run_id": runid}
         def save():
             atomic(folder / "status.json", json.dumps(journal, indent=2) + "\n")
@@ -313,7 +316,8 @@ def deploy(args):
                 atomic(active, desired.read_bytes())
             if "backend" in services:
                 run([*check, "collectstatic", "--noinput"], timeout=300)
-            start(project, services, False)
+            # Schema maintenance stops both web services, even for backend-only image updates.
+            start(project, journal["restart_services"], False)
             maintenance(project, False)
             verify_web(project)
             if worker and "backend" in services:
@@ -336,6 +340,70 @@ def deploy(args):
                 journal["status"] = "schema-release-needs-repair"; save()
                 print("Schema release stopped. Keep this project in maintenance; inspect " + str(LOG), file=sys.stderr)
             raise
+
+
+def verify_local_avestudio():
+    for port, path in ((8000, "/api/health/"), (3000, "/")):
+        connection = http.client.HTTPConnection("127.0.0.1", port, timeout=15)
+        try:
+            connection.request("GET", path, headers={"Host": "avestudio.ro", "X-Forwarded-Proto": "https"})
+            status = connection.getresponse().status
+            if status != 200:
+                raise RuntimeError(f"Local service on port {port} returned HTTP {status}; maintenance retained")
+            print(f"Local service {port}{path}: HTTP 200", flush=True)
+        finally:
+            connection.close()
+
+
+def recover(project, run_id):
+    """Finish this specific schema release without rerunning or restoring its database."""
+    global LOG
+    if project != "avestudio" or not re.fullmatch(r"[0-9]{8}T[0-9]{6}Z-[0-9a-f]{8}", run_id):
+        raise ValueError("Select a known AveStudio schema release run")
+    root = STATE / project
+    folder = root / run_id
+    with (STATE / "lock").open("a") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        journal = json.loads((folder / "status.json").read_text())
+        if journal.get("status") != "schema-release-needs-repair" or not journal.get("migration_started"):
+            raise RuntimeError("This run is not a stopped schema release; no changes made")
+        active = APP_ROOT / project / "staging.compose.yml"
+        if active.read_bytes() != (folder / "candidate.compose.json").read_bytes():
+            raise RuntimeError("Active configuration changed since this run; no changes made")
+        release = manifest(folder / "release.json", project)
+        if release["commit"] != journal.get("commit") or journal.get("project") != project:
+            raise RuntimeError("Release journal and manifest differ; no changes made")
+        value = json.loads(active.read_text())
+        if value["services"]["backend"]["image"] != release["images"]["backend"]:
+            raise RuntimeError("Active backend is not the failed release candidate")
+        runtime_matches(value, release)
+        image_checks(release["images"]["backend"], release)
+        LOG = folder / "recovery.log"
+        atomic(LOG, "Recover " + project + " " + run_id + "\n")
+        command = compose(project, "exec", "-T", "backend", "python", "manage.py", "migrate", "--check")
+        result = run(command, check=False)
+        if result.returncode:
+            with LOG.open("ab") as output:
+                output.write((result.stdout or b"") + (result.stderr or b""))
+            raise RuntimeError("Schema migrations are not all applied; maintenance retained; inspect recovery log")
+        print("All schema migrations are applied; starting both existing web services.", flush=True)
+        start(project, ["backend", "frontend"], False)
+        verify_local_avestudio()
+        try:
+            maintenance(project, False)
+            verify_web(project)
+        except BaseException:
+            maintenance(project, True)
+            raise
+        journal.update(
+            status="deployed", restart_services=["backend", "frontend"],
+            active_compose_sha256=hashlib.sha256(active.read_bytes()).hexdigest(),
+            completed_at_utc=dt.datetime.now(dt.timezone.utc).isoformat(),
+            recovery="restarted-web-services-after-schema-release",
+        )
+        atomic(folder / "status.json", json.dumps(journal, indent=2) + "\n")
+        atomic(root / "current.json", json.dumps(journal, indent=2) + "\n")
+        print("RECOVERED " + project + " " + release["commit"] + "; database and photos retained")
 
 
 def rollback(project):
@@ -381,6 +449,7 @@ def main():
     parser.add_argument("--plan", action="store_true")
     parser.add_argument("--migrate", action="store_true")
     parser.add_argument("--rollback", action="store_true")
+    parser.add_argument("--recover", help="Finish a stopped AveStudio schema release by its run ID")
     parser.add_argument("--service", choices=["all", "frontend", "backend"], default="all")
     args = parser.parse_args()
     guard()
@@ -391,6 +460,8 @@ def main():
     os.umask(0o077)
     if args.install:
         install()
+    elif args.project and args.recover:
+        recover(args.project, args.recover)
     elif args.project and args.rollback:
         rollback(args.project)
     elif args.project and args.release:

@@ -86,10 +86,11 @@ def release(cfg, commit):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("action", choices=["setup", "plan", "deploy", "rollback"])
+    parser.add_argument("action", choices=["setup", "plan", "deploy", "rollback", "recover"])
     parser.add_argument("--commit", help="Full release commit; defaults to this checkout's HEAD")
     parser.add_argument("--service", choices=["all", "frontend", "backend"], default="all")
     parser.add_argument("--migrate", action="store_true", help="Explicitly permit reviewed database migrations under maintenance")
+    parser.add_argument("--run", help="Run ID of the stopped schema release to recover")
     args = parser.parse_args()
     cfg = json.loads((OPS / "project.json").read_text())
     if args.action == "setup":
@@ -98,6 +99,10 @@ def main():
         subprocess.run([*SSH[:1], "-tt", *SSH[1:], command], check=True)
     elif args.action == "rollback":
         operator("--project", cfg["project"], "--rollback")
+    elif args.action == "recover":
+        if not args.run or not re.fullmatch(r"[0-9]{8}T[0-9]{6}Z-[0-9a-f]{8}", args.run):
+            raise ValueError("Use --run with the stopped schema release ID from its log path")
+        operator("--project", cfg["project"], "--recover", args.run)
     else:
         if args.commit:
             commit = args.commit

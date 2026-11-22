@@ -165,6 +165,94 @@ class ReleaseTests(unittest.TestCase):
         self.assertEqual(maintenance.call_args.args, ("avestudio", True))
         start.assert_not_called()
 
+    def test_backend_only_schema_release_restarts_frontend_without_changing_its_image(self):
+        def run(args, *, output=None, **kwargs):
+            body = b""
+            if "config" in args and "--format" in args:
+                body = json.dumps(self.original).encode()
+            elif "migrate" in args and "--check" in args:
+                return subprocess.CompletedProcess(args, 1, b"", b"")
+            elif "pg_dump" in args:
+                output.write(b"PGDMP synthetic")
+            return subprocess.CompletedProcess(args, 0, body, b"")
+        args = SimpleNamespace(project="avestudio", release=str(self.path), service="backend", plan=False, migrate=True)
+        with patch.object(deployment, "run", side_effect=run), patch.object(deployment, "image_checks"), \
+                patch.object(deployment, "runtime_matches"), patch.object(deployment, "fresh_backup"), \
+                patch.object(deployment, "photo_jobs_idle"), patch.object(deployment, "worker_running", return_value=False), \
+                patch.object(deployment, "maintenance"), patch.object(deployment, "start") as start, \
+                patch.object(deployment.shutil, "disk_usage", return_value=SimpleNamespace(free=20 * 1024**3)), \
+                patch.object(deployment, "verify_web"):
+            deployment.deploy(args)
+        start.assert_called_once_with("avestudio", ["backend", "frontend"], False)
+        self.assertEqual(json.loads(self.active.read_text())["services"]["frontend"]["image"], "old-frontend")
+        current = json.loads((self.state / "avestudio/current.json").read_text())
+        self.assertEqual(current["services"], ["backend"])
+        self.assertEqual(current["restart_services"], ["backend", "frontend"])
+        self.assertTrue(current["migration_started"])
+
+    def stopped_schema_release(self):
+        run_id = "20261122T230058Z-a3719bd4"
+        folder = self.state / "avestudio" / run_id
+        folder.mkdir(parents=True)
+        candidate = copy.deepcopy(self.original)
+        candidate["services"]["backend"]["image"] = self.release["images"]["backend"]
+        self.active.write_text(json.dumps(candidate))
+        (folder / "candidate.compose.json").write_bytes(self.active.read_bytes())
+        (folder / "release.json").write_text(json.dumps(self.release))
+        (folder / "status.json").write_text(json.dumps({
+            "project": "avestudio", "commit": self.release["commit"], "services": ["backend"],
+            "status": "schema-release-needs-repair", "migration_started": True, "run_id": run_id,
+        }))
+        return run_id, folder
+
+    def test_recovery_checks_migrations_starts_services_and_records_success(self):
+        run_id, folder = self.stopped_schema_release()
+        before = self.active.read_bytes()
+        with patch.object(deployment, "runtime_matches"), patch.object(deployment, "image_checks"), \
+                patch.object(deployment, "run", return_value=subprocess.CompletedProcess([], 0, b"", b"")) as run, \
+                patch.object(deployment, "start") as start, patch.object(deployment, "verify_local_avestudio"), \
+                patch.object(deployment, "maintenance") as maintenance, patch.object(deployment, "verify_web"):
+            deployment.recover("avestudio", run_id)
+        start.assert_called_once_with("avestudio", ["backend", "frontend"], False)
+        self.assertEqual(maintenance.call_args.args, ("avestudio", False))
+        self.assertIn("--check", run.call_args.args[0])
+        self.assertNotIn("--noinput", run.call_args.args[0])
+        self.assertEqual(self.active.read_bytes(), before)
+        self.assertEqual(json.loads((folder / "status.json").read_text())["status"], "deployed")
+        self.assertEqual(json.loads((self.state / "avestudio/current.json").read_text())["commit"], self.release["commit"])
+
+    def test_recovery_refuses_pending_migrations_without_starting_services(self):
+        run_id, folder = self.stopped_schema_release()
+        with patch.object(deployment, "runtime_matches"), patch.object(deployment, "image_checks"), \
+                patch.object(deployment, "run", return_value=subprocess.CompletedProcess([], 1, b"pending", b"")), \
+                patch.object(deployment, "start") as start, patch.object(deployment, "maintenance") as maintenance:
+            with self.assertRaisesRegex(RuntimeError, "not all applied"):
+                deployment.recover("avestudio", run_id)
+        start.assert_not_called()
+        maintenance.assert_not_called()
+        self.assertEqual(json.loads((folder / "status.json").read_text())["status"], "schema-release-needs-repair")
+
+    def test_recovery_reenables_maintenance_when_https_check_fails(self):
+        run_id, folder = self.stopped_schema_release()
+        with patch.object(deployment, "runtime_matches"), patch.object(deployment, "image_checks"), \
+                patch.object(deployment, "run", return_value=subprocess.CompletedProcess([], 0, b"", b"")), \
+                patch.object(deployment, "start"), patch.object(deployment, "verify_local_avestudio"), \
+                patch.object(deployment, "maintenance") as maintenance, \
+                patch.object(deployment, "verify_web", side_effect=RuntimeError("HTTPS failed")):
+            with self.assertRaisesRegex(RuntimeError, "HTTPS failed"):
+                deployment.recover("avestudio", run_id)
+        self.assertEqual(maintenance.call_args.args, ("avestudio", True))
+        self.assertEqual(json.loads((folder / "status.json").read_text())["status"], "schema-release-needs-repair")
+        self.assertFalse((self.state / "avestudio/current.json").exists())
+
+    def test_recovery_refuses_changed_active_configuration(self):
+        run_id, _ = self.stopped_schema_release()
+        self.active.write_text(self.active.read_text() + "\n")
+        with patch.object(deployment, "start") as start:
+            with self.assertRaisesRegex(RuntimeError, "configuration changed"):
+                deployment.recover("avestudio", run_id)
+        start.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()

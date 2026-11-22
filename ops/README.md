@@ -168,7 +168,9 @@ python .\ops\deploy.py deploy --commit $releaseCommit --migrate
 a successful off-host production backup from the last 26 hours, takes an
 additional immediate database dump, puts that site's hostnames in maintenance,
 stops its writers, migrates with the new image and starts/health-checks the new
-runtime. Aveletter's one email worker is updated with its backend. Other sites
+runtime. Both web services restart after migrations, including a backend-only
+release; only the selected services receive new image references.
+Aveletter's one email worker is updated with its backend. Other sites
 remain running. Active AveStudio photo jobs block a backend replacement until
 they finish.
 
@@ -238,6 +240,24 @@ Once a schema migration begins, the helper deliberately leaves a failed release
 in maintenance for repair; it does not restore an older database or assume the
 old image supports the changed schema. The displayed root-only log identifies
 the release. Preserve the database, media and mail, and inspect the failure.
+
+If an AveStudio schema release applied its migrations but left the frontend
+stopped, install the current helper and recover that specific run. Use the run
+directory name from the failed release's log path:
+
+```powershell
+python .\ops\deploy.py setup
+if ($LASTEXITCODE -ne 0) { throw 'Helper installation failed.' }
+python .\ops\deploy.py recover --run 20261122T230058Z-a3719bd4
+if ($LASTEXITCODE -ne 0) { throw 'Recovery stopped; keep maintenance enabled.' }
+```
+
+Recovery requires the saved candidate configuration to still be active, checks
+its backend image and production adapter, and verifies that all migrations are
+already applied. It starts both existing web services and checks local HTTP and
+production HTTPS before recording success. It retains the database, media and
+image references. If a check fails, maintenance stays enabled. This command does
+not rerun migrations or replace a failed migration repair.
 
 Do not run migration-era staging installers for an ordinary release. Do not
 use `docker compose down -v`, broad image pruning, or source snapshot restoration
