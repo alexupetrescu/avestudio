@@ -291,7 +291,8 @@ storage. No bulk migration is performed.
    ~~~
 
    This repeats the access check and prompts for the VPS sudo password. It uses
-   the deployment lock, verifies the active backend environment file, preserves
+   the deployment lock, selects the active backend environment file from the known
+   production or legacy staging credential locations, preserves
    unrelated settings, and keeps a root-only backup before atomically writing
    the R2 variables. Keys travel through SSH stdin and are not saved on the PC.
    No containers are restarted. A running deployment prevents this change.

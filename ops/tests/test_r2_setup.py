@@ -46,12 +46,23 @@ class R2SetupTests(unittest.TestCase):
 
     @unittest.skipIf(os.name == 'nt', 'Linux configuration lock and file modes')
     def test_apply_preserves_other_settings_and_makes_a_private_backup(self):
+        self.check_environment_layout('avestudio-staging')
+
+    @unittest.skipIf(os.name == 'nt', 'Linux configuration lock and file modes')
+    def test_apply_uses_production_credentials_after_cutover(self):
+        self.check_environment_layout('avestudio-production')
+
+    def check_environment_layout(self, layout):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / 'backend.env'
             original = 'DATABASE_PASSWORD=keep-this\nSCHOOLS_R2_BUCKET=old-bucket\n'
             path.write_text(original)
+            unused = Path(directory) / 'unused.env'
+            unused.write_text('UNUSED=keep\n')
             source = REMOTE.replace('/var/lib/avestudio-deploy/lock', str(Path(directory) / 'lock'))
-            source = source.replace('/etc/avestudio-infra/avestudio-staging/backend.env', str(path))
+            source = source.replace('/etc/avestudio-infra/' + layout + '/backend.env', str(path))
+            other = 'avestudio-production' if layout == 'avestudio-staging' else 'avestudio-staging'
+            source = source.replace('/etc/avestudio-infra/' + other + '/backend.env', str(unused))
             data = {
                 'SCHOOLS_R2_ENABLED': 'true', 'SCHOOLS_R2_ENDPOINT': 'https://' + 'a' * 32 + '.eu.r2.cloudflarestorage.com',
                 'SCHOOLS_R2_BUCKET': 'avestudio-schools', 'SCHOOLS_R2_ACCESS_KEY_ID': 'access',
@@ -75,7 +86,31 @@ class R2SetupTests(unittest.TestCase):
             self.assertEqual(backup[0].read_text(), original)
             self.assertEqual(backup[0].stat().st_mode & 0o777, 0o600)
             self.assertEqual(path.stat().st_mode & 0o777, 0o600)
+            self.assertEqual(unused.read_text(), 'UNUSED=keep\n')
+            self.assertIn(str(path), output.getvalue())
             self.assertNotIn('secret', output.getvalue())
+
+    @unittest.skipIf(os.name == 'nt', 'Linux environment-file guard')
+    def test_unknown_or_ambiguous_env_file_does_not_write_credentials(self):
+        configurations = [
+            ['/tmp/unexpected.env'],
+            ['/etc/avestudio-infra/avestudio-production/backend.env',
+             '/etc/avestudio-infra/avestudio-staging/backend.env'],
+        ]
+        for files in configurations:
+            with self.subTest(files=files), tempfile.TemporaryDirectory() as directory:
+                source = REMOTE.replace('/var/lib/avestudio-deploy/lock', str(Path(directory) / 'lock'))
+                data = {
+                    'SCHOOLS_R2_ENABLED': 'true', 'SCHOOLS_R2_ENDPOINT': 'https://' + 'a' * 32 + '.r2.cloudflarestorage.com',
+                    'SCHOOLS_R2_BUCKET': 'avestudio-schools', 'SCHOOLS_R2_ACCESS_KEY_ID': 'access',
+                    'SCHOOLS_R2_SECRET_ACCESS_KEY': 'secret',
+                }
+                with patch('os.geteuid', return_value=0), patch('socket.gethostname', return_value='avestudio-ro'), \
+                     patch('sys.stdin', StringIO(json.dumps(data))), \
+                     patch('subprocess.check_output', return_value=json.dumps({'services': {'backend': {'env_file': files}}}).encode()):
+                    with self.assertRaisesRegex(RuntimeError, 'exactly one known'):
+                        exec(compile(source, '<r2-config-test>', 'exec'), {})
+                self.assertEqual([path.name for path in Path(directory).iterdir()], ['lock'])
 
     @unittest.skipIf(os.name == 'nt', 'Linux deployment lock')
     def test_active_deployment_blocks_configuration_without_writing_files(self):

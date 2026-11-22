@@ -34,9 +34,6 @@ with open('/var/lib/avestudio-deploy/lock', 'a') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except BlockingIOError:
         raise RuntimeError('A deployment is running. Finish it before saving R2 configuration.')
-    path = pathlib.Path('/etc/avestudio-infra/avestudio-staging/backend.env')
-    if path.is_symlink() or not path.is_file() or path.stat().st_uid != 0:
-        raise RuntimeError('Unexpected backend environment file; nothing changed')
     compose = ['docker', 'compose', '--project-name', 'avestudio-staging',
                '--project-directory', '/srv/avestudio', '--env-file',
                '/etc/avestudio-infra/avestudio-staging/release.env',
@@ -44,8 +41,19 @@ with open('/var/lib/avestudio-deploy/lock', 'a') as lock:
                '--no-env-resolution', '--format', 'json']
     config = json.loads(subprocess.check_output(compose))
     files = config['services']['backend'].get('env_file', [])
-    if str(path) not in [row.get('path') if isinstance(row, dict) else row for row in files]:
-        raise RuntimeError('Active backend env_file differs; nothing changed')
+    if isinstance(files, str):
+        files = [files]
+    allowed = {
+        '/etc/avestudio-infra/avestudio-production/backend.env',
+        '/etc/avestudio-infra/avestudio-staging/backend.env',
+    }
+    declared = [row.get('path') if isinstance(row, dict) else row for row in files]
+    candidates = set(value for value in declared if isinstance(value, str) and value in allowed)
+    if len(candidates) != 1:
+        raise RuntimeError('Expected exactly one known backend credential file in active env_file; nothing changed')
+    path = pathlib.Path(candidates.pop())
+    if path.is_symlink() or not path.is_file() or path.stat().st_uid != 0:
+        raise RuntimeError('Unexpected backend environment file; nothing changed')
     original = path.read_bytes()
     backup = path.with_name(path.name + '.before-r2-' + time.strftime('%Y%m%dT%H%M%SZ', time.gmtime()) + '-' + secrets.token_hex(4))
     def create_private(target, body):
@@ -60,7 +68,7 @@ with open('/var/lib/avestudio-deploy/lock', 'a') as lock:
     temporary = path.with_name(path.name + '.r2-' + secrets.token_hex(8))
     create_private(temporary, ('\n'.join(rows) + '\n').encode())
     os.replace(temporary, path)
-    print('R2 configuration saved privately for the next backend deployment. No containers restarted.')
+    print('R2 configuration saved privately in ' + str(path) + ' for the next backend deployment. No containers restarted.')
 '''
 
 
@@ -73,9 +81,11 @@ def probe(endpoint, bucket, key, secret):
     return bucket_usage(client, bucket)
 
 
-def read_required_secret(label):
+def read_required_secret(label, *, strip=True):
     while True:
-        value = getpass.getpass(label + ' (hidden; paste then press Enter): ').strip()
+        value = getpass.getpass(label + ' (hidden; paste then press Enter): ')
+        if strip:
+            value = value.strip()
         if not value:
             print(label + ' was empty. Paste the value even though no characters appear, then press Enter.')
             continue
@@ -105,7 +115,7 @@ def main():
     if not args.apply:
         print(f'Check only. Use --apply --jurisdiction {args.jurisdiction} after the current deployment finishes to save configuration for the next backend release.')
         return 0
-    password = getpass.getpass('VPS sudo password (not saved): ')
+    password = read_required_secret('VPS sudo password for alejandro', strip=False)
     if '\n' in password or '\r' in password:
         raise ValueError('Sudo password cannot contain a newline.')
     data = {
