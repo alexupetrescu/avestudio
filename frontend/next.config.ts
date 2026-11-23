@@ -13,9 +13,16 @@ const getApiDomain = () => {
 
 const nextConfig: NextConfig = {
   async rewrites() {
-    const target = process.env.DJANGO_API_PROXY_TARGET;
-    return target ? [{ source: '/media/:path*', destination: `${target}/media/:path*` }] : [];
+    const target = process.env.DJANGO_API_PROXY_TARGET || 'http://localhost:8000';
+    return [
+      // Preserve trailing slashes: Django's POST endpoints must not redirect uploads.
+      { source: '/api/assistant/:path*', destination: `${target}/api/assistant/:path*/` },
+      ...(process.env.DJANGO_API_PROXY_TARGET
+        ? [{ source: '/media/:path*', destination: `${target}/media/:path*` }] : []),
+    ];
   },
+  // Django owns the API's trailing-slash convention; avoid Next's opposite redirect.
+  skipTrailingSlashRedirect: true,
   images: {
     remotePatterns: [
       {

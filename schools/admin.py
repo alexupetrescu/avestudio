@@ -22,10 +22,28 @@ from .sessions import album_enrollments, copy_roster
 from .uploads import ClassUploadAdminMixin
 from .pdf import class_list_filename, render_class_list_pdf
 from .models import (
-    Child, ChildProfile, ClassPhoto, FaceJob, FaceReference, PhotoMatch, PhotoSession, School, SchoolClass, fold_name,
+    Child, ChildProfile, ClassAssistant, ClassPhoto, FaceJob, FaceReference, PhotoMatch, PhotoSession, School, SchoolClass, fold_name,
 )
 
 LOW_CONFIDENCE = 0.35
+
+
+@admin.register(ClassAssistant)
+class ClassAssistantAdmin(admin.ModelAdmin):
+    list_display = ('user', 'school_class')
+    list_select_related = ('user', 'school_class__school', 'school_class__session')
+    search_fields = ('user__username', 'school_class__name', 'school_class__school__name')
+    autocomplete_fields = ('user', 'school_class')
+
+    def has_module_permission(self, request):
+        return request.user.is_superuser
+
+    def has_view_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    has_add_permission = has_view_permission
+    has_change_permission = has_view_permission
+    has_delete_permission = has_view_permission
 
 
 def _is_image(uploaded_file):

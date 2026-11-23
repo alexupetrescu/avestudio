@@ -1,9 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import CookieConsent from "@/components/CookieConsent";
-import GoogleAnalytics from "@/components/GoogleAnalytics";
+import SiteChrome from "@/components/SiteChrome";
 import { SITE_URL, DEFAULT_IMAGE } from "@/lib/seo";
 import { generateOrganization } from "@/lib/structured-data";
 
@@ -117,13 +114,7 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased bg-[var(--background)] text-[var(--foreground)] min-h-screen flex flex-col">
-        <GoogleAnalytics />
-        <Navbar />
-        <main className="flex-grow">
-          {children}
-        </main>
-        <Footer />
-        <CookieConsent />
+        <SiteChrome>{children}</SiteChrome>
       </body>
     </html>
   );

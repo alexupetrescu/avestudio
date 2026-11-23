@@ -1,5 +1,8 @@
 # Ghid: Oferta Școli & Grădinițe 2026
 
+Pentru accesul asistenților pe telefon, vezi [Assistant CRM](CRM_SETUP.md).
+Interfața Next.js este la `/crm/`; accesul se acordă separat pentru fiecare clasă existentă.
+
 Ce trebuie instalat și ce faci, pas cu pas, de la pregătirea serverului până la livrarea albumelor.
 Aplicația veche `clients` (albumele de anul trecut) rămâne neatinsă și funcționează în continuare.
 

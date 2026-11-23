@@ -423,3 +423,33 @@ class UploadReceipt(models.Model):
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=['upload', 'key'], name='unique_class_upload_file')]
+
+
+class ClassAssistant(models.Model):
+    """An explicit grant to manage children and photos in one existing class."""
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='class_assignments')
+    school_class = models.ForeignKey(SchoolClass, on_delete=models.CASCADE, related_name='assistant_assignments')
+
+    class Meta:
+        verbose_name = 'CRM class access'
+        verbose_name_plural = 'CRM class access'
+        constraints = [models.UniqueConstraint(fields=['user', 'school_class'], name='unique_class_assistant')]
+
+    def __str__(self):
+        return f'{self.user} · {self.school_class}'
+
+
+class AssistantUploadReceipt(models.Model):
+    """A durable receipt prevents duplicate mobile uploads after a lost response."""
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    child = models.ForeignKey(Child, on_delete=models.CASCADE)
+    key = models.UUIDField()
+    kind = models.CharField(max_length=12, choices=[('photo', 'Album photo'), ('reference', 'Reference portrait')])
+    filename = models.CharField(max_length=255)
+    size = models.PositiveBigIntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['user', 'key'], name='unique_assistant_upload')]

@@ -166,6 +166,12 @@ CORS_EXPOSE_HEADERS = ['Content-Disposition']
 # Frontend URL for generating client album links
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000')
 
+# The CRM uses same-origin session cookies via the Next.js API rewrite in development.
+# Production settings supply their own fixed HTTPS origin list.
+CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in os.getenv(
+    'CSRF_TRUSTED_ORIGINS', FRONTEND_URL,
+).split(',') if origin.strip()]
+
 # File upload settings
 # Allow up to 500 files in a single request
 DATA_UPLOAD_MAX_NUMBER_FILES = 500
