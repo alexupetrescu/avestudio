@@ -65,8 +65,16 @@ their sign-in and session access. Reset passwords through Django's user admin or
 ## Assistant workflow
 
 - Search assigned classes by class, school, city or session, then open a class.
-- Add a child's surname, given name and optional notes. Existing order choices,
-  prices, parent links and PINs remain outside the assistant's editing scope.
+- Add a child's surname, given name, packages and optional notes. New children
+  start with A selected; choosing B clears A. C/D/E are optional extras on top
+  of A or B. The roster shows the school's prices, each child's total, package
+  counts and the class total. Package changes save to the same order records
+  used by the teacher page, with the same validation.
+- Sort the roster by surname A–Z/Z–A or by time added (newest/oldest first).
+  The selected sort order is remembered in this browser.
+- Use **Adaugă foto** beside a child to open camera/upload controls directly in
+  the roster. Choose a reference portrait or album photos; saving refreshes the
+  child's thumbnail and photo count without leaving the list.
 - Open the child to edit their name and notes, add a reference portrait from a
   file or phone camera, or upload multiple album photos.
 - A **reference portrait** is for the existing face-matching workflow. It is

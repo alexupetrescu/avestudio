@@ -130,7 +130,7 @@ class AssistantCrmTests(TestCase):
         self.client.force_login(self.admin)
         self.assertEqual(len(self.client.get(self.url('classes')).json()['classes']), 2)
 
-    def test_create_and_edit_child_cannot_change_class_pin_or_packages(self):
+    def test_create_and_edit_child_can_set_orders_but_not_class_or_pin(self):
         self.client.force_login(self.assistant)
         response = self.json_post('add-child', {
             'first_name': ' Ioana ', 'last_name': ' Test ', 'notes': 'Observație',
@@ -140,7 +140,10 @@ class AssistantCrmTests(TestCase):
         saved = Child.objects.get(pk=response.json()['child']['id'])
         self.assertEqual(saved.first_name, 'Ioana')
         self.assertEqual(saved.school_class_id, self.group.pk)
-        self.assertFalse(saved.package_a)
+        self.assertTrue(saved.package_a)
+        self.assertNotEqual(saved.pin, '0000')
+        self.assertEqual(response.json()['child']['total_lei'], self.school.price_a)
+        added_at = response.json()['child']['created_at']
         self.assertTrue(saved.profile_id)
         response = self.client.patch(self.url('child', child=saved), {
             'first_name': 'Ioana Maria', 'last_name': 'Test', 'notes': 'Nou', 'package_a': True,
@@ -148,14 +151,61 @@ class AssistantCrmTests(TestCase):
         self.assertEqual(response.status_code, 200)
         saved.refresh_from_db()
         self.assertEqual(saved.first_name, 'Ioana Maria')
-        self.assertFalse(saved.package_a)
+        self.assertTrue(saved.package_a)
+        self.assertEqual(response.json()['child']['created_at'], added_at)
 
     def test_names_validation_duplicate_and_malformed_json(self):
         self.client.force_login(self.assistant)
         for invalid in [[], {'first_name': [], 'last_name': 'Name'}, {'first_name': '  ', 'last_name': 'Name'}, {'first_name': 'A' * 121, 'last_name': 'Name'}]:
             self.assertEqual(self.json_post('add-child', invalid).status_code, 400)
-        self.assertEqual(self.json_post('add-child', {'first_name': 'Ana', 'last_name': 'Popescu'}).status_code, 409)
+        self.assertEqual(self.json_post('add-child', {'first_name': 'Ana', 'last_name': 'Popescu'}).status_code, 400)
         self.assertEqual(self.client.post(self.url('add-child'), '{bad', content_type='application/json').status_code, 400)
+
+    def test_crm_orders_use_teacher_validation_and_are_visible_on_teacher_list(self):
+        self.client.force_login(self.assistant)
+        response = self.client.patch(self.url('child'), {'package_a': True, 'package_d': True}, content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['child']['total_lei'], self.school.prices['a'] + self.school.prices['d'])
+        response = self.client.patch(self.url('child'), {'package_a': False, 'package_b': True}, content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['child']['total_lei'], self.school.prices['b'] + self.school.prices['d'])
+        teacher = self.client.get(reverse('schools-class-detail', args=[self.group.pk]), {'pin': self.group.pin}).json()
+        saved = next(child for child in teacher['children'] if child['id'] == str(self.child.pk))
+        self.assertFalse(saved['package_a'])
+        self.assertTrue(saved['package_b'])
+        self.assertTrue(saved['package_d'])
+        self.assertEqual(saved['total_lei'], response.json()['child']['total_lei'])
+
+    def test_crm_rejects_two_base_packages_and_addons_without_base(self):
+        self.client.force_login(self.assistant)
+        for packages in ({'package_a': True, 'package_b': True}, {'package_c': True}, {'package_d': True}, {'package_e': True}):
+            with self.subTest(packages=packages):
+                self.assertEqual(self.client.patch(self.url('child'), packages, content_type='application/json').status_code, 400)
+        self.child.refresh_from_db()
+        self.assertFalse(self.child.package_a)
+        self.assertFalse(self.child.package_b)
+
+    def test_crm_uses_returning_school_prices_and_ignores_supplied_total(self):
+        self.school.is_returning_customer = True
+        self.school.save(update_fields=['is_returning_customer'])
+        self.client.force_login(self.assistant)
+        response = self.json_post('add-child', {'first_name': 'Ioana', 'last_name': 'Test', 'package_a': True,
+            'package_c': True, 'package_d': True, 'package_e': True, 'total_lei': 1})
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json()['child']['total_lei'], 45 + 40 + 20 + 105)
+        roster = self.client.get(self.url('class')).json()
+        self.assertEqual(roster['class']['prices']['a'], 45)
+        self.assertEqual(roster['class']['prices']['b'], 65)
+        self.assertTrue(all(child['created_at'] for child in roster['children']))
+
+    def test_teacher_package_change_is_reflected_in_crm(self):
+        self.client.patch(reverse('schools-class-child', args=[self.group.pk, self.child.pk]),
+            {'pin': self.group.pin, 'package_b': True, 'package_d': True}, content_type='application/json')
+        self.client.force_login(self.assistant)
+        child = self.client.get(self.url('child')).json()['child']
+        self.assertTrue(child['package_b'])
+        self.assertTrue(child['package_d'])
+        self.assertEqual(child['total_lei'], self.school.prices['b'] + self.school.prices['d'])
 
     def test_album_upload_creates_variants_and_only_matches_selected_child(self):
         self.client.force_login(self.assistant)

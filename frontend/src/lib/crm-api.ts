@@ -1,10 +1,14 @@
+import type { ChildOrder, SchoolClassOrder } from './api';
+
 export type CrmUser = { username: string; name: string };
+export type CrmPrices = SchoolClassOrder['prices'];
 export type CrmClass = {
   id: string; name: string; school_name: string; city: string; session_label: string;
   shoot_display: string; teacher_name: string; child_count: number; photo_count: number;
+  prices: CrmPrices;
 };
-export type CrmChild = {
-  id: string; first_name: string; last_name: string; notes: string;
+export type CrmChild = ChildOrder & {
+  created_at: string;
   photo_count: number; reference_url: string | null;
 };
 export type CrmPhotos = {

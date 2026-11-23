@@ -4,11 +4,12 @@ import Link from 'next/link';
 import { use, useCallback, useEffect, useState } from 'react';
 import ChildForm from '@/components/crm/ChildForm';
 import PhotoUploader from '@/components/crm/PhotoUploader';
-import { childPath, crmApi, errorText, type CrmChild, type CrmPhotos } from '@/lib/crm-api';
+import { childPath, crmApi, errorText, type CrmChild, type CrmPhotos, type CrmPrices } from '@/lib/crm-api';
 
 export default function CrmChildPage({ params }: { params: Promise<{ id: string; childId: string }> }) {
   const { id, childId } = use(params);
   const [child, setChild] = useState<CrmChild | null>(null);
+  const [prices, setPrices] = useState<CrmPrices | null>(null);
   const [photos, setPhotos] = useState<CrmPhotos | null>(null);
   const [page, setPage] = useState(1);
   const [error, setError] = useState('');
@@ -17,7 +18,7 @@ export default function CrmChildPage({ params }: { params: Promise<{ id: string;
   const [notice, setNotice] = useState('');
   const path = childPath(id, childId);
   const loadChild = useCallback(async () => {
-    try { setChild((await crmApi<{ child: CrmChild }>(path)).child); setError(''); }
+    try { const result = await crmApi<{ child: CrmChild; prices: CrmPrices }>(path); setChild(result.child); setPrices(result.prices); setError(''); }
     catch (error) { setError(errorText(error)); }
   }, [path]);
   const loadPhotos = useCallback(async () => {
@@ -32,7 +33,7 @@ export default function CrmChildPage({ params }: { params: Promise<{ id: string;
     <nav className="crm-breadcrumb" aria-label="Navigare"><Link href="/crm">Clase</Link><span>/</span><Link href={`/crm/classes/${id}`}>Lista copiilor</Link><span>/</span><span>{child?.first_name || 'Copil'}</span></nav>
     {error ? <div className="crm-empty"><p className="crm-error" role="alert">{error}</p><button className="crm-button" onClick={loadChild}>Reîncearcă</button></div> : !child ? <p className="crm-empty" role="status">Se încarcă datele copilului…</p> : <>
       <div className="crm-page-heading"><div><p className="crm-eyebrow">FIȘA COPILULUI</p><h1>{child.first_name} {child.last_name}</h1><p className="crm-muted">{child.photo_count} fotografii în album</p></div><button className="crm-button" onClick={() => setEditing(!editing)} aria-expanded={editing}>Editează datele</button></div>
-      {editing && <section className="crm-card crm-add-child"><h2>Datele copilului</h2><ChildForm path={path} child={child} onCancel={() => setEditing(false)} onSaved={saved => { setChild(saved); setEditing(false); setNotice('Datele au fost salvate.'); }} /></section>}
+      {editing && prices && <section className="crm-card crm-add-child"><h2>Datele și pachetele copilului</h2><ChildForm path={path} child={child} prices={prices} onCancel={() => setEditing(false)} onSaved={saved => { setChild(saved); setEditing(false); setNotice('Datele au fost salvate.'); }} /></section>}
       {notice && <p className="crm-success" role="status">{notice}</p>}
       {child.notes && <p className="crm-note"><strong>Observații:</strong> {child.notes}</p>}
       <div className="crm-child-workspace"><section className="crm-card crm-portrait-card"><p className="crm-eyebrow">PENTRU RECUNOAȘTERE</p><h2>Portret de referință</h2>

@@ -5,8 +5,8 @@ import { crmApi, CrmError, errorText } from '@/lib/crm-api';
 
 type Upload = { key: string; file: File; state: 'waiting' | 'uploading' | 'done' | 'error'; error?: string };
 
-export default function PhotoUploader({ path, reference = false, onUploaded }: {
-  path: string; reference?: boolean; onUploaded: () => void;
+export default function PhotoUploader({ path, reference = false, onUploaded, onPendingChange }: {
+  path: string; reference?: boolean; onUploaded: () => void; onPendingChange?: (pending: boolean) => void;
 }) {
   const [files, setFiles] = useState<Upload[]>([]);
   const [busy, setBusy] = useState(false);
@@ -17,6 +17,8 @@ export default function PhotoUploader({ path, reference = false, onUploaded }: {
   const paused = useRef(false);
   const pending = files.some(file => file.state !== 'done');
   const done = files.filter(file => file.state === 'done').length;
+
+  useEffect(() => { onPendingChange?.(pending); }, [pending, onPendingChange]);
 
   useEffect(() => {
     if (!pending) return;

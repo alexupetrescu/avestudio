@@ -6,7 +6,6 @@ import json
 import logging
 import mimetypes
 
-from django import forms
 from django.contrib.auth import authenticate, login, logout
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
@@ -20,6 +19,8 @@ from django.urls import reverse
 from django.utils.cache import patch_cache_control, patch_vary_headers
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_http_methods
+
+from backend.serializers import ChildOrderSerializer
 
 from .forms import QueuedPhotoForm
 from .models import AssistantUploadReceipt, Child, ClassPhoto, FaceReference, PhotoMatch, SchoolClass
@@ -124,6 +125,7 @@ def class_data(school_class):
         'session_label': school_class.session_label, 'shoot_display': school_class.shoot_display,
         'teacher_name': school_class.teacher_name,
         'child_count': school_class.child_count, 'photo_count': school_class.photo_count,
+        'prices': school_class.prices,
     }
 
 
@@ -136,14 +138,14 @@ def child_data(child):
     latest = references[0] if references else None
     reference_url = reverse('assistant:reference-preview', args=[child.school_class_id, child.pk]) if latest else None
     return {
-        'id': str(child.pk), 'first_name': child.first_name, 'last_name': child.last_name,
-        'notes': child.notes, 'photo_count': child.photo_count,
+        **ChildOrderSerializer(child).data,
+        'created_at': child.created_at.isoformat(), 'photo_count': child.photo_count,
         'reference_url': f'{reference_url}?v={latest.pk}' if latest else None,
     }
 
 
 def children_queryset():
-    return Child.objects.annotate(photo_count=Count('photos', distinct=True)).prefetch_related(
+    return Child.objects.select_related('school_class__school').annotate(photo_count=Count('photos', distinct=True)).prefetch_related(
         Prefetch('face_references', queryset=FaceReference.objects.order_by('-created_at', '-pk')),
     )
 
@@ -162,25 +164,17 @@ def class_detail(request, class_id):
     })
 
 
-class ChildForm(forms.ModelForm):
-    class Meta:
-        model = Child
-        fields = ('first_name', 'last_name', 'notes')
-
-
 def save_child(request, school_class, instance=None):
     data = payload(request)
     # Reject arrays, nulls and objects rather than coercing them to a person's name.
-    if any(not isinstance(data.get(key, ''), str) for key in ChildForm._meta.fields):
+    if any(not isinstance(data.get(key, ''), str) for key in ('first_name', 'last_name', 'notes')):
         raise ValidationError('Numele, prenumele și observațiile trebuie să fie text.')
-    form = ChildForm(data, instance=instance)
-    if not form.is_valid():
-        return JsonResponse({'error': ' '.join(str(error) for errors in form.errors.values() for error in errors)}, status=400)
-    child = form.save(commit=False)
-    child.school_class = school_class
+    serializer = ChildOrderSerializer(instance, data=data, partial=instance is not None, context={'school_class': school_class})
+    if not serializer.is_valid():
+        return JsonResponse({'error': ' '.join(str(error) for errors in serializer.errors.values() for error in errors)}, status=400)
     try:
         with transaction.atomic():
-            child.save()
+            child = serializer.save(school_class=school_class)
     except IntegrityError:
         return JsonResponse({'error': 'Acest copil este deja în clasă.'}, status=409)
     return JsonResponse({'child': child_data(children_queryset().get(pk=child.pk))}, status=200 if instance else 201)
@@ -197,7 +191,7 @@ def edit_child(request, class_id, child_id):
     child = scoped_child(request, class_id, child_id)
     if request.method == 'PATCH':
         return save_child(request, child.school_class, instance=child)
-    return JsonResponse({'child': child_data(children_queryset().get(pk=child.pk))})
+    return JsonResponse({'child': child_data(children_queryset().get(pk=child.pk)), 'prices': child.school_class.prices})
 
 
 def store_upload(request, child, kind):
