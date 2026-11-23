@@ -173,7 +173,9 @@ class AssistantCrmTests(TestCase):
         self.assertEqual(preview.status_code, 200)
         self.assertIn('no-store', preview['Cache-Control'])
         self.assertEqual(preview['Content-Type'], 'image/jpeg')
-        preview.close()
+        # Consume the test client's wrapper so request_finished does not close
+        # the surrounding PostgreSQL TestCase transaction.
+        self.assertTrue(b''.join(preview.streaming_content))
         self.client.logout()
         self.assertEqual(self.client.get(response.json()['photos'][0]['url']).status_code, 401)
 
@@ -198,7 +200,7 @@ class AssistantCrmTests(TestCase):
         preview_url = response.json()['child']['reference_url']
         preview = self.client.get(preview_url)
         self.assertEqual(preview.status_code, 200)
-        preview.close()
+        self.assertTrue(b''.join(preview.streaming_content))
         self.grant.delete()
         self.assertEqual(self.client.get(preview_url).status_code, 404)
 
