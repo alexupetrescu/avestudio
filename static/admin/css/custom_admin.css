@@ -1,208 +1,57 @@
-/* ============================================================
-   AVE Studio — Django Admin Theme
-   Minimalist black & white, matching the frontend visual system.
-
-   Strategy: override Django admin's own CSS custom properties for
-   BOTH light and dark themes instead of forcing colors with
-   !important. Every stock widget then inherits readable colors in
-   either theme, which structurally prevents same-color-on-same-
-   color contrast bugs.
-   ============================================================ */
-
-/* ---------- LIGHT THEME (default) ---------- */
+/* AVE Studio admin: shared luxury tokens, including the native theme toggle. */
+:root,
 html[data-theme="light"],
-:root {
-    --primary: #1a1a1a;
-    --secondary: #1a1a1a;
-    --accent: #b08d57;              /* muted bronze, used sparingly */
-    --primary-fg: #ffffff;
-
-    --body-fg: #1f1f1f;
-    --body-bg: #ffffff;
-    --body-quiet-color: #6b6b6b;
-    --body-medium-color: #3d3d3d;
-    --body-loud-color: #000000;
-
-    --header-color: #bdbdbd;
-    --header-branding-color: #ffffff;
-    --header-bg: #111111;
-    --header-link-color: #ffffff;
-
-    --breadcrumbs-fg: #8a8a8a;
-    --breadcrumbs-link-fg: #1a1a1a;
-    --breadcrumbs-bg: #fafafa;
-
-    --link-fg: #1a1a1a;
-    --link-hover-color: #b08d57;
-    --link-selected-fg: #b08d57;
-
-    --hairline-color: #ececec;
-    --border-color: #d8d8d8;
-
-    --error-fg: #b3261e;
-
-    --darkened-bg: #f7f7f5;
-    --selected-bg: #f0efec;
-    --selected-row: #f7f2e9;
-
-    --button-fg: #ffffff;
-    --button-bg: #2b2b2b;
-    --button-hover-bg: #000000;
-    --default-button-bg: #111111;
-    --default-button-hover-bg: #3a3a3a;
-    --close-button-bg: #6b6b6b;
-    --close-button-hover-bg: #1a1a1a;
-    --delete-button-bg: #a1352c;
+html[data-theme="dark"],
+html[data-theme="auto"] {
+    --font-family-primary: var(--ave-font-body);
+    --primary: var(--ave-black);
+    --secondary: var(--ave-black);
+    --accent: var(--ave-gold);
+    --primary-fg: var(--ave-white);
+    --body-fg: var(--ave-ink);
+    --body-bg: var(--ave-surface);
+    --body-quiet-color: var(--ave-muted);
+    --body-medium-color: var(--ave-secondary);
+    --body-loud-color: var(--ave-ink);
+    --header-color: var(--ave-on-black-muted);
+    --header-branding-color: var(--ave-white);
+    --header-bg: var(--ave-black);
+    --header-link-color: var(--ave-gold-light);
+    --breadcrumbs-fg: var(--ave-muted);
+    --breadcrumbs-link-fg: var(--ave-ink);
+    --breadcrumbs-bg: var(--ave-page);
+    --link-fg: var(--ave-ink);
+    --link-hover-color: var(--ave-gold-text);
+    --link-selected-fg: var(--ave-gold-text);
+    --hairline-color: var(--ave-line);
+    --border-color: var(--ave-input-line);
+    --error-fg: var(--ave-error);
+    --darkened-bg: var(--ave-surface-subtle);
+    --selected-bg: var(--ave-gold-wash);
+    --selected-row: var(--ave-gold-wash);
+    --button-fg: var(--ave-action-text);
+    --button-bg: var(--ave-action);
+    --button-hover-bg: var(--ave-action-hover);
+    --default-button-bg: var(--ave-action);
+    --default-button-hover-bg: var(--ave-action-hover);
+    --close-button-bg: var(--ave-secondary);
+    --close-button-hover-bg: var(--ave-muted);
+    --delete-button-bg: #9f302f;
     --delete-button-hover-bg: #7f261f;
-
-    --object-tools-fg: #ffffff;
-    --object-tools-bg: #111111;
-    --object-tools-hover-bg: #3a3a3a;
-
-    /* Theme-aware values for AVE custom components */
-    --ave-panel-bg: #fafaf8;
-    --ave-panel-border: #e4e4e0;
-    --ave-status-ok-bg: #eef4ee;
-    --ave-status-ok-fg: #1e5b2a;
-    --ave-status-ok-border: #bcd6c0;
-    --ave-status-error-bg: #faeceb;
-    --ave-status-error-fg: #8c2b24;
-    --ave-status-error-border: #e3b7b3;
-    --ave-default-btn-bg: #111111;
-    --ave-default-btn-fg: #ffffff;
-    --ave-default-btn-hover-bg: #3a3a3a;
-
-    color-scheme: light;
-}
-
-/* ---------- DARK THEME (explicit toggle) ---------- */
-html[data-theme="dark"] {
-    --primary: #2e2e2e;
-    --secondary: #2e2e2e;
-    --accent: #c9a96e;
-    --primary-fg: #ffffff;
-
-    --body-fg: #e8e8e8;
-    --body-bg: #121212;
-    --body-quiet-color: #a3a3a3;
-    --body-medium-color: #cfcfcf;
-    --body-loud-color: #ffffff;
-
-    --header-color: #8a8a8a;
-    --header-branding-color: #ffffff;
-    --header-bg: #0a0a0a;
-    --header-link-color: #ffffff;
-
-    --breadcrumbs-fg: #8a8a8a;
-    --breadcrumbs-link-fg: #e8e8e8;
-    --breadcrumbs-bg: #181818;
-
-    --link-fg: #e8e8e8;
-    --link-hover-color: #c9a96e;
-    --link-selected-fg: #c9a96e;
-
-    --hairline-color: #262626;
-    --border-color: #3a3a3a;
-
-    --error-fg: #e35f5f;
-
-    --darkened-bg: #1c1c1c;
-    --selected-bg: #242424;
-    --selected-row: #2a2519;
-
-    --button-fg: #ffffff;
-    --button-bg: #333333;
-    --button-hover-bg: #454545;
-    --default-button-bg: #f2f2f2;
-    --default-button-hover-bg: #d6d6d6;
-    --close-button-bg: #3a3a3a;
-    --close-button-hover-bg: #555555;
-    --delete-button-bg: #8c2b24;
-    --delete-button-hover-bg: #6e1f19;
-
-    --object-tools-fg: #111111;
-    --object-tools-bg: #f2f2f2;
-    --object-tools-hover-bg: #d6d6d6;
-
-    --ave-panel-bg: #1a1a1a;
-    --ave-panel-border: #2e2e2e;
-    --ave-status-ok-bg: #16231a;
-    --ave-status-ok-fg: #9fd0a9;
-    --ave-status-ok-border: #2c4a33;
-    --ave-status-error-bg: #2a1715;
-    --ave-status-error-fg: #e8a29c;
-    --ave-status-error-border: #5c2b26;
-    --ave-default-btn-bg: #f2f2f2;
-    --ave-default-btn-fg: #111111;
-    --ave-default-btn-hover-bg: #d6d6d6;
-
-    color-scheme: dark;
-}
-
-/* ---------- DARK THEME (system preference, data-theme="auto") ---------- */
-@media (prefers-color-scheme: dark) {
-    :root {
-        --primary: #2e2e2e;
-        --secondary: #2e2e2e;
-        --accent: #c9a96e;
-        --primary-fg: #ffffff;
-
-        --body-fg: #e8e8e8;
-        --body-bg: #121212;
-        --body-quiet-color: #a3a3a3;
-        --body-medium-color: #cfcfcf;
-        --body-loud-color: #ffffff;
-
-        --header-color: #8a8a8a;
-        --header-branding-color: #ffffff;
-        --header-bg: #0a0a0a;
-        --header-link-color: #ffffff;
-
-        --breadcrumbs-fg: #8a8a8a;
-        --breadcrumbs-link-fg: #e8e8e8;
-        --breadcrumbs-bg: #181818;
-
-        --link-fg: #e8e8e8;
-        --link-hover-color: #c9a96e;
-        --link-selected-fg: #c9a96e;
-
-        --hairline-color: #262626;
-        --border-color: #3a3a3a;
-
-        --error-fg: #e35f5f;
-
-        --darkened-bg: #1c1c1c;
-        --selected-bg: #242424;
-        --selected-row: #2a2519;
-
-        --button-fg: #ffffff;
-        --button-bg: #333333;
-        --button-hover-bg: #454545;
-        --default-button-bg: #f2f2f2;
-        --default-button-hover-bg: #d6d6d6;
-        --close-button-bg: #3a3a3a;
-        --close-button-hover-bg: #555555;
-        --delete-button-bg: #8c2b24;
-        --delete-button-hover-bg: #6e1f19;
-
-        --object-tools-fg: #111111;
-        --object-tools-bg: #f2f2f2;
-        --object-tools-hover-bg: #d6d6d6;
-
-        --ave-panel-bg: #1a1a1a;
-        --ave-panel-border: #2e2e2e;
-        --ave-status-ok-bg: #16231a;
-        --ave-status-ok-fg: #9fd0a9;
-        --ave-status-ok-border: #2c4a33;
-        --ave-status-error-bg: #2a1715;
-        --ave-status-error-fg: #e8a29c;
-        --ave-status-error-border: #5c2b26;
-        --ave-default-btn-bg: #f2f2f2;
-        --ave-default-btn-fg: #111111;
-        --ave-default-btn-hover-bg: #d6d6d6;
-
-        color-scheme: dark;
-    }
+    --object-tools-fg: var(--ave-action-text);
+    --object-tools-bg: var(--ave-action);
+    --object-tools-hover-bg: var(--ave-action-hover);
+    --ave-panel-bg: var(--ave-surface-subtle);
+    --ave-panel-border: var(--ave-line);
+    --ave-status-ok-bg: var(--ave-gold-wash);
+    --ave-status-ok-fg: var(--ave-gold-text);
+    --ave-status-ok-border: var(--ave-gold-soft);
+    --ave-status-error-bg: var(--ave-error-bg);
+    --ave-status-error-fg: var(--ave-error);
+    --ave-status-error-border: var(--ave-error-border);
+    --ave-default-btn-bg: var(--ave-action);
+    --ave-default-btn-fg: var(--ave-action-text);
+    --ave-default-btn-hover-bg: var(--ave-action-hover);
 }
 
 /* ============================================================
@@ -210,18 +59,20 @@ html[data-theme="dark"] {
    ============================================================ */
 
 #site-name a {
-    font-weight: 300;
-    font-size: 1.125rem;
-    letter-spacing: 0.35em;
+    font-family: var(--ave-font-heading);
+    font-weight: 500;
+    font-size: 1.5rem;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
 }
 
 #header {
     padding: 18px 40px;
+    border-bottom: 1px solid var(--ave-gold);
 }
 
 #user-tools {
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
 }
@@ -239,16 +90,17 @@ html[data-theme="dark"] {
 
 #content h1 {
     font-weight: 400;
-    font-size: 1.5rem;
-    letter-spacing: 0.06em;
+    font-family: var(--ave-font-heading);
+    font-size: 2rem;
+    letter-spacing: -0.03em;
     color: var(--body-loud-color);
 }
 
-/* Section captions: quiet uppercase labels instead of colored bands */
+/* Black section bands with the same gold accents as CRM and teacher lists. */
 .module h2, .module caption, .inline-group h2 {
-    background: var(--darkened-bg);
-    color: var(--body-medium-color);
-    font-size: 0.6875rem;
+    background: var(--ave-black);
+    color: var(--ave-gold-light);
+    font-size: 0.75rem;
     font-weight: 600;
     letter-spacing: 0.14em;
     text-transform: uppercase;
@@ -256,24 +108,23 @@ html[data-theme="dark"] {
     border-bottom: 1px solid var(--hairline-color);
 }
 
-/* App names inside module captions (dashboard, sidebar): Django colors these
-   with --header-link-color (white); our captions are light, so recolor them */
+/* App names retain contrast on black in both admin themes. */
 .module caption a.section:link,
 .module caption a.section:visited,
 .module h2 a:link,
 .module h2 a:visited {
-    color: var(--body-medium-color);
+    color: var(--ave-gold-light);
 }
 
 .module caption a.section:hover,
 .module caption a.section:focus {
-    color: var(--link-hover-color);
+    color: var(--ave-white);
     text-decoration: none;
 }
 
 .module {
     border: 1px solid var(--hairline-color);
-    border-radius: 6px;
+    border-radius: var(--ave-radius-card);
     overflow: hidden;
     margin-bottom: 24px;
     background: var(--body-bg);
@@ -284,7 +135,7 @@ html[data-theme="dark"] {
    ============================================================ */
 
 .button, input[type=submit], input[type=button], .submit-row input, a.button {
-    border-radius: 3px;
+    border-radius: var(--ave-radius-control);
     font-size: 0.75rem;
     font-weight: 600;
     letter-spacing: 0.1em;
@@ -316,9 +167,9 @@ a.button {
 }
 
 .object-tools a:link, .object-tools a:visited {
-    border-radius: 3px;
+    border-radius: var(--ave-radius-control);
     padding: 8px 16px;
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     font-weight: 600;
     letter-spacing: 0.1em;
     text-transform: uppercase;
@@ -337,24 +188,24 @@ a.button {
 
 #result_list {
     border: 1px solid var(--hairline-color);
-    border-radius: 6px;
+    border-radius: var(--ave-radius-card);
     border-collapse: separate;
     border-spacing: 0;
     overflow: hidden;
 }
 
 #result_list thead th {
-    background: var(--darkened-bg);
-    font-size: 0.6875rem;
+    background: var(--ave-black);
+    font-size: 0.75rem;
     font-weight: 600;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: var(--body-medium-color);
+    color: var(--ave-white);
     padding: 12px 14px;
 }
 
 #result_list thead th a:link, #result_list thead th a:visited {
-    color: var(--body-medium-color);
+    color: var(--ave-white);
 }
 
 #result_list tbody td, #result_list tbody th {
@@ -374,12 +225,12 @@ a.button {
 
 #changelist-filter {
     border: 1px solid var(--hairline-color);
-    border-radius: 6px;
+    border-radius: var(--ave-radius-card);
     background: var(--darkened-bg);
 }
 
 #changelist-filter h2 {
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     font-weight: 600;
     letter-spacing: 0.14em;
     text-transform: uppercase;
@@ -390,7 +241,7 @@ a.button {
 
 #changelist-search input[type="text"] {
     padding: 8px 12px;
-    border-radius: 3px;
+    border-radius: var(--ave-radius-control);
 }
 
 .paginator {
@@ -398,7 +249,7 @@ a.button {
 }
 
 .paginator a:link, .paginator a:visited {
-    border-radius: 3px;
+    border-radius: var(--ave-radius-control);
     background: transparent;
     border: 1px solid var(--border-color);
     color: var(--body-fg);
@@ -412,7 +263,7 @@ a.button {
 .paginator .this-page {
     background: var(--body-loud-color);
     color: var(--body-bg);
-    border-radius: 3px;
+    border-radius: var(--ave-radius-control);
     padding: 2px 8px;
 }
 
@@ -423,7 +274,7 @@ a.button {
 input[type=text], input[type=password], input[type=email], input[type=url],
 input[type=number], input[type=tel], textarea, select, .vTextField {
     border: 1px solid var(--border-color);
-    border-radius: 3px;
+    border-radius: var(--ave-radius-control);
     padding: 8px 10px;
     background: var(--body-bg);
     color: var(--body-fg);
@@ -455,7 +306,7 @@ input[type="checkbox"] {
 .submit-row {
     background: var(--darkened-bg);
     border: 1px solid var(--hairline-color);
-    border-radius: 6px;
+    border-radius: var(--ave-radius-card);
     padding: 14px 16px;
 }
 
@@ -507,7 +358,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
     max-width: 480px;
     max-height: 480px;
     object-fit: contain;
-    border-radius: 6px;
+    border-radius: var(--ave-radius-card);
     border: 1px solid var(--hairline-color);
 }
 
@@ -528,7 +379,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
     color: var(--body-loud-color);
     background: var(--darkened-bg);
     border: 1px solid var(--hairline-color);
-    border-radius: 3px;
+    border-radius: var(--ave-radius-control);
     padding: 2px 8px;
     display: inline-block;
 }
@@ -546,7 +397,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
     font-size: 0.75rem;
     background: var(--darkened-bg);
     border: 1px solid var(--hairline-color);
-    border-radius: 3px;
+    border-radius: var(--ave-radius-control);
     padding: 2px 6px;
     color: var(--body-fg);
 }
@@ -554,7 +405,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 .ave-access-panel {
     background: var(--ave-panel-bg);
     border: 1px solid var(--ave-panel-border);
-    border-radius: 6px;
+    border-radius: var(--ave-radius-card);
     padding: 16px 18px;
     margin: 6px 0;
     max-width: 640px;
@@ -588,7 +439,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 }
 
 .ave-status {
-    border-radius: 6px;
+    border-radius: var(--ave-radius-card);
     padding: 12px 16px;
     max-width: 640px;
 }
@@ -617,7 +468,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
     background: var(--ave-panel-bg);
     border: 1px solid var(--ave-panel-border);
     border-left: 3px solid var(--accent);
-    border-radius: 6px;
+    border-radius: var(--ave-radius-card);
     padding: 14px 18px;
     margin-bottom: 24px;
     font-size: 0.8125rem;
@@ -643,7 +494,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 
 .ave-field > label {
     display: block;
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     font-weight: 700;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -719,7 +570,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
     padding: 10px 16px;
     background: var(--ave-panel-bg);
     border: 1px solid var(--ave-panel-border);
-    border-radius: 6px;
+    border-radius: var(--ave-radius-card);
     font-size: 0.8125rem;
 }
 
@@ -759,7 +610,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 
 .ave-group-card {
     border: 1px solid var(--hairline-color);
-    border-radius: 6px;
+    border-radius: var(--ave-radius-card);
     background: var(--body-bg);
     overflow: hidden;
 }
@@ -784,7 +635,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 }
 
 .ave-group-card-count {
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     color: var(--body-quiet-color);
     white-space: nowrap;
 }
@@ -800,19 +651,19 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
     width: 52px;
     height: 52px;
     object-fit: cover;
-    border-radius: 3px;
+    border-radius: var(--ave-radius-control);
     border: 1px solid var(--hairline-color);
 }
 
 .ave-group-card-more {
     width: 52px;
     height: 52px;
-    border-radius: 3px;
+    border-radius: var(--ave-radius-control);
     border: 1px dashed var(--border-color);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     color: var(--body-quiet-color);
     flex-shrink: 0;
 }
@@ -827,7 +678,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 
 .ave-photo-cell {
     border: 1px solid var(--hairline-color);
-    border-radius: 6px;
+    border-radius: var(--ave-radius-card);
     overflow: hidden;
     background: var(--body-bg);
 }
@@ -841,7 +692,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 
 .ave-photo-cell figcaption {
     padding: 6px 8px;
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     color: var(--body-quiet-color);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -860,7 +711,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 
 .ave-progress-track {
     height: 6px;
-    border-radius: 3px;
+    border-radius: var(--ave-radius-control);
     background: var(--darkened-bg);
     border: 1px solid var(--hairline-color);
     overflow: hidden;
@@ -887,7 +738,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 }
 
 .ave-section-title {
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     font-weight: 700;
     letter-spacing: 0.14em;
     text-transform: uppercase;
@@ -930,7 +781,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
     margin-bottom: 10px;
 }
 .ave-job-status {
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     font-weight: 700;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -948,7 +799,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
     max-height: 180px;
     overflow: auto;
     background: var(--darkened-bg);
-    border-radius: 6px;
+    border-radius: var(--ave-radius-card);
     padding: 10px 12px;
     margin-top: 10px;
     color: var(--body-medium-color);
@@ -985,7 +836,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     padding: 2px 8px;
     border-radius: 999px;
     background: var(--darkened-bg);
@@ -1008,3 +859,37 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
     margin: 32px 0 14px;
 }
 .ave-section-head h2 { margin: 0; }
+
+/* Shared controls and table treatment; leave Django's widget layouts intact. */
+.button, a.button, input[type=submit], input[type=button], .submit-row input,
+.object-tools a:link, .object-tools a:visited {
+    box-sizing: border-box;
+    min-height: 44px;
+    border-radius: var(--ave-radius-button);
+    line-height: 24px;
+    letter-spacing: .04em;
+}
+input[type=text], input[type=password], input[type=email], input[type=url],
+input[type=number], input[type=tel], textarea, select, .vTextField {
+    min-height: 44px;
+    box-sizing: border-box;
+    font-family: var(--ave-font-body);
+    font-size: 14px;
+}
+#result_list thead th.sorted, #result_list thead th:hover { background: #29241b; }
+#result_list thead th .text a:focus, #result_list thead th .text a:hover { color: var(--ave-gold-light); }
+#result_list thead th .sortoptions { filter: brightness(0) invert(1); }
+body .ave-roster-sort-buttons button { border-radius: var(--ave-radius-button); }
+.ave-roster-sort-buttons button[aria-pressed="true"] { box-shadow: inset 0 -2px var(--ave-gold); }
+.ave-children-table thead { background: var(--ave-black); color: var(--ave-white); }
+.messagelist li.success { background-color: var(--ave-gold-wash); color: var(--ave-gold-text); }
+.module caption a.section:hover, .module caption a.section:focus { color: var(--ave-white); }
+@media (max-width: 767px) {
+    #header, #content, div.breadcrumbs { padding-left: 16px; padding-right: 16px; }
+    input[type=text], input[type=password], input[type=email], input[type=url],
+    input[type=number], input[type=tel], textarea, select, .vTextField { font-size: 16px; }
+    #content h1 { font-size: 1.75rem; }
+    .ave-actions { flex-wrap: wrap; }
+}
+
+body .ave-roster-sorting { border-radius: var(--ave-radius-card); }

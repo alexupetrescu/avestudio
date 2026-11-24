@@ -43,7 +43,7 @@ export default function Navbar() {
         if (isHomePage && !scrolled) {
             return active ? 'text-white' : 'text-white/70 hover:text-white';
         }
-        return active ? 'text-black' : 'text-black/50 hover:text-black';
+        return active ? 'text-black' : 'text-black/60 hover:text-[var(--ave-gold-text)]';
     };
 
     return (
@@ -78,7 +78,7 @@ export default function Navbar() {
                             >
                                 Acasă
                                 {isActive('/') && (
-                                    <span className="absolute -bottom-1 left-0 w-full h-[1px] bg-current animate-[lineGrow_0.3s_var(--ease-luxury)] origin-left" />
+                                    <span className="absolute -bottom-1 left-0 w-full h-[1px] bg-[var(--ave-gold)] animate-[lineGrow_0.3s_var(--ease-luxury)] origin-left" />
                                 )}
                             </Link>
                             <Link
@@ -87,7 +87,7 @@ export default function Navbar() {
                             >
                                 Portofoliu
                                 {isActive('/portfolio') && (
-                                    <span className="absolute -bottom-1 left-0 w-full h-[1px] bg-current animate-[lineGrow_0.3s_var(--ease-luxury)] origin-left" />
+                                    <span className="absolute -bottom-1 left-0 w-full h-[1px] bg-[var(--ave-gold)] animate-[lineGrow_0.3s_var(--ease-luxury)] origin-left" />
                                 )}
                             </Link>
                             <Link
@@ -96,7 +96,7 @@ export default function Navbar() {
                             >
                                 Ofertă Crăciun
                                 {isActive('/oferta-scoli') && (
-                                    <span className="absolute -bottom-1 left-0 w-full h-[1px] bg-current animate-[lineGrow_0.3s_var(--ease-luxury)] origin-left" />
+                                    <span className="absolute -bottom-1 left-0 w-full h-[1px] bg-[var(--ave-gold)] animate-[lineGrow_0.3s_var(--ease-luxury)] origin-left" />
                                 )}
                             </Link>
                         </div>

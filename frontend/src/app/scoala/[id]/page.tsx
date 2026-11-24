@@ -125,7 +125,7 @@ export default function TeacherOrderPage({ params }: { params: Promise<{ id: str
                                 <h1 className="text-3xl md:text-5xl font-semibold tracking-tight mb-2" style={{ fontFamily: 'var(--font-heading)', color: 'var(--xmas-green)' }}>
                                     {data.school_name}
                                 </h1>
-                                <p className="text-lg" style={{ color: 'rgba(43,36,32,0.65)' }}>
+                                <p className="text-lg" style={{ color: 'var(--ave-secondary)' }}>
                                     {data.name} · {data.session_label}{data.teacher_name ? ` · ${data.teacher_name}` : ''}
                                 </p>
                                 <div className="xmas-rule max-w-[160px] my-6" />
@@ -135,7 +135,7 @@ export default function TeacherOrderPage({ params }: { params: Promise<{ id: str
                                         <span className="text-lg font-semibold" style={{ color: 'var(--xmas-green)', fontFamily: 'var(--font-heading)' }}>{data.shoot_display}</span>
                                     </div>
                                 )}
-                                <p className="text-sm max-w-2xl" style={{ color: 'rgba(43,36,32,0.6)' }}>
+                                <p className="text-sm max-w-2xl" style={{ color: 'var(--ave-muted)' }}>
                                     Adăugați fiecare copil (nume și prenume) și bifați pachetele dorite de părinți. Modificările se salvează automat.
                                     {!data.shoot_display && data.period && <> Perioadă pentru fotografiere: <strong style={{ color: 'var(--xmas-green)' }}>{data.period}</strong>.</>}
                                 </p>
@@ -162,24 +162,24 @@ export default function TeacherOrderPage({ params }: { params: Promise<{ id: str
                                                     </p>
                                                     <p className="text-xl font-semibold" style={{ color: 'var(--xmas-burgundy)', fontFamily: 'var(--font-heading)' }}>
                                                         {p.list_price !== null && p.list_price > p.price && (
-                                                            <span className="xmas-strike mr-2 text-sm font-normal" style={{ color: 'rgba(43,36,32,0.4)' }}>{formatMoney(p.list_price!)} lei</span>
+                                                            <span className="xmas-strike mr-2 text-sm font-normal" style={{ color: 'var(--ave-muted)' }}>{formatMoney(p.list_price!)} lei</span>
                                                         )}
                                                         {formatMoney(p.price)} lei
                                                     </p>
                                                 </div>
-                                                <p className="text-xs leading-snug mt-1" style={{ color: 'rgba(43,36,32,0.6)' }}>{p.description}</p>
+                                                <p className="text-xs leading-snug mt-1" style={{ color: 'var(--ave-muted)' }}>{p.description}</p>
                                                 {p.digital_included && <span className="xmas-tag mt-2">+ format digital inclus</span>}
                                             </div>
                                         </div>
                                     ))}
                                 </div>
-                                <p className="text-xs" style={{ color: 'rgba(43,36,32,0.55)' }}>
+                                <p className="text-xs" style={{ color: 'var(--ave-muted)' }}>
                                     Fiecare copil primește <strong>un singur pachet de bază</strong>. Opționalele se pot adăuga în plus, oricâte.
                                 </p>
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                     {ADDONS.map((p) => (
                                         <div key={p.id} className="xmas-card px-4 py-3 flex items-center gap-3">
-                                            <span className="xmas-letter !w-9 !h-9 !text-base">{p.code}</span>
+                                            <span className="xmas-letter !text-base">{p.code}</span>
                                             <p className="text-sm flex-1 min-w-0" style={{ color: 'var(--xmas-ink)' }}>{p.description}</p>
                                             <p className="text-lg font-semibold whitespace-nowrap" style={{ color: 'var(--xmas-burgundy)', fontFamily: 'var(--font-heading)' }}>
                                                 {formatMoney(p.price)} lei
@@ -200,11 +200,11 @@ export default function TeacherOrderPage({ params }: { params: Promise<{ id: str
                                 </p>
                                 <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-3 items-end">
                                     <label className="block">
-                                        <span className="block text-xs mb-1.5" style={{ color: 'rgba(43,36,32,0.55)' }}>Nume (de familie)</span>
+                                        <span className="block text-xs mb-1.5" style={{ color: 'var(--ave-muted)' }}>Nume (de familie)</span>
                                         <input className="xmas-input" value={lastName} onChange={(e) => setLastName(e.target.value)} required autoComplete="off" placeholder="Popescu" />
                                     </label>
                                     <label className="block">
-                                        <span className="block text-xs mb-1.5" style={{ color: 'rgba(43,36,32,0.55)' }}>Prenume</span>
+                                        <span className="block text-xs mb-1.5" style={{ color: 'var(--ave-muted)' }}>Prenume</span>
                                         <input className="xmas-input" value={firstName} onChange={(e) => setFirstName(e.target.value)} required autoComplete="off" placeholder="Ana" />
                                     </label>
                                     <button type="submit" className="xmas-btn" disabled={busy === 'add' || !lastName.trim() || !firstName.trim() || !hasBasePackage(newPackages, PACKAGES)}>
@@ -213,7 +213,7 @@ export default function TeacherOrderPage({ params }: { params: Promise<{ id: str
                                 </div>
                                 <div className="flex flex-wrap gap-x-6 gap-y-3 mt-5">
                                     {PACKAGES.map((p) => (
-                                        <label key={p.id} className="inline-flex items-center gap-2.5 text-sm cursor-pointer select-none">
+                                        <label key={p.id} className="inline-flex items-center gap-2.5 text-sm cursor-pointer select-none min-h-11">
                                             <input
                                                 type={p.kind === 'base' ? 'radio' : 'checkbox'}
                                                 className="xmas-check"
@@ -262,39 +262,41 @@ export default function TeacherOrderPage({ params }: { params: Promise<{ id: str
                             {/* Children table */}
                             <div className="xmas-card overflow-hidden">
                                 <div className="overflow-x-auto">
-                                    <table className="w-full text-sm">
+                                    <table className="teacher-order-table w-full text-sm">
                                         <thead>
-                                            <tr style={{ background: 'var(--xmas-cream)' }}>
-                                                <th className="text-left px-4 py-3 font-medium" style={{ color: 'rgba(43,36,32,0.55)' }}>#</th>
-                                                <th className="text-left px-4 py-3 font-medium" style={{ color: 'rgba(43,36,32,0.55)' }}>Copil</th>
+                                            <tr>
+                                                <th className="text-left px-4 py-3 font-medium">#</th>
+                                                <th className="text-left px-4 py-3 font-medium">Copil</th>
                                                 {PACKAGES.map((p) => (
-                                                    <th key={p.id} className="text-center px-2 py-3 font-semibold leading-tight" style={{ color: 'var(--xmas-green)' }} title={p.description}>
+                                                    <th key={p.id} className="text-center px-2 py-3 font-semibold leading-tight" title={p.description}>
                                                         {p.code}
-                                                        <span className="block text-[10px] font-normal" style={{ color: 'rgba(43,36,32,0.5)' }}>{p.name}</span>
+                                                        <span className="block text-[10px] font-normal">{p.name}</span>
                                                     </th>
                                                 ))}
-                                                <th className="text-right px-4 py-3 font-medium" style={{ color: 'rgba(43,36,32,0.55)' }}>Total</th>
+                                                <th className="text-right px-4 py-3 font-medium">Total</th>
                                                 <th className="px-2 py-3" />
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {data.children.map((c, i) => (
                                                 <tr key={c.id} className={busy === c.id ? 'opacity-50' : ''} style={{ borderTop: '1px solid var(--xmas-gold-soft)' }}>
-                                                    <td className="px-4 py-3" style={{ color: 'rgba(43,36,32,0.4)' }}>{i + 1}</td>
+                                                    <td className="px-4 py-3" style={{ color: 'var(--ave-muted)' }}>{i + 1}</td>
                                                     <td className="px-4 py-3 font-medium whitespace-nowrap" style={{ color: 'var(--xmas-ink)' }}>
                                                         {c.last_name} {c.first_name}
                                                     </td>
                                                     {PACKAGES.map((p) => (
                                                         <td key={p.id} className="text-center px-2 py-3">
-                                                            <input
-                                                                type={p.kind === 'base' ? 'radio' : 'checkbox'}
-                                                                className="xmas-check"
-                                                                name={p.kind === 'base' ? `base-${c.id}` : undefined}
-                                                                checked={c.package_ids.includes(p.id)}
-                                                                disabled={busy === c.id || (!p.available && !c.package_ids.includes(p.id)) || (p.kind === 'extra' && !hasBasePackage(c, PACKAGES))}
-                                                                onChange={() => toggle(c, p.id)}
-                                                                aria-label={`${p.code} pentru ${c.last_name} ${c.first_name}`}
-                                                            />
+                                                            <label className="teacher-package-toggle">
+                                                                <input
+                                                                    type={p.kind === 'base' ? 'radio' : 'checkbox'}
+                                                                    className="xmas-check"
+                                                                    name={p.kind === 'base' ? `base-${c.id}` : undefined}
+                                                                    checked={c.package_ids.includes(p.id)}
+                                                                    disabled={busy === c.id || (!p.available && !c.package_ids.includes(p.id)) || (p.kind === 'extra' && !hasBasePackage(c, PACKAGES))}
+                                                                    onChange={() => toggle(c, p.id)}
+                                                                    aria-label={`${p.code} pentru ${c.last_name} ${c.first_name}`}
+                                                                />
+                                                            </label>
                                                         </td>
                                                     ))}
                                                     <td className="text-right px-4 py-3 font-semibold whitespace-nowrap" style={{ color: 'var(--xmas-burgundy)' }}>
@@ -304,7 +306,7 @@ export default function TeacherOrderPage({ params }: { params: Promise<{ id: str
                                                         <button
                                                             type="button"
                                                             onClick={() => remove(c)}
-                                                            className="text-xs hover:opacity-100 opacity-40 transition-opacity px-2"
+                                                            className="teacher-remove"
                                                             aria-label="Șterge"
                                                             title="Șterge din listă"
                                                         >
@@ -315,7 +317,7 @@ export default function TeacherOrderPage({ params }: { params: Promise<{ id: str
                                             ))}
                                             {data.children.length === 0 && (
                                                 <tr>
-                                                    <td colSpan={PACKAGES.length + 4} className="px-4 py-10 text-center text-sm" style={{ color: 'rgba(43,36,32,0.45)' }}>
+                                                    <td colSpan={PACKAGES.length + 4} className="px-4 py-10 text-center text-sm" style={{ color: 'var(--ave-muted)' }}>
                                                         Niciun copil încă. Adăugați primul copil din formularul de mai sus.
                                                     </td>
                                                 </tr>
@@ -338,7 +340,7 @@ export default function TeacherOrderPage({ params }: { params: Promise<{ id: str
                                 </div>
                             </div>
 
-                            <p className="text-xs text-center" style={{ color: 'rgba(43,36,32,0.45)' }}>
+                            <p className="text-xs text-center" style={{ color: 'var(--ave-muted)' }}>
                                 Pentru întrebări: Alexandru 0756 538 455 · Adina 0746 986 415
                             </p>
                         </div>

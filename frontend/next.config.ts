@@ -15,6 +15,7 @@ const nextConfig: NextConfig = {
   async rewrites() {
     const target = process.env.DJANGO_API_PROXY_TARGET || 'http://localhost:8000';
     return [
+      { source: '/static/:path*', destination: `${target}/static/:path*` },
       // Preserve trailing slashes: Django's POST endpoints must not redirect uploads.
       { source: '/api/assistant/:path*', destination: `${target}/api/assistant/:path*/` },
       ...(process.env.DJANGO_API_PROXY_TARGET
