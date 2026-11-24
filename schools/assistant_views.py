@@ -19,6 +19,7 @@ from django.urls import reverse
 from django.utils.cache import patch_cache_control, patch_vary_headers
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_http_methods
+from rest_framework import serializers
 
 from backend.serializers import ChildOrderSerializer
 
@@ -126,6 +127,7 @@ def class_data(school_class):
         'teacher_name': school_class.teacher_name,
         'child_count': school_class.child_count, 'photo_count': school_class.photo_count,
         'prices': school_class.prices,
+        'created_at': school_class.created_at.isoformat(),
     }
 
 
@@ -164,12 +166,26 @@ def class_detail(request, class_id):
     })
 
 
+class CrmChildOrderSerializer(ChildOrderSerializer):
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        editing_packages = any(f'package_{letter}' in attrs for letter in 'abcde')
+        if (self.instance is None or editing_packages) and not (
+            attrs.get('package_a', getattr(self.instance, 'package_a', False))
+            or attrs.get('package_b', getattr(self.instance, 'package_b', False))
+        ):
+            raise serializers.ValidationError('Alegeți Pachetul Standard (A) sau Pachetul Extra (B).')
+        return attrs
+
+
 def save_child(request, school_class, instance=None):
     data = payload(request)
     # Reject arrays, nulls and objects rather than coercing them to a person's name.
     if any(not isinstance(data.get(key, ''), str) for key in ('first_name', 'last_name', 'notes')):
         raise ValidationError('Numele, prenumele și observațiile trebuie să fie text.')
-    serializer = ChildOrderSerializer(instance, data=data, partial=instance is not None, context={'school_class': school_class})
+    if instance is None and not any(f'package_{letter}' in data for letter in 'ab'):
+        data = {**data, 'package_a': True}
+    serializer = CrmChildOrderSerializer(instance, data=data, partial=instance is not None, context={'school_class': school_class})
     if not serializer.is_valid():
         return JsonResponse({'error': ' '.join(str(error) for errors in serializer.errors.values() for error in errors)}, status=400)
     try:

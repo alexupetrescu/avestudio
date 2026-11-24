@@ -1,12 +1,13 @@
 'use client';
 
-import { useCallback, useState } from 'react';
-import PhotoUploader from './PhotoUploader';
+import { useCallback, useState, type Ref } from 'react';
+import PhotoUploader, { type PhotoPickerHandle } from './PhotoUploader';
 import { childPath, type CrmChild } from '@/lib/crm-api';
 
-export default function QuickPhotoUpload({ classId, child, onUploaded, onPendingChange, onClose }: {
+export default function QuickPhotoUpload({ classId, child, onUploaded, onPendingChange, onClose, pickerRef }: {
   classId: string; child: CrmChild; onUploaded: () => void;
   onPendingChange: (pending: boolean) => void; onClose: () => void;
+  pickerRef?: Ref<PhotoPickerHandle>;
 }) {
   const [kind, setKind] = useState('reference');
   const [pending, setPending] = useState(false);
@@ -17,6 +18,6 @@ export default function QuickPhotoUpload({ classId, child, onUploaded, onPending
       <option value="reference">Portret de referință</option><option value="photos">Fotografii în album</option>
     </select></label>
     <p className="crm-help">{kind === 'reference' ? 'Un portret clar pentru recunoaștere. Poți folosi camera telefonului.' : 'Aceste fotografii ajung direct în albumul copilului.'}</p>
-    <PhotoUploader key={kind} path={`${childPath(classId, child.id)}${kind}/`} reference={kind === 'reference'} onUploaded={onUploaded} onPendingChange={updatePending} />
+    <PhotoUploader key={kind} pickerRef={pickerRef} path={`${childPath(classId, child.id)}${kind}/`} reference={kind === 'reference'} onUploaded={onUploaded} onPendingChange={updatePending} />
   </section>;
 }

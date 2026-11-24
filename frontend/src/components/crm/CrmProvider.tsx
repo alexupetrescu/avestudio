@@ -1,11 +1,21 @@
 'use client';
 
 import Link from 'next/link';
-import { createContext, useContext, useEffect, useState, type FormEvent } from 'react';
+import { createContext, useCallback, useContext, useEffect, useId, useState, type FormEvent } from 'react';
 import { crmApi, errorText, type CrmUser } from '@/lib/crm-api';
 
 const UserContext = createContext<CrmUser | null>(null);
 export const useCrmUser = () => useContext(UserContext);
+const WorkContext = createContext<{ register: (id: string, message: string | null) => void } | null>(null);
+
+export function useCrmPendingWork(pending: boolean, message: string) {
+  const id = useId();
+  const register = useContext(WorkContext)?.register;
+  useEffect(() => {
+    register?.(id, pending ? message : null);
+    return () => register?.(id, null);
+  }, [id, pending, message, register]);
+}
 
 function Login({ onLogin, notice }: { onLogin: (user: CrmUser) => void; notice: string }) {
   const [error, setError] = useState('');
@@ -56,6 +66,34 @@ export function CrmProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [signingOut, setSigningOut] = useState(false);
+  const [pendingWork, setPendingWork] = useState<Record<string, string>>({});
+  const [navigationNotice, setNavigationNotice] = useState('');
+  const register = useCallback((id: string, message: string | null) => {
+    setPendingWork(current => {
+      if (message === (current[id] ?? null)) return current;
+      const next = { ...current };
+      if (message) next[id] = message; else delete next[id];
+      return next;
+    });
+  }, []);
+  const pendingMessages = Object.values(pendingWork);
+  const pendingMessage = pendingMessages[0] || '';
+
+  useEffect(() => {
+    if (!pendingMessage) { setNavigationNotice(''); return; }
+    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); };
+    const guard = (event: MouseEvent) => {
+      if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+      const anchor = (event.target instanceof Element ? event.target : null)?.closest('a');
+      if (!anchor || anchor.target === '_blank' || anchor.hasAttribute('download')) return;
+      const url = new URL(anchor.href);
+      if (url.pathname === location.pathname && url.search === location.search && url.origin === location.origin) return;
+      event.preventDefault(); event.stopPropagation(); setNavigationNotice(pendingMessage);
+    };
+    window.addEventListener('beforeunload', warn);
+    document.addEventListener('click', guard, true);
+    return () => { window.removeEventListener('beforeunload', warn); document.removeEventListener('click', guard, true); };
+  }, [pendingMessage]);
 
   async function loadSession() {
     setLoading(true); setError('');
@@ -72,6 +110,7 @@ export function CrmProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   async function signOut() {
+    if (pendingMessage) { setNavigationNotice(pendingMessage); return; }
     setSigningOut(true); setError('');
     try { await crmApi('logout/', { method: 'POST' }); setUser(null); setNotice('Te-ai deconectat.'); }
     catch (error) { setError(errorText(error)); }
@@ -82,12 +121,13 @@ export function CrmProvider({ children }: { children: React.ReactNode }) {
     {loading ? <div className="crm-loading" role="status">Se deschide spațiul echipei…</div>
       : error && !user ? <div className="crm-loading"><p className="crm-error" role="alert">{error}</p><button className="crm-button" onClick={loadSession}>Reîncearcă</button></div>
       : !user ? <Login onLogin={setUser} notice={notice} />
-      : <UserContext.Provider value={user}>
+      : <UserContext.Provider value={user}><WorkContext.Provider value={{ register }}>
         <header className="crm-header"><Link href="/crm" className="crm-wordmark">AVE<span>STUDIO / CRM</span></Link>
-          <div className="crm-header-account"><span>{user.name}</span><button className="crm-button crm-small" onClick={signOut} disabled={signingOut}>{signingOut ? 'Se închide…' : 'Deconectare'}</button></div></header>
+          <div className="crm-header-account"><span>{user.name}</span><button className="crm-button crm-small" onClick={signOut} disabled={signingOut || !!pendingMessage} title={pendingMessage || undefined}>{signingOut ? 'Se închide…' : 'Deconectare'}</button></div></header>
         {error && <p className="crm-error crm-global-error" role="alert">{error}</p>}
+        {navigationNotice && <p className="crm-notice crm-global-error" role="status">{navigationNotice}</p>}
         <main className="crm-content">{children}</main>
         <footer className="crm-footer">AVE Studio <span>·</span> Spațiul echipei</footer>
-      </UserContext.Provider>}
+      </WorkContext.Provider></UserContext.Provider>}
   </div>;
 }

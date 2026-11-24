@@ -165,6 +165,16 @@
 .crm-saving { display: block; color: var(--crm-muted); font-size: .75rem; min-height: 1.1rem; }
 .crm-photo-action { white-space: nowrap; }
 .crm-photo-action .crm-button { gap: .45rem; }
+.crm-photo-buttons { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: .4rem; }
+.crm-camera-button { min-width: 44px; padding: .6rem !important; }
+.crm-upload-preview { width: 120px; height: 150px; object-fit: contain; background: #fff; border: 1px solid var(--crm-line); border-radius: .6rem; margin-bottom: 1rem; }
+.crm-order-error { font-size: .8rem; color: #9f302f; padding-top: .5rem; }
+.crm-order-error .crm-button { margin-top: .5rem; }
+.crm-missing-package { display: block; color: #856020; font-size: .8rem; margin-top: .3rem; }
+.crm-pricing-disclosure { margin-bottom: 1.25rem; border: 1px solid var(--crm-line); background: #fff; border-radius: .8rem; padding: 1rem; }
+.crm-pricing-disclosure>summary { cursor: pointer; font-size: .875rem; font-weight: 500; }
+.crm-pricing-disclosure>summary>span { color: var(--crm-muted); font-weight: 400; margin-left: .8rem; display: inline-block; }
+.crm-pricing-disclosure .crm-pricing { margin-top: 1rem; margin-bottom: 0; }
 .crm-order-table tfoot { background: var(--crm-green); color: white; }
 .crm-order-table tfoot th { text-align: left; padding-left: 1rem; }
 .crm-class-total { font-weight: 600; white-space: nowrap; }

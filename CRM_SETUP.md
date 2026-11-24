@@ -70,11 +70,23 @@ their sign-in and session access. Reset passwords through Django's user admin or
   of A or B. The roster shows the school's prices, each child's total, package
   counts and the class total. Package changes save to the same order records
   used by the teacher page, with the same validation.
-- Sort the roster by surname A–Z/Z–A or by time added (newest/oldest first).
-  The selected sort order is remembered in this browser.
-- Use **Adaugă foto** beside a child to open camera/upload controls directly in
-  the roster. Choose a reference portrait or album photos; saving refreshes the
-  child's thumbnail and photo count without leaving the list.
+- Sort either the class list or child roster by name A–Z/Z–A or time added
+  (newest/oldest first). Each list remembers its selected order in this browser.
+  Search accepts names without Romanian diacritics and words in either order.
+- A/B are an exclusive choice. Extras remain unavailable until a base package
+  is selected. New CRM children default to A; empty base selections are rejected.
+  Existing rows without an order show a prompt rather than being assigned a
+  package automatically. Changing just their name or notes preserves the order.
+- Package changes save independently per child. Rapid changes are queued, with
+  the latest complete selection saved after an in-flight request; other rows
+  remain usable. A failed save restores the last confirmed selection and offers
+  an explicit retry of the intended selection.
+- **Adaugă foto** beside a child opens the file picker immediately. The camera
+  icon opens capture directly. The inline panel defaults to a reference portrait
+  and also supports album photos. A portrait preview appears before saving;
+  saving refreshes the child's thumbnail and photo count without leaving the list.
+- Pending saves/uploads block accidental in-app navigation and sign-out. The
+  file queue remains attached to the same child when sorting changes.
 - Open the child to edit their name and notes, add a reference portrait from a
   file or phone camera, or upload multiple album photos.
 - A **reference portrait** is for the existing face-matching workflow. It is

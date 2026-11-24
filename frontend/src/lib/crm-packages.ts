@@ -1,4 +1,4 @@
-import type { CrmChild, CrmPrices } from './crm-api';
+import type { CrmPrices } from './crm-api';
 
 export type PackageKey = 'package_a' | 'package_b' | 'package_c' | 'package_d' | 'package_e';
 export type PackageSelection = Record<PackageKey, boolean>;
@@ -12,15 +12,16 @@ export const CRM_PACKAGES: { key: PackageKey; letter: string; name: string; desc
 ];
 
 export function packagePatch(current: PackageSelection, key: PackageKey): Partial<PackageSelection> {
-  const value = !current[key];
-  return { [key]: value, ...(value && key === 'package_a' ? { package_b: false } : {}), ...(value && key === 'package_b' ? { package_a: false } : {}) };
+  if (key === 'package_a') return { package_a: true, package_b: false };
+  if (key === 'package_b') return { package_a: false, package_b: true };
+  return current.package_a || current.package_b ? { [key]: !current[key] } : {};
 }
 
 export function packageTotal(child: PackageSelection, prices: CrmPrices) {
   return CRM_PACKAGES.reduce((sum, item) => sum + (child[item.key] ? prices[item.priceKey] : 0), 0);
 }
 
-export function selectedPackages(child?: CrmChild): PackageSelection {
+export function selectedPackages(child?: PackageSelection): PackageSelection {
   return { package_a: child?.package_a ?? true, package_b: child?.package_b ?? false,
     package_c: child?.package_c ?? false, package_d: child?.package_d ?? false, package_e: child?.package_e ?? false };
 }

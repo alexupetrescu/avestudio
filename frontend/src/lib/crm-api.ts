@@ -6,6 +6,7 @@ export type CrmClass = {
   id: string; name: string; school_name: string; city: string; session_label: string;
   shoot_display: string; teacher_name: string; child_count: number; photo_count: number;
   prices: CrmPrices;
+  created_at: string;
 };
 export type CrmChild = ChildOrder & {
   created_at: string;

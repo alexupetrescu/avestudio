@@ -1,40 +1,49 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useImperativeHandle, useRef, useState, type Ref } from 'react';
 import { crmApi, CrmError, errorText } from '@/lib/crm-api';
+import { useCrmPendingWork } from './CrmProvider';
 
 type Upload = { key: string; file: File; state: 'waiting' | 'uploading' | 'done' | 'error'; error?: string };
+export type PhotoPickerHandle = { chooseFile: () => void; openCamera: () => void };
 
-export default function PhotoUploader({ path, reference = false, onUploaded, onPendingChange }: {
-  path: string; reference?: boolean; onUploaded: () => void; onPendingChange?: (pending: boolean) => void;
+export default function PhotoUploader({ path, reference = false, onUploaded, onPendingChange, pickerRef }: {
+  path: string; reference?: boolean; onUploaded: () => void; onPendingChange?: (pending: boolean) => void; pickerRef?: Ref<PhotoPickerHandle>;
 }) {
   const [files, setFiles] = useState<Upload[]>([]);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
+  const [preview, setPreview] = useState('');
   const input = useRef<HTMLInputElement>(null);
   const camera = useRef<HTMLInputElement>(null);
   const running = useRef(false);
   const paused = useRef(false);
   const pending = files.some(file => file.state !== 'done');
   const done = files.filter(file => file.state === 'done').length;
+  useCrmPendingWork(pending, 'Salvează fotografiile sau elimină selecția înainte de a părăsi pagina.');
+  useImperativeHandle(pickerRef, () => ({
+    chooseFile: () => { if (!busy && !pending) input.current?.click(); },
+    openCamera: () => { if (!busy && !pending) camera.current?.click(); },
+  }), [busy, pending]);
 
   useEffect(() => { onPendingChange?.(pending); }, [pending, onPendingChange]);
 
+  const previewFile = reference ? files[0]?.file : undefined;
   useEffect(() => {
-    if (!pending) return;
-    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); };
-    window.addEventListener('beforeunload', warn);
-    return () => window.removeEventListener('beforeunload', warn);
-  }, [pending]);
+    if (!previewFile) { setPreview(''); return; }
+    const url = URL.createObjectURL(previewFile);
+    setPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [previewFile]);
 
   function select(selected: FileList | null) {
     if (!selected?.length) return;
     const next = Array.from(selected).map(file => ({ key: crypto.randomUUID(), file, state: 'waiting' as const }));
+    if (input.current) input.current.value = '';
+    if (camera.current) camera.current.value = '';
     const oversized = next.find(item => item.file.size > 64 * 1024 * 1024);
     if (oversized) { setNotice(`${oversized.file.name}: limita este de 64 MB pentru o fotografie.`); return; }
     setNotice(''); setFiles(reference ? next.slice(0, 1) : next);
-    if (input.current) input.current.value = '';
-    if (camera.current) camera.current.value = '';
   }
 
   async function upload() {
@@ -60,12 +69,13 @@ export default function PhotoUploader({ path, reference = false, onUploaded, onP
 
   return <div className="crm-uploader">
     <input ref={input} type="file" accept="image/jpeg,image/png,image/webp" multiple={!reference} className="crm-file-input" aria-label={reference ? 'Alege portretul' : 'Alege fotografiile'} onChange={event => select(event.target.files)} disabled={busy} />
-    {reference && <input ref={camera} type="file" accept="image/*" capture="environment" className="crm-file-input" aria-label="Fotografiază copilul" onChange={event => select(event.target.files)} disabled={busy} />}
+    <input ref={camera} type="file" accept="image/*" capture="environment" className="crm-file-input" aria-label="Fotografiază copilul" onChange={event => select(event.target.files)} disabled={busy} />
     <div className="crm-actions"><button type="button" className="crm-button" disabled={busy || pending} onClick={() => input.current?.click()}>{reference ? 'Alege un portret' : 'Alege fotografii'}</button>
-      {reference && <button type="button" className="crm-button" disabled={busy || pending} onClick={() => camera.current?.click()}>Deschide camera</button>}</div>
+      <button type="button" className="crm-button" disabled={busy || pending} onClick={() => camera.current?.click()}>Deschide camera</button></div>
     <p className="crm-help">JPEG, PNG sau WebP · maximum 64 MB / fotografie</p>
     {notice && <p className="crm-error" role="alert">{notice}</p>}
     {files.length > 0 && <div className="crm-upload-queue" aria-live="polite">
+      {preview && <img className="crm-upload-preview" src={preview} alt="Previzualizarea portretului selectat" />}
       <p>{done} din {files.length} {reference ? 'portret salvat' : 'fotografii salvate'}</p>
       <progress value={done} max={files.length} aria-label="Fotografii salvate" />
       <ul>{files.map(item => <li key={item.key}><span className="crm-filename">{item.file.name}</span><span className={`crm-upload-status crm-upload-${item.state}`}>

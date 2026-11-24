@@ -207,6 +207,38 @@ class AssistantCrmTests(TestCase):
         self.assertTrue(child['package_d'])
         self.assertEqual(child['total_lei'], self.school.prices['b'] + self.school.prices['d'])
 
+    def test_new_crm_child_defaults_to_standard_and_rejects_explicit_empty_base(self):
+        self.client.force_login(self.assistant)
+        response = self.json_post('add-child', {'first_name': 'Ioana', 'last_name': 'Test'})
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(response.json()['child']['package_a'])
+        self.assertFalse(response.json()['child']['package_b'])
+        response = self.json_post('add-child', {'first_name': 'Maria', 'last_name': 'Test', 'package_a': False, 'package_b': False})
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(Child.objects.filter(first_name='Maria', school_class=self.group).exists())
+
+    def test_crm_cannot_unset_the_last_base_package(self):
+        self.client.force_login(self.assistant)
+        self.child.package_a = True
+        self.child.save()
+        response = self.client.patch(self.url('child'), {'package_a': False, 'package_b': False}, content_type='application/json')
+        self.assertEqual(response.status_code, 400)
+        self.child.refresh_from_db()
+        self.assertTrue(self.child.package_a)
+
+    def test_editing_legacy_names_does_not_silently_add_a_package(self):
+        self.client.force_login(self.assistant)
+        response = self.client.patch(self.url('child'), {'notes': 'Updated note'}, content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.json()['child']['package_a'])
+        self.assertFalse(response.json()['child']['package_b'])
+        self.assertEqual(response.json()['child']['total_lei'], 0)
+
+    def test_class_creation_time_is_available_for_sorting(self):
+        self.client.force_login(self.assistant)
+        item = self.client.get(self.url('classes')).json()['classes'][0]
+        self.assertEqual(item['created_at'], self.group.created_at.isoformat())
+
     def test_album_upload_creates_variants_and_only_matches_selected_child(self):
         self.client.force_login(self.assistant)
         self.assertEqual(self.upload().status_code, 201)

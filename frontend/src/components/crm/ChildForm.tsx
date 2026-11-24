@@ -24,11 +24,11 @@ export default function ChildForm({ path, child, prices, onSaved, onCancel }: {
   }
   return <form className="crm-form" onSubmit={submit}>
     <div className="crm-form-columns">
-      <label>Nume<input name="last_name" autoComplete="off" defaultValue={child?.last_name} required maxLength={120} /></label>
+      <label>Nume<input name="last_name" autoComplete="off" defaultValue={child?.last_name} autoFocus={!child} required maxLength={120} /></label>
       <label>Prenume<input name="first_name" autoComplete="off" defaultValue={child?.first_name} required maxLength={120} /></label>
     </div>
     <fieldset className="crm-package-options" disabled={busy}><legend>Pachetele copilului</legend>
-      {CRM_PACKAGES.map(item => <label key={item.key}><input type="checkbox" checked={packages[item.key]} onChange={() => setPackages(current => ({ ...current, ...packagePatch(current, item.key) }))} />
+      {CRM_PACKAGES.map(item => <label key={item.key}><input type={item.key === 'package_a' || item.key === 'package_b' ? 'radio' : 'checkbox'} name={item.key === 'package_a' || item.key === 'package_b' ? 'base_package' : undefined} value={item.letter} checked={packages[item.key]} disabled={item.letter > 'B' && !packages.package_a && !packages.package_b} onChange={() => setPackages(current => ({ ...current, ...packagePatch(current, item.key) }))} />
         <span><strong>{item.letter}</strong> {item.name} · {prices[item.priceKey]} lei</span></label>)}
       <p className="crm-help">Alege A sau B. C, D și E se pot adăuga în plus.</p>
     </fieldset>
@@ -36,7 +36,7 @@ export default function ChildForm({ path, child, prices, onSaved, onCancel }: {
     {child ? <label>Observații <span className="crm-optional">(opțional)</span><textarea name="notes" defaultValue={child.notes} maxLength={255} rows={2} /></label>
       : <details className="crm-notes"><summary>Observații (opțional)</summary><label><span className="crm-sr-only">Observații</span><textarea name="notes" maxLength={255} rows={2} /></label></details>}
     {error && <p className="crm-error" role="alert">{error}</p>}
-    <div className="crm-actions"><button className="crm-button crm-primary" disabled={busy}>{busy ? 'Se salvează…' : child ? 'Salvează modificările' : 'Adaugă copilul'}</button>
+    <div className="crm-actions"><button className="crm-button crm-primary" disabled={busy || (!packages.package_a && !packages.package_b)}>{busy ? 'Se salvează…' : child ? 'Salvează modificările' : 'Adaugă copilul'}</button>
       {onCancel && <button className="crm-button" type="button" onClick={onCancel} disabled={busy}>Renunță</button>}</div>
   </form>;
 }
