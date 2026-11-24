@@ -122,7 +122,6 @@
 
 .crm select { appearance: none; font: inherit; font-size: 1rem; color: var(--crm-ink); border: 1px solid #bacbc1; border-radius: .6rem; min-height: 48px; padding: .7rem 2.3rem .7rem .9rem; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath d='m4 6 4 4 4-4' fill='none' stroke='%23245e50' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right .8rem center; max-width: 100%; }
 .crm-list-controls { display: flex; align-items: center; gap: .75rem; }
-.crm-sort select { width: 205px; }
 .crm-pricing { margin-bottom: 1.5rem; }
 .crm-main-prices, .crm-addon-prices { display: grid; gap: 1rem; }
 .crm-main-prices { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -187,7 +186,7 @@
 .crm-photo-kind select { display: block; width: 100%; margin-top: .35rem; }
 @media (max-width: 1000px) { .crm-list-controls { flex-wrap: wrap; justify-content: flex-end; } .crm-main-prices { grid-template-columns: 1fr; } }
 @media (max-width: 720px) {
-  .crm-list-controls { display: grid; grid-template-columns: 1fr; } .crm-sort select, .crm-list-controls .crm-search { width: 100%; }
+  .crm-list-controls { display: grid; grid-template-columns: 1fr; } .crm-list-controls .crm-search { width: 100%; }
   .crm-addon-prices { grid-template-columns: 1fr; gap: .6rem; } .crm-price-card { padding: 1rem; } .crm-main-prices .crm-price-card { flex-wrap: wrap; } .crm-main-prices .crm-price-card>div:not(.crm-price) { flex: 1; } .crm-price { align-self: flex-start; }
   .crm-order-table, .crm-order-table tbody, .crm-order-table tfoot { display: block; }
   .crm-order-table thead { display: none; }
@@ -203,3 +202,14 @@
   .crm-order-table tfoot tr { display: grid; grid-template-columns: repeat(5, 1fr); padding: 1rem; gap: 1rem 0; } .crm-order-table tfoot th { grid-column: 1 / -1; padding: 0; } .crm-order-table tfoot .crm-mobile-label { color: #d7e6da; margin-bottom: .3rem; }
   .crm-class-total { grid-column: 1 / -1; } .crm-summary-spacer { display: none; }
 }
+
+/* Keep every sorting choice visible on desktop and mobile. */
+.crm-list-controls { flex-wrap: wrap; justify-content: flex-end; }
+.crm-sort { border: 0; padding: 0; margin: 0; min-width: 0; }
+.crm-sort legend { font-size: .875rem; font-weight: 600; margin-bottom: .45rem; }
+.crm-sort-buttons { display: flex; gap: .35rem; flex-wrap: wrap; }
+.crm-sort-buttons button { border: 1px solid var(--crm-line); border-radius: .5rem; background: #fff; color: inherit; font: inherit; font-size: .875rem; padding: .65rem .75rem; min-height: 44px; cursor: pointer; }
+.crm-sort-buttons button[aria-pressed="true"] { background: #1f4339; border-color: #1f4339; color: #fff; }
+.crm-sort-buttons button:focus-visible { outline: 2px solid #487b6d; outline-offset: 2px; }
+.crm-entry-meta time { display: inline; font-size: inherit; }
+@media (max-width: 720px) { .crm-sort-buttons { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); } .crm-sort-buttons button { padding: .65rem .4rem; } }

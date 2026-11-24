@@ -210,6 +210,7 @@ class Child(models.Model):
     pin = models.CharField(max_length=4, default=generate_pin, help_text='PIN for the child album')
     qr_code = models.ImageField(upload_to='schools/qr/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    entry_index = models.PositiveBigIntegerField('Entry index', editable=False)
 
     class Meta:
         ordering = ['last_name', 'first_name']
@@ -217,6 +218,7 @@ class Child(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['school_class', 'match_key'], name='unique_child_per_class'),
             models.UniqueConstraint(fields=['school_class', 'profile'], name='unique_child_profile_per_class'),
+            models.UniqueConstraint(fields=['school_class', 'entry_index'], name='unique_child_entry_per_class'),
         ]
 
     @property
@@ -256,10 +258,22 @@ class Child(models.Model):
         if self.package_a and self.package_b:
             raise ValidationError('Alegeți fie Pachetul Standard (A), fie Pachetul Extra (B), nu amândouă.')
         with transaction.atomic():
-            previous_profile = (
-                type(self).objects.filter(pk=self.pk).values_list('profile_id', flat=True).first()
+            previous = (
+                type(self).objects.filter(pk=self.pk).values('profile_id', 'school_class_id', 'entry_index').first()
                 if not self._state.adding else None
             )
+            if previous is None or previous['school_class_id'] != self.school_class_id:
+                # Lock the parent so simultaneous additions receive distinct, increasing indexes.
+                SchoolClass.objects.select_for_update().get(pk=self.school_class_id)
+                latest = type(self).objects.filter(school_class_id=self.school_class_id).aggregate(
+                    latest=models.Max('entry_index'),
+                )['latest'] or 0
+                self.entry_index = latest + 1
+                if kwargs.get('update_fields') is not None:
+                    kwargs['update_fields'] = set(kwargs['update_fields']) | {'entry_index'}
+            else:
+                self.entry_index = previous['entry_index']
+            previous_profile = previous['profile_id'] if previous else None
             if not self.profile_id:
                 self.profile = ChildProfile.objects.create(
                     id=self.pk, first_name=self.first_name, last_name=self.last_name, pin=self.pin,

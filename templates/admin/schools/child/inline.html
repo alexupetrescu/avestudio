@@ -1,0 +1,13 @@
+<div class="ave-child-roster">
+  <fieldset class="ave-roster-sorting">
+    <legend>Sortează copiii</legend>
+    <div class="ave-roster-sort-buttons">
+      <button type="button" data-roster-sort="oldest" aria-pressed="true">Ordinea adăugării</button>
+      <button type="button" data-roster-sort="newest" aria-pressed="false">Ultimii adăugați</button>
+      <button type="button" data-roster-sort="name-asc" aria-pressed="false">Nume A–Z</button>
+      <button type="button" data-roster-sort="name-desc" aria-pressed="false">Nume Z–A</button>
+    </div>
+    <p>Indexul de adăugare rămâne același la editare. Sortarea păstrează modificările nesalvate.</p>
+  </fieldset>
+  {% include "admin/edit_inline/tabular.html" %}
+</div>

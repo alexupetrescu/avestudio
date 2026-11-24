@@ -9,7 +9,8 @@ export type CrmClass = {
   created_at: string;
 };
 export type CrmChild = ChildOrder & {
-  created_at: string;
+  created_at: string | null;
+  entry_index: number;
   photo_count: number; reference_url: string | null;
 };
 export type CrmPhotos = {

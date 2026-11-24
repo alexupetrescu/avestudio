@@ -10,9 +10,7 @@ import CrmSortSelect, { useCrmSort } from '@/components/crm/CrmSortSelect';
 import useCrmOrders from '@/components/crm/useCrmOrders';
 import { childPath, classPath, crmApi, errorText, type CrmChild, type CrmClass } from '@/lib/crm-api';
 import { CRM_PACKAGES } from '@/lib/crm-packages';
-import { compareCrmItems, matchesCrmSearch } from '@/lib/crm-list';
-
-const addedFormat = new Intl.DateTimeFormat('ro-RO', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Bucharest' });
+import { addedAtLabel, compareCrmItems, matchesCrmSearch } from '@/lib/crm-list';
 
 export default function CrmClassPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -20,7 +18,7 @@ export default function CrmClassPage({ params }: { params: Promise<{ id: string 
   const [error, setError] = useState('');
   const [orderError, setOrderError] = useState('');
   const [search, setSearch] = useState('');
-  const [sort, setSort] = useCrmSort('crm-roster-sort');
+  const [sort, setSort] = useCrmSort('crm-roster-sort', 'oldest');
   const [adding, setAdding] = useState(false);
   const [newChildVersion, setNewChildVersion] = useState(0);
   const [notice, setNotice] = useState('');
@@ -92,7 +90,7 @@ export default function CrmClassPage({ params }: { params: Promise<{ id: string 
             <Link href={`/crm/classes/${id}/children/${child.id}`} className="crm-child-link" onClick={event => { if (uploadPending) { event.preventDefault(); setOrderError('Finalizează încărcarea sau elimină selecția înainte de a deschide altă pagină.'); } }}>
               <div className="crm-avatar">{child.reference_url ? <img src={child.reference_url} alt="" loading="lazy" /> : <span>{child.first_name[0]}{child.last_name[0]}</span>}</div>
               <div className="crm-child-name"><h3>{child.last_name} {child.first_name}</h3><p>{child.photo_count} {child.photo_count === 1 ? 'fotografie' : 'fotografii'} · {child.reference_url ? 'Portret adăugat' : 'Fără portret'}</p>
-                {(sort === 'newest' || sort === 'oldest') && <time dateTime={child.created_at}>Adăugat {addedFormat.format(new Date(child.created_at))}</time>}
+                <p className="crm-entry-meta">Adăugare #{child.entry_index} · <time dateTime={child.created_at || undefined}>{addedAtLabel(child.created_at)}</time></p>
                 {!child.package_a && !child.package_b && <span className="crm-missing-package">Alege pachetul A sau B</span>}</div>
             </Link>
             {orders.errors[child.id] && <div className="crm-order-error" role="alert"><p>{orders.errors[child.id]}</p><button type="button" className="crm-button crm-small" onClick={() => orders.retry(child.id)}>Reîncearcă salvarea</button></div>}

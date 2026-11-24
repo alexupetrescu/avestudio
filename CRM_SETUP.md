@@ -8,7 +8,8 @@ Django) remains the place for the owner to manage schools, classes and accounts.
 ## Enable the CRM
 
 Deploy both backend and frontend through the existing GitHub release workflow.
-The backend needs the additive migration **`schools.0006_assistant_crm`**;
+The backend needs the additive migrations **`schools.0006_assistant_crm`** and
+**`schools.0007_child_entry_index`**;
 review and apply it with the deployment controller's migration option. No
 existing children, albums, photos, packages or PINs are changed by the migration.
 
@@ -128,3 +129,21 @@ Headless Chrome checks at phone and desktop widths passed sign-in, child
 creation, both upload modes, private previews, session persistence, logout,
 and a retry after a simulated lost upload response without creating duplicates.
 All browser checks used a disposable database and synthetic images.
+
+## Roster sorting
+
+Both the CRM and the class inline in Django admin expose four visible sorting
+buttons: **Ordinea adăugării**, **Ultimii adăugați**, **Nume A–Z**, and **Nume Z–A**.
+CRM remembers the selection; a new roster view starts in entry order.
+
+Each child has a stored `created_at` timestamp and a readonly `entry_index` within
+the class. New entries receive an increasing index under a parent row lock; edits
+preserve it, and moving an enrollment to another class assigns an index there.
+Insertion sorting uses this stored index, including when timestamps are missing
+or identical to the second. CRM displays both the index and timestamp with seconds.
+
+Migration 0007 backfills existing indexes using their stored creation timestamps,
+then UUID for exact timestamp ties. Historical insertion order cannot be recovered
+for exact ties; the fallback is deterministic. Original timestamps and photos are
+unchanged. Admin sorting moves existing form rows without reloading or renumbering
+form fields, so unsaved edits stay with the correct child.

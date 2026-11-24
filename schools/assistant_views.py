@@ -141,7 +141,8 @@ def child_data(child):
     reference_url = reverse('assistant:reference-preview', args=[child.school_class_id, child.pk]) if latest else None
     return {
         **ChildOrderSerializer(child).data,
-        'created_at': child.created_at.isoformat(), 'photo_count': child.photo_count,
+        'created_at': child.created_at.isoformat() if child.created_at else None,
+        'entry_index': child.entry_index, 'photo_count': child.photo_count,
         'reference_url': f'{reference_url}?v={latest.pk}' if latest else None,
     }
 
@@ -149,7 +150,7 @@ def child_data(child):
 def children_queryset():
     return Child.objects.select_related('school_class__school').annotate(photo_count=Count('photos', distinct=True)).prefetch_related(
         Prefetch('face_references', queryset=FaceReference.objects.order_by('-created_at', '-pk')),
-    )
+    ).order_by('entry_index')
 
 
 @endpoint(['GET'])

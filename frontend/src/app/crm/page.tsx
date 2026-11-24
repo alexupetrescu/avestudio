@@ -21,7 +21,7 @@ export default function CrmHome() {
     finally { setLoading(false); }
   }
   useEffect(() => { void load(); }, []);
-  const filtered = classes.filter(item => matchesCrmSearch(`${item.name} ${item.school_name} ${item.session_label} ${item.city}`, search))
+  const filtered = classes.map((item, source_index) => ({ ...item, source_index })).filter(item => matchesCrmSearch(`${item.name} ${item.school_name} ${item.session_label} ${item.city}`, search))
     .sort((a, b) => compareCrmItems({ ...a, name: `${a.school_name} ${a.name}` }, { ...b, name: `${b.school_name} ${b.name}` }, sort));
   return <>
     <div className="crm-page-heading"><div><p className="crm-eyebrow">SPAȚIUL TĂU DE LUCRU</p><h1>Bună, {user?.name.split(' ')[0]}.</h1><p className="crm-muted">Alege o clasă pentru a adăuga copii și fotografii.</p></div><span className="crm-badge">{classes.length} clase</span></div>

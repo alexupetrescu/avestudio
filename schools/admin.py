@@ -12,6 +12,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
 from django.utils.html import format_html, format_html_join
+from django.utils import timezone
 from django.utils.safestring import mark_safe
 from django.views.decorators.csrf import csrf_protect
 
@@ -107,9 +108,15 @@ class SchoolClassInline(admin.TabularInline):
 class ChildInline(admin.TabularInline):
     model = Child
     extra = 0
+    ordering = ('entry_index',)
+    template = 'admin/schools/child/inline.html'
+
+    class Media:
+        js = ('admin/js/child_sort.js',)
+        css = {'all': ('admin/css/child_sort.css',)}
     fields = ('last_name', 'first_name', 'package_a', 'package_b', 'package_c', 'package_d', 'package_e',
-              'pin', 'reference_photo', 'photo_count', 'album_link')
-    readonly_fields = ('pin', 'reference_photo', 'photo_count', 'album_link')
+              'entry_index', 'added_at', 'pin', 'reference_photo', 'photo_count', 'album_link')
+    readonly_fields = ('entry_index', 'added_at', 'pin', 'reference_photo', 'photo_count', 'album_link')
     show_change_link = True
 
     def get_queryset(self, request):
@@ -123,6 +130,10 @@ class ChildInline(admin.TabularInline):
                 and request.user.has_perm('schools.add_facereference')):
             return [field for field in fields if field != 'reference_photo']
         return fields
+
+    @admin.display(description='Added at')
+    def added_at(self, obj):
+        return timezone.localtime(obj.created_at).strftime('%d.%m.%Y %H:%M:%S') if obj.created_at else '-'
 
     def reference_photo(self, obj):
         if not obj or obj._state.adding:
@@ -628,13 +639,13 @@ class SchoolClassAdmin(ClassUploadAdminMixin, admin.ModelAdmin):
 @admin.register(Child)
 class ChildAdmin(admin.ModelAdmin):
     list_display = ('last_name', 'first_name', 'school_class', 'packages_display', 'total_display',
-                    'pin_display', 'photo_count', 'album_link')
+                    'entry_index', 'created_at', 'pin_display', 'photo_count', 'album_link')
     list_filter = ('school_class__session__year', 'school_class__session', 'school_class__school',
                    ('school_class', admin.RelatedOnlyFieldListFilter),
                    'package_a', 'package_b', 'package_c', 'package_d', 'package_e')
     search_fields = ('first_name', 'last_name', 'pin', 'school_class__name', 'school_class__school__name')
     list_select_related = ('school_class__school', 'school_class__session', 'profile')
-    readonly_fields = ('pin', 'qr_code', 'album_panel', 'match_key', 'created_at', 'session_history')
+    readonly_fields = ('entry_index', 'pin', 'qr_code', 'album_panel', 'match_key', 'created_at', 'session_history')
     autocomplete_fields = ('profile',)
     inlines = [FaceReferenceInline]
     actions = ['print_cards']
@@ -645,6 +656,7 @@ class ChildAdmin(admin.ModelAdmin):
                    'description': 'A (Standard) and B (Extra) are alternatives: tick only one of them.'}),
         ('Album access', {'fields': ('album_panel', 'pin', 'qr_code', 'match_key')}),
         ('Photo sessions', {'fields': ('session_history',)}),
+        ('Entry order', {'fields': ('entry_index', 'created_at')}),
     )
 
     def can_upload_reference(self, request, obj=None):
