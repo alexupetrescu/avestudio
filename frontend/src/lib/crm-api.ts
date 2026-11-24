@@ -1,11 +1,12 @@
-import type { ChildOrder, SchoolClassOrder } from './api';
+import type { ChildOrder, SchoolClassOrder, SessionPackageOffer } from './api';
 
-export type CrmUser = { username: string; name: string };
+export type CrmUser = { username: string; name: string; can_admin: boolean; can_crm: boolean };
 export type CrmPrices = SchoolClassOrder['prices'];
 export type CrmClass = {
   id: string; name: string; school_name: string; city: string; session_label: string;
   shoot_display: string; teacher_name: string; child_count: number; photo_count: number;
   prices: CrmPrices;
+  offers: SessionPackageOffer[];
   created_at: string;
 };
 export type CrmChild = ChildOrder & {
@@ -42,6 +43,7 @@ export async function crmApi<T>(path: string, options: RequestInit = {}): Promis
       : 'Cererea nu a putut fi finalizată. Încearcă din nou.'), response.status);
   }
   if (data?.csrfToken) csrfToken = data.csrfToken;
+  if (path === 'login/' || path === 'logout/') window.dispatchEvent(new Event('avestudio-session-changed'));
   return data as T;
 }
 

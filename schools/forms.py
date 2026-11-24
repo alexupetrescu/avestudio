@@ -55,3 +55,59 @@ class QueuedPhotoForm(forms.Form):
         if image.size > 64 * 1024 * 1024:
             raise forms.ValidationError('Each photo must be 64 MB or smaller.')
         return image
+
+
+class ChildPackageForm(forms.ModelForm):
+    package_selection = forms.ModelMultipleChoiceField(queryset=None, required=False, label='Packages', widget=forms.CheckboxSelectMultiple)
+
+    class Meta:
+        from .models import Child
+        model = Child
+        exclude = ('package_choices',)
+
+    def __init__(self, *args, school_class=None, **kwargs):
+        from .models import SessionPackage, SchoolClass
+        from .offers import default_package_ids, session_offers
+        super().__init__(*args, **kwargs)
+        self.order_class = school_class or (self.instance.school_class if self.instance.school_class_id else None)
+        if school_class is None and self.is_bound and self.data.get('school_class'):
+            try:
+                self.order_class = SchoolClass.objects.select_related('school', 'session').get(pk=self.data['school_class'])
+            except (SchoolClass.DoesNotExist, ValueError, forms.ValidationError):
+                pass
+        queryset = SessionPackage.objects.select_related('package', 'session')
+        if self.order_class and self.order_class.session_id:
+            queryset = queryset.filter(session_id=self.order_class.session_id)
+        self.fields['package_selection'].queryset = queryset
+        self.fields['package_selection'].label_from_instance = lambda offer: str(offer) + ('' if offer.available else ' [Unavailable for new orders]')
+        if not self.instance._state.adding:
+            self.initial['package_selection'] = [offer.pk for offer in self.instance.package_choices.all()]
+        elif self.order_class and session_offers(self.order_class):
+            self.initial['package_selection'] = default_package_ids(self.order_class)
+
+    def clean(self):
+        from .offers import session_offers, validate_package_ids
+        cleaned = super().clean()
+        group = cleaned.get('school_class') or self.order_class
+        if group and session_offers(group) and 'package_selection' in cleaned:
+            validate_package_ids(group, [str(offer.pk) for offer in cleaned['package_selection']], child=self.instance, require_base=False)
+        return cleaned
+
+    def _save_m2m(self):
+        from .offers import session_offers, set_child_packages
+        super()._save_m2m()
+        if 'package_selection' in self.cleaned_data and session_offers(self.instance.school_class):
+            set_child_packages(self.instance, [str(offer.pk) for offer in self.cleaned_data['package_selection']])
+
+
+class ChildPackageInlineFormSet(forms.models.BaseInlineFormSet):
+    def get_form_kwargs(self, index):
+        return {**super().get_form_kwargs(index), 'school_class': self.instance}
+
+
+class SessionPackageFormSet(forms.models.BaseInlineFormSet):
+    def clean(self):
+        super().clean()
+        for form in self.forms:
+            if form.cleaned_data.get('DELETE') and form.instance.pk and form.instance.selected_children.exists():
+                form.add_error('DELETE', 'This offer is selected by children. Disable it instead of deleting it.')

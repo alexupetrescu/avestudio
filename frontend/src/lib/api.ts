@@ -123,10 +123,25 @@ async function parseError(res: Response, fallback: string): Promise<never> {
     throw new Error(message);
 }
 
+export interface SessionPackageOffer {
+    id: string;
+    code: string;
+    name: string;
+    kind: 'base' | 'extra';
+    description: string;
+    digital_included: boolean;
+    available: boolean;
+    price: number;
+    list_price: number | null;
+    items: { quantity: number; name: string; format: string }[];
+    image: string | null;
+}
+
 export interface ChildOrder {
     id: string;
     first_name: string;
     last_name: string;
+    package_ids: string[];
     package_a: boolean;
     package_b: boolean;
     package_c: boolean;
@@ -137,6 +152,7 @@ export interface ChildOrder {
 }
 
 export interface SchoolClassOrder {
+    offers: SessionPackageOffer[];
     session_label: string;
     id: string;
     name: string;

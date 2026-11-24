@@ -10,10 +10,12 @@ import re
 import unicodedata
 import uuid
 from io import BytesIO
+from decimal import Decimal
 
 import qrcode
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator, RegexValidator
 from django.core.files import File
 from django.db import models, transaction
 from django.utils import timezone
@@ -98,14 +100,117 @@ class School(models.Model):
 class PhotoSession(models.Model):
     name = models.CharField(max_length=120, help_text='Christmas, March, Summer, etc.')
     year = models.PositiveIntegerField(default=pricing.SEASON)
+    offer_start = models.DateField('Offer period start', null=True, blank=True)
+    offer_end = models.DateField('Offer period end', null=True, blank=True)
+    packages = models.ManyToManyField('PhotoPackage', through='SessionPackage', related_name='photo_sessions', blank=True)
     date = models.DateField(null=True, blank=True, help_text='Used to order sessions within a year.')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['-year', '-date', '-created_at']
 
+    def clean(self):
+        super().clean()
+        if self.offer_start and self.offer_end and self.offer_start > self.offer_end:
+            raise ValidationError({'offer_end': 'Offer end must be on or after its start.'})
+
     def __str__(self):
         return f'{self.name} {self.year}'
+
+
+class PhotoPackage(models.Model):
+    class Kind(models.TextChoices):
+        BASE = 'base', 'Base package (choose one)'
+        EXTRA = 'extra', 'Optional extra'
+
+    name = models.CharField(max_length=120)
+    kind = models.CharField(max_length=10, choices=Kind.choices, default=Kind.BASE)
+    description = models.TextField(blank=True, help_text='Short description shown on the order form.')
+    digital_included = models.BooleanField(default=False)
+    list_price = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, validators=[MinValueValidator(0)], help_text='Optional original price in lei.')
+    new_price = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], help_text='Price in lei for new schools.')
+    returning_price = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, validators=[MinValueValidator(0)], help_text='Blank uses the new-school price.')
+    image = models.ImageField(upload_to='site/packages/', blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['kind', 'name', 'pk']
+        verbose_name = 'Photo package'
+        verbose_name_plural = 'Photo packages'
+
+    def clean(self):
+        super().clean()
+        if self.pk:
+            old = type(self).objects.filter(pk=self.pk).values_list('kind', flat=True).first()
+            if old != self.kind and self.session_offers.filter(selected_children__isnull=False).exists():
+                raise ValidationError({'kind': 'The type cannot change after children have selected this package. Create a new package instead.'})
+
+    def __str__(self):
+        return self.name
+
+
+class PackageItem(models.Model):
+    package = models.ForeignKey(PhotoPackage, related_name='items', on_delete=models.CASCADE)
+    quantity = models.PositiveSmallIntegerField(default=1, validators=[MinValueValidator(1)])
+    name = models.CharField(max_length=180, help_text='Calendar, photograph, greeting card, etc.')
+    format = models.CharField(max_length=80, blank=True, help_text='For example 20×30 cm, 45 pieces, or design 2027.')
+    sort_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['sort_order', 'pk']
+
+    def __str__(self):
+        return f'{self.quantity} × {self.name}' + (f' · {self.format}' if self.format else '')
+
+
+class SessionPackage(models.Model):
+    session = models.ForeignKey(PhotoSession, related_name='package_offers', on_delete=models.CASCADE)
+    package = models.ForeignKey(PhotoPackage, related_name='session_offers', on_delete=models.PROTECT)
+    code = models.CharField(max_length=12, validators=[RegexValidator(r'^[A-Za-z0-9][A-Za-z0-9-]*$', 'Use letters, numbers or hyphens.')], help_text='Display label: A, B, C, AA, EXTRA1, etc.')
+    sort_order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True, help_text='Disable to stop new selections while retaining existing orders.')
+    list_price = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, validators=[MinValueValidator(0)], help_text='Optional session override in lei.')
+    new_price = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, validators=[MinValueValidator(0)], help_text='Blank uses the catalog price.')
+    returning_price = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, validators=[MinValueValidator(0)], help_text='Blank uses the catalog returning-school price.')
+    legacy_key = models.CharField(max_length=1, blank=True, editable=False, default='')
+
+    class Meta:
+        ordering = ['sort_order', 'pk']
+        constraints = [
+            models.UniqueConstraint(fields=['session', 'code'], name='unique_package_code_per_session'),
+            models.UniqueConstraint(fields=['session', 'package'], name='unique_package_per_session'),
+        ]
+
+    def clean(self):
+        super().clean()
+        self.code = self.code.upper().strip()
+        if self.pk:
+            old = type(self).objects.filter(pk=self.pk).values('session_id', 'package_id').first()
+            if old and (old['session_id'] != self.session_id or old['package_id'] != self.package_id) and self.selected_children.exists():
+                raise ValidationError('This offer is already selected. Add another offer instead of changing its session or package.')
+
+    def save(self, *args, **kwargs):
+        self.code = self.code.upper().strip()
+        super().save(*args, **kwargs)
+
+    @property
+    def available(self):
+        return self.is_active and self.package.is_active
+
+    def price_for(self, returning):
+        if returning:
+            if self.returning_price is not None:
+                return self.returning_price
+            return self.package.returning_price if self.package.returning_price is not None else (self.new_price if self.new_price is not None else self.package.new_price)
+        return self.new_price if self.new_price is not None else self.package.new_price
+
+    @property
+    def effective_list_price(self):
+        return self.list_price if self.list_price is not None else self.package.list_price
+
+    def __str__(self):
+        return f'{self.code} · {self.package.name} · {self.session}'
 
 
 class ChildProfile(models.Model):
@@ -159,11 +264,12 @@ class SchoolClass(models.Model):
 
     @property
     def prices(self) -> dict:
-        return self.school.prices
+        from .offers import legacy_prices
+        return legacy_prices(self)
 
     @property
     def price_a(self) -> int:
-        return self.school.price_a
+        return self.prices['a']
 
     @property
     def shoot_display(self) -> str:
@@ -211,6 +317,7 @@ class Child(models.Model):
     qr_code = models.ImageField(upload_to='schools/qr/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     entry_index = models.PositiveBigIntegerField('Entry index', editable=False)
+    package_choices = models.ManyToManyField(SessionPackage, through='ChildPackageChoice', related_name='selected_children', blank=True, editable=False)
 
     class Meta:
         ordering = ['last_name', 'first_name']
@@ -233,13 +340,21 @@ class Child(models.Model):
         return bool(getattr(self, f'package_{key}'))
 
     @property
-    def total_lei(self) -> int:
-        prices = self.school_class.prices
-        return sum(prices[k] for k in pricing.LETTERS if self.has(k))
+    def package_ids(self):
+        from .offers import child_package_ids
+        return child_package_ids(self)
+
+    @property
+    def total_lei(self):
+        from .offers import child_package_ids, catalog_for_class
+        selected = set(child_package_ids(self))
+        return sum((offer['price'] for offer in catalog_for_class(self.school_class) if offer['id'] in selected), Decimal('0.00'))
 
     @property
     def packages(self) -> str:
-        return ''.join(k.upper() for k in pricing.LETTERS if self.has(k)) or '-'
+        from .offers import child_package_ids, catalog_for_class
+        selected = set(child_package_ids(self))
+        return ', '.join(offer['code'] for offer in catalog_for_class(self.school_class) if offer['id'] in selected) or '-'
 
     def clean(self):
         super().clean()
@@ -259,7 +374,7 @@ class Child(models.Model):
             raise ValidationError('Alegeți fie Pachetul Standard (A), fie Pachetul Extra (B), nu amândouă.')
         with transaction.atomic():
             previous = (
-                type(self).objects.filter(pk=self.pk).values('profile_id', 'school_class_id', 'entry_index').first()
+                type(self).objects.filter(pk=self.pk).values('profile_id', 'school_class_id', 'entry_index', *[f'package_{key}' for key in pricing.LETTERS]).first()
                 if not self._state.adding else None
             )
             if previous is None or previous['school_class_id'] != self.school_class_id:
@@ -273,6 +388,8 @@ class Child(models.Model):
                     kwargs['update_fields'] = set(kwargs['update_fields']) | {'entry_index'}
             else:
                 self.entry_index = previous['entry_index']
+            legacy_changed = any(getattr(self, f'package_{key}') != (previous[f'package_{key}'] if previous else False) for key in pricing.LETTERS)
+            moved = previous is not None and previous['school_class_id'] != self.school_class_id
             previous_profile = previous['profile_id'] if previous else None
             if not self.profile_id:
                 self.profile = ChildProfile.objects.create(
@@ -282,9 +399,21 @@ class Child(models.Model):
             if not self.qr_code or (previous_profile and previous_profile != self.profile_id):
                 self.generate_qr_code()
             super().save(*args, **kwargs)
+            if legacy_changed or moved:
+                from .offers import sync_legacy_choices
+                sync_legacy_choices(self, moved=moved, legacy_changed=legacy_changed)
 
     def __str__(self):
         return self.full_name
+
+
+class ChildPackageChoice(models.Model):
+    child = models.ForeignKey(Child, on_delete=models.CASCADE)
+    offer = models.ForeignKey(SessionPackage, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['child', 'offer'], name='unique_child_package_choice')]
 
 
 def _class_id_of(instance):

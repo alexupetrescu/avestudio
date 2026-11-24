@@ -1,13 +1,14 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { childPath, crmApi, errorText, type CrmChild, type CrmPrices } from '@/lib/crm-api';
+import { childPath, crmApi, errorText, type CrmChild } from '@/lib/crm-api';
+import type { SessionPackageOffer } from '@/lib/api';
 import { packagePatch, packageTotal, selectedPackages, type PackageKey, type PackageSelection } from '@/lib/crm-packages';
 import { useCrmPendingWork } from './CrmProvider';
 
 type PendingOrder = { confirmed: CrmChild; desired: CrmChild; version: number; running: boolean };
 
-export default function useCrmOrders(classId: string, prices: CrmPrices | undefined,
+export default function useCrmOrders(classId: string, offers: SessionPackageOffer[] | undefined,
   apply: (id: string, packages: PackageSelection, total: number) => void) {
   const pending = useRef(new Map<string, PendingOrder>());
   const [saving, setSaving] = useState<Record<string, boolean>>({});
@@ -45,12 +46,12 @@ export default function useCrmOrders(classId: string, prices: CrmPrices | undefi
   }
 
   function toggle(child: CrmChild, key: PackageKey) {
-    if (!prices) return;
+    if (!offers) return;
     const existing = pending.current.get(child.id);
     const current = existing?.running ? existing.desired : child;
-    const selection = { ...current, ...packagePatch(current, key) };
-    if (Object.keys(selectedPackages(current)).every(key => current[key as PackageKey] === selection[key as PackageKey])) return;
-    const desired = { ...selection, total_lei: packageTotal(selection, prices) };
+    const selection = { ...current, ...packagePatch(current, key, offers) };
+    if (current.package_ids.length === selection.package_ids.length && current.package_ids.every(id => selection.package_ids.includes(id))) return;
+    const desired = { ...selection, total_lei: packageTotal(selection, offers) };
     const order = existing || { confirmed: child, desired, version: 0, running: false };
     order.desired = desired; order.version += 1;
     pending.current.set(child.id, order);

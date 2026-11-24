@@ -64,6 +64,20 @@ class AssistantCrmTests(TestCase):
         self.assertIn('csrftoken', response.cookies)
         self.assertIn('no-store', response['Cache-Control'])
 
+    def test_session_navigation_flags_follow_real_access(self):
+        self.assertIsNone(self.client.get(self.url('session')).json()['user'])
+        for user, admin, crm in ((self.assistant, False, True), (self.unassigned, True, False), (self.admin, True, True)):
+            with self.subTest(user=user.username):
+                self.client.force_login(user)
+                response = self.client.get(self.url('session'))
+                data = response.json()['user']
+                self.assertEqual((data['can_admin'], data['can_crm']), (admin, crm))
+                self.assertIn('no-store', response['Cache-Control'])
+                self.assertIn('Cookie', response['Vary'])
+        self.client.force_login(self.assistant)
+        self.grant.delete()
+        self.assertFalse(self.client.get(self.url('session')).json()['user']['can_crm'])
+
     def test_assistant_can_login_without_staff_permission(self):
         response = self.json_post('login', {'username': 'assistant', 'password': 'test-password'})
         self.assertEqual(response.status_code, 200)

@@ -40,7 +40,7 @@
 </style>
 </head>
 <body>
-    <div class="brand">AVE Studio · Ofertă foto Crăciun {{ season }}</div>
+    <div class="brand">AVE Studio · Lista de comenzi</div>
     <h1>{{ school.name }}{% if school.city %} ({{ school.city }}){% endif %} — {{ school_class.name }}</h1>
     <p>{{ school_class.session_label }}</p>
     <p class="meta">
@@ -49,19 +49,26 @@
     </p>
     {% if school_class.shoot_display %}
     <p class="shoot"><b>Ședința foto:</b> {{ school_class.shoot_display }}</p>
-    {% else %}
+    {% elif period %}
     <p class="shoot"><b>Perioadă pentru fotografiere:</b> {{ period }}</p>
     {% endif %}
     <table class="legend" width="100%">
         {% for item in legend %}
         <tr>
             <td class="lk" width="5%">{{ item.letter }}</td>
-            <td class="ln" width="75%"><b>{{ item.label }}</b>{% if item.list %} <span class="muted">(alegeți A sau B)</span><br><span class="muted">{{ item.contents }}</span>{% endif %}</td>
-            <td class="lp" width="20%">{% if item.list %}<span class="strike">{{ item.list }} lei</span> {% endif %}<b>{{ item.price }} lei</b></td>
+            <td class="ln" width="75%"><b>{{ item.label }}</b>{% if item.contents %}<br><span class="muted">{{ item.contents }}</span>{% endif %}</td>
+            <td class="lp" width="20%">{% if item.list %}<span class="strike">{{ item.list|floatformat:"-2" }} lei</span> {% endif %}<b>{{ item.price|floatformat:"-2" }} lei</b></td>
         </tr>
         {% endfor %}
     </table>
 
+{% if compact_packages %}
+    <table class="list" width="100%" repeat="1">
+      <thead><tr><th width="6%">#</th><th width="34%">Copil</th><th width="32%">Pachete</th><th width="13%" class="r">Total</th><th width="15%">Observații</th></tr></thead>
+      <tbody>{% for row in rows %}<tr><td class="c nr">{{ row.nr }}</td><td>&nbsp;{{ row.child.full_name }}</td><td>&nbsp;{{ row.selected_codes }}</td><td class="r">{{ row.total|floatformat:"-2" }} lei&nbsp;</td><td class="notes">&nbsp;{{ row.child.notes }}</td></tr>{% endfor %}
+      <tr class="total"><td></td><td>&nbsp;TOTAL ({{ count }} copii)</td><td>{% for item in legend %}{{ item.letter }}: {{ item.count }}{% if not forloop.last %}; {% endif %}{% endfor %}</td><td class="r">{{ total_lei|floatformat:"-2" }} lei&nbsp;</td><td></td></tr></tbody>
+    </table>
+{% else %}
     <table class="list" repeat="1" width="100%">
         <thead>
             <tr>
@@ -80,7 +87,7 @@
                 <td>&nbsp;{{ row.child.last_name }}</td>
                 <td>&nbsp;{{ row.child.first_name }}</td>
                 {% for on in row.marks %}{% if on %}<td class="c on"><span class="mark">✓</span></td>{% else %}<td class="c"></td>{% endif %}{% endfor %}
-                <td class="r">{% if row.total %}{{ row.total }} lei&nbsp;{% endif %}</td>
+                <td class="r">{{ row.total|floatformat:"-2" }} lei&nbsp;</td>
                 <td class="notes">&nbsp;{{ row.child.notes }}</td>
             </tr>
         {% endfor %}
@@ -93,12 +100,13 @@
                 <td class="c"></td>
                 <td colspan="2">&nbsp;TOTAL ({{ count }} copii)</td>
                 {% for t in totals %}<td class="c">{{ t }}</td>{% endfor %}
-                <td class="r">{{ total_lei }} lei&nbsp;</td>
+                <td class="r">{{ total_lei|floatformat:"-2" }} lei&nbsp;</td>
                 <td></td>
             </tr>
         </tbody>
     </table>
 
+{% endif %}
     <div id="footer">
         AVE Studio · Alexandru 0756 538 455 · Adina 0746 986 415 · www.avestudio.ro &nbsp;·&nbsp; pagina <pdf:pagenumber> / <pdf:pagecount>
     </div>

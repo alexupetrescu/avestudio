@@ -24,6 +24,7 @@ from rest_framework import serializers
 from backend.serializers import ChildOrderSerializer
 
 from .forms import QueuedPhotoForm
+from .offers import catalog_data, default_package_ids
 from .models import AssistantUploadReceipt, Child, ClassPhoto, FaceReference, PhotoMatch, SchoolClass
 
 logger = logging.getLogger(__name__)
@@ -77,7 +78,11 @@ def payload(request):
 def user_data(user):
     if not (user.is_authenticated and user.is_active):
         return None
-    return {'username': user.get_username(), 'name': user.get_full_name() or user.get_username()}
+    return {
+        'username': user.get_username(), 'name': user.get_full_name() or user.get_username(),
+        'can_admin': user.is_staff,
+        'can_crm': user.is_superuser or accessible_classes(user).exists(),
+    }
 
 
 @endpoint(['GET'], public=True)
@@ -127,12 +132,13 @@ def class_data(school_class):
         'teacher_name': school_class.teacher_name,
         'child_count': school_class.child_count, 'photo_count': school_class.photo_count,
         'prices': school_class.prices,
+        'offers': catalog_data(school_class),
         'created_at': school_class.created_at.isoformat(),
     }
 
 
 def class_queryset(user):
-    return accessible_classes(user).annotate(child_count=Count('children', distinct=True), photo_count=Count('photos', distinct=True))
+    return accessible_classes(user).prefetch_related('session__package_offers__package__items').annotate(child_count=Count('children', distinct=True), photo_count=Count('photos', distinct=True))
 
 
 def child_data(child):
@@ -148,7 +154,8 @@ def child_data(child):
 
 
 def children_queryset():
-    return Child.objects.select_related('school_class__school').annotate(photo_count=Count('photos', distinct=True)).prefetch_related(
+    return Child.objects.select_related('school_class__school', 'school_class__session').annotate(photo_count=Count('photos', distinct=True)).prefetch_related(
+        'school_class__session__package_offers__package__items', 'package_choices__package',
         Prefetch('face_references', queryset=FaceReference.objects.order_by('-created_at', '-pk')),
     ).order_by('entry_index')
 
@@ -170,6 +177,8 @@ def class_detail(request, class_id):
 class CrmChildOrderSerializer(ChildOrderSerializer):
     def validate(self, attrs):
         attrs = super().validate(attrs)
+        if 'package_ids' in attrs:
+            return attrs
         editing_packages = any(f'package_{letter}' in attrs for letter in 'abcde')
         if (self.instance is None or editing_packages) and not (
             attrs.get('package_a', getattr(self.instance, 'package_a', False))
@@ -184,8 +193,8 @@ def save_child(request, school_class, instance=None):
     # Reject arrays, nulls and objects rather than coercing them to a person's name.
     if any(not isinstance(data.get(key, ''), str) for key in ('first_name', 'last_name', 'notes')):
         raise ValidationError('Numele, prenumele și observațiile trebuie să fie text.')
-    if instance is None and not any(f'package_{letter}' in data for letter in 'ab'):
-        data = {**data, 'package_a': True}
+    if instance is None and 'package_ids' not in data and not any(f'package_{letter}' in data for letter in 'ab'):
+        data = {**data, 'package_a': True} if any(f'package_{letter}' in data for letter in 'cde') else {**data, 'package_ids': default_package_ids(school_class)}
     serializer = CrmChildOrderSerializer(instance, data=data, partial=instance is not None, context={'school_class': school_class})
     if not serializer.is_valid():
         return JsonResponse({'error': ' '.join(str(error) for errors in serializer.errors.values() for error in errors)}, status=400)
@@ -208,7 +217,7 @@ def edit_child(request, class_id, child_id):
     child = scoped_child(request, class_id, child_id)
     if request.method == 'PATCH':
         return save_child(request, child.school_class, instance=child)
-    return JsonResponse({'child': child_data(children_queryset().get(pk=child.pk)), 'prices': child.school_class.prices})
+    return JsonResponse({'child': child_data(children_queryset().get(pk=child.pk)), 'prices': child.school_class.prices, 'offers': catalog_data(child.school_class)})
 
 
 def store_upload(request, child, kind):

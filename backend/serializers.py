@@ -73,12 +73,13 @@ from schools.models import Child, ClassPhoto, SchoolClass
 
 class ChildOrderSerializer(serializers.ModelSerializer):
     """Child row on the teacher order form."""
-    total_lei = serializers.IntegerField(read_only=True)
+    total_lei = serializers.FloatField(read_only=True)
+    package_ids = serializers.ListField(child=serializers.CharField(max_length=64), required=False)
 
     class Meta:
         model = Child
         fields = ['id', 'first_name', 'last_name', 'package_a', 'package_b', 'package_c', 'package_d',
-                  'package_e', 'notes', 'total_lei']
+                  'package_e', 'package_ids', 'notes', 'total_lei']
         read_only_fields = ['id']
 
     def validate(self, attrs):
@@ -86,12 +87,29 @@ class ChildOrderSerializer(serializers.ModelSerializer):
         last = attrs.get('last_name', getattr(self.instance, 'last_name', '')).strip()
         if not first or not last:
             raise serializers.ValidationError('Completați numele și prenumele.')
-        pkg_a = attrs.get('package_a', getattr(self.instance, 'package_a', False))
-        pkg_b = attrs.get('package_b', getattr(self.instance, 'package_b', False))
+        from schools.offers import default_package_ids, validate_package_ids
+        from django.core.exceptions import ValidationError as ModelValidationError
+        school_class = self.context.get('school_class') or (self.instance.school_class if self.instance else None)
+        if self.instance is None and school_class and not any(key in attrs for key in ['package_ids', *[f'package_{letter}' for letter in 'abcde']]):
+            attrs['package_ids'] = default_package_ids(school_class)
+        if 'package_ids' in attrs:
+            try:
+                validate_package_ids(school_class, attrs['package_ids'], child=self.instance)
+            except ModelValidationError as error:
+                raise serializers.ValidationError(error.messages)
+            # The ID selection is canonical; legacy flags cannot override it.
+            for letter in 'abcde':
+                attrs.pop(f'package_{letter}', None)
+            pkg_a = pkg_b = False
+        else:
+            pkg_a = attrs.get('package_a', getattr(self.instance, 'package_a', False))
+
+        if 'package_ids' not in attrs:
+            pkg_b = attrs.get('package_b', getattr(self.instance, 'package_b', False))
         if pkg_a and pkg_b:
             raise serializers.ValidationError('Alegeți fie Pachetul Standard (A), fie Pachetul Extra (B), nu amândouă.')
         has_extra = any(attrs.get(f'package_{k}', getattr(self.instance, f'package_{k}', False)) for k in 'cde')
-        if has_extra and not (pkg_a or pkg_b):
+        if 'package_ids' not in attrs and has_extra and not (pkg_a or pkg_b):
             raise serializers.ValidationError('Extra C, D și E se comandă doar împreună cu Pachetul Standard (A) sau Extra (B).')
         from schools.models import fold_name
         school_class = self.context.get('school_class')
@@ -105,6 +123,29 @@ class ChildOrderSerializer(serializers.ModelSerializer):
         return attrs
 
 
+    def create(self, validated_data):
+        from django.db import transaction
+        from schools.offers import set_child_packages
+        ids = validated_data.pop('package_ids', None)
+        with transaction.atomic():
+            child = super().create(validated_data)
+            if ids is not None:
+                set_child_packages(child, ids, require_base=True)
+        return child
+
+    def update(self, instance, validated_data):
+        from django.db import transaction
+        from schools.offers import set_child_packages
+        ids = validated_data.pop('package_ids', None)
+        with transaction.atomic():
+            # Re-read under a row lock so a names-only edit cannot restore stale package flags.
+            instance = Child.objects.select_for_update().get(pk=instance.pk)
+            child = super().update(instance, validated_data)
+            if ids is not None:
+                set_child_packages(child, ids, require_base=True)
+        return child
+
+
 class SchoolClassOrderSerializer(serializers.ModelSerializer):
     school_name = serializers.CharField(source='school.name', read_only=True)
     is_returning = serializers.BooleanField(source='school.is_returning_customer', read_only=True)
@@ -113,17 +154,23 @@ class SchoolClassOrderSerializer(serializers.ModelSerializer):
     shoot_display = serializers.CharField(read_only=True)
     session_label = serializers.CharField(read_only=True)
     children = ChildOrderSerializer(many=True, read_only=True)
+    offers = serializers.SerializerMethodField()
 
     class Meta:
         model = SchoolClass
         fields = ['id', 'name', 'teacher_name', 'school_name', 'is_returning', 'prices', 'period',
-                  'shoot_date', 'shoot_time', 'shoot_display', 'session_label', 'children']
+                  'shoot_date', 'shoot_time', 'shoot_display', 'session_label', 'offers', 'children']
 
     def get_prices(self, obj):
-        return school_pricing.prices_for(obj.school.is_returning_customer)
+        return obj.prices
 
     def get_period(self, obj):
-        return school_pricing.PERIOD
+        from schools.offers import offer_period
+        return offer_period(obj)
+
+    def get_offers(self, obj):
+        from schools.offers import catalog_data
+        return catalog_data(obj)
 
 
 class ClassPhotoSerializer(serializers.ModelSerializer):

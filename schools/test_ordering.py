@@ -101,6 +101,7 @@ class LegacyEntryOrderMigrationTests(TransactionTestCase):
         old = ('schools', '0006_assistant_crm')
         target = ('schools', '0007_child_entry_index')
         executor = MigrationExecutor(connection)
+        restore = executor.loader.graph.leaf_nodes()
         try:
             executor.migrate([old])
             historical = executor.loader.project_state([old]).apps
@@ -120,4 +121,4 @@ class LegacyEntryOrderMigrationTests(TransactionTestCase):
             self.assertEqual([(str(row.pk), row.entry_index) for row in rows], [(str(first.pk), 1), (str(second.pk), 2)])
             self.assertTrue(all(row.created_at == fixed for row in rows))
         finally:
-            MigrationExecutor(connection).migrate([target])
+            MigrationExecutor(connection).migrate(restore)

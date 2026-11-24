@@ -1,5 +1,5 @@
 {% extends "admin/base.html" %}
-{% load static %}
+{% load static team_navigation %}
 
 {% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | AVE Studio Admin{% endblock %}
 
@@ -14,4 +14,10 @@
 {% block extrastyle %}
 {{ block.super }}
 <link rel="stylesheet" href="{% static 'admin/css/custom_admin.css' %}">
+{% endblock %}
+
+{% block userlinks %}
+{% team_crm_access user as can_use_crm %}
+{% if can_use_crm %}<a href="/crm/">CRM</a> / {% endif %}
+{{ block.super }}
 {% endblock %}

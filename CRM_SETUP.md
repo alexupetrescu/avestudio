@@ -9,7 +9,8 @@ Django) remains the place for the owner to manage schools, classes and accounts.
 
 Deploy both backend and frontend through the existing GitHub release workflow.
 The backend needs the additive migrations **`schools.0006_assistant_crm`** and
-**`schools.0007_child_entry_index`**;
+**`schools.0007_child_entry_index`**, **`schools.0008_session_package_catalog`**, and
+**`schools.0009_seed_current_session_offers`**;
 review and apply it with the deployment controller's migration option. No
 existing children, albums, photos, packages or PINs are changed by the migration.
 
@@ -147,3 +148,41 @@ then UUID for exact timestamp ties. Historical insertion order cannot be recover
 for exact ties; the fallback is deterministic. Original timestamps and photos are
 unchanged. Admin sorting moves existing form rows without reloading or renumbering
 form fields, so unsaved edits stay with the correct child.
+
+## Team navigation
+
+Sign in on the main domain through `/admin/` or `/crm/`. A compact team bar then
+appears across the public website and CRM. Staff see **Django Admin**; assigned
+assistants and superusers see **CRM**. Anonymous visitors see no team bar. Login,
+logout, navigation and returning to the tab refresh the access state. Django admin
+also includes a CRM link for accounts with CRM access. The bar uses the existing
+private, uncached session endpoint and does not grant any additional permissions.
+
+## Configurable photo-session packages
+
+1. Open **Schools → Photo packages** (`/admin/schools/photopackage/`). Add a base
+   package or optional extra, its description/image, digital inclusion, catalog
+   prices in lei, and item rows with quantity, name and format/size. Sessions can
+   also be assigned directly from this package editor. Returning-school
+   price is optional; blank uses the regular price. Prices support two decimals.
+2. Open **Schools → Photo sessions** (`/admin/schools/photosession/`). Assign any
+   number of catalog packages in the inline. Give each a unique display code and
+   order, and optionally override its prices for that session. Blank prices inherit
+   from the catalog. Set the photography period here if needed.
+3. Assign the photo session to a class. Its teacher form, CRM, admin order editor,
+   CSV and class PDF use that session's offers. Each child selects exactly one base
+   package and any number of extras. Admin can retain empty, not-yet-ordered entries.
+
+Catalog price changes apply to sessions inheriting them. Session overrides allow
+different terms without duplicating the catalog package. Disable an offer to stop
+new selections while preserving existing orders; used offers/packages are protected
+from deletion or reassignment. Create a new package when changing its base/extra
+type after orders exist.
+
+Migration 0009 imports the Christmas A–E offer, including product quantities, list,
+new-school and returning-school prices. It assigns those definitions to existing
+photo sessions and copies existing selections. Child names, PINs, photos, creation
+times and entry indexes remain intact. Unconfigured legacy classes retain the old
+A–E offer until their session is configured. The old boolean fields remain a
+compatibility bridge for existing clients; current teacher and CRM forms use
+`package_ids` and are not limited to five choices.

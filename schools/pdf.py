@@ -13,6 +13,8 @@ from io import BytesIO
 from pathlib import Path
 
 from django.conf import settings
+from django.db.models import prefetch_related_objects
+from decimal import Decimal
 from django.template.loader import render_to_string
 from PIL import Image
 from reportlab.lib.fonts import addMapping
@@ -50,32 +52,28 @@ def ensure_fonts():
 
 
 def class_list_context(school_class) -> dict:
-    children = list(school_class.children.all())
-    totals = {k: 0 for k in pricing.LETTERS}
-    total_lei = 0
+    from .offers import catalog_for_class, child_package_ids, offer_period
+    prefetch_related_objects([school_class], 'session__package_offers__package__items', 'children__package_choices')
+    offers = catalog_for_class(school_class)
+    totals = {offer['id']: 0 for offer in offers}
+    total_lei = Decimal('0.00')
     rows = []
-    for i, child in enumerate(children, start=1):
-        for k in pricing.LETTERS:
-            totals[k] += child.has(k)
-        total_lei += child.total_lei
-        rows.append({
-            'nr': i,
-            'child': child,
-            'marks': [child.has(k) for k in pricing.LETTERS],
-            'total': child.total_lei,
-        })
-    is_returning = school_class.school.is_returning_customer
+    children = list(school_class.children.all())
+    for index, child in enumerate(children, start=1):
+        selected = set(child_package_ids(child))
+        for offer in offers:
+            totals[offer['id']] += offer['id'] in selected
+        total = sum((offer['price'] for offer in offers if offer['id'] in selected), Decimal('0.00'))
+        total_lei += total
+        rows.append({'nr': index, 'child': child, 'marks': [offer['id'] in selected for offer in offers],
+                     'selected_codes': ', '.join(offer['code'] for offer in offers if offer['id'] in selected), 'total': total})
     return {
-        'school_class': school_class,
-        'school': school_class.school,
-        'rows': rows,
-        'letters': [k.upper() for k in pricing.LETTERS],
-        'totals': [totals[k] for k in pricing.LETTERS],
-        'total_lei': total_lei,
-        'count': len(children),
-        'legend': pricing.legend(is_returning),
-        'period': pricing.PERIOD,
-        'season': pricing.SEASON,
+        'school_class': school_class, 'school': school_class.school, 'rows': rows,
+        'letters': [offer['code'] for offer in offers], 'totals': [totals[offer['id']] for offer in offers],
+        'total_lei': total_lei, 'count': len(children),
+        'legend': [{'letter': offer['code'], 'label': offer['name'], 'contents': (offer['description'] if offer['description'] != offer['name'] else '') + (' + format digital inclus' if offer['digital_included'] else ''), 'price': offer['price'], 'list': offer['list_price'], 'count': totals[offer['id']]} for offer in offers],
+        'period': offer_period(school_class), 'season': school_class.session.year if school_class.session_id else school_class.school.season,
+        'compact_packages': len(offers) > 5 or any(len(offer['code']) > 3 for offer in offers),
     }
 
 

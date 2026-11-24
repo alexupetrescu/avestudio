@@ -1,27 +1,30 @@
-import type { CrmPrices } from './crm-api';
+import type { SessionPackageOffer } from './api';
 
-export type PackageKey = 'package_a' | 'package_b' | 'package_c' | 'package_d' | 'package_e';
-export type PackageSelection = Record<PackageKey, boolean>;
+export type PackageKey = string;
+export type PackageSelection = { package_ids: string[] };
 
-export const CRM_PACKAGES: { key: PackageKey; letter: string; name: string; description: string; priceKey: keyof CrmPrices }[] = [
-  { key: 'package_a', letter: 'A', name: 'Standard', description: 'Calendar 20×30, 2× foto 15×20, 1× retro 10×12', priceKey: 'a' },
-  { key: 'package_b', letter: 'B', name: 'Extra', description: 'Calendar 20×30, 2 felicitări, foto 20×30, 2× foto 15×20, 2× retro 10×12', priceKey: 'b' },
-  { key: 'package_c', letter: 'C', name: 'Breloc', description: 'Breloc 7×5 cm', priceKey: 'c' },
-  { key: 'package_d', letter: 'D', name: 'Magnet', description: 'Magnet frigider 6,5×6,5 cm', priceKey: 'd' },
-  { key: 'package_e', letter: 'E', name: 'Puzzle', description: 'Puzzle 45 piese', priceKey: 'e' },
-];
-
-export function packagePatch(current: PackageSelection, key: PackageKey): Partial<PackageSelection> {
-  if (key === 'package_a') return { package_a: true, package_b: false };
-  if (key === 'package_b') return { package_a: false, package_b: true };
-  return current.package_a || current.package_b ? { [key]: !current[key] } : {};
+export function selectedPackages(child?: PackageSelection, offers: SessionPackageOffer[] = []): PackageSelection {
+  return { package_ids: child ? [...child.package_ids] : offers.filter(offer => offer.kind === 'base' && offer.available).slice(0, 1).map(offer => offer.id) };
 }
 
-export function packageTotal(child: PackageSelection, prices: CrmPrices) {
-  return CRM_PACKAGES.reduce((sum, item) => sum + (child[item.key] ? prices[item.priceKey] : 0), 0);
+export function hasBasePackage(selection: PackageSelection, offers: SessionPackageOffer[]) {
+  return offers.some(offer => offer.kind === 'base' && selection.package_ids.includes(offer.id));
 }
 
-export function selectedPackages(child?: PackageSelection): PackageSelection {
-  return { package_a: child?.package_a ?? true, package_b: child?.package_b ?? false,
-    package_c: child?.package_c ?? false, package_d: child?.package_d ?? false, package_e: child?.package_e ?? false };
+export function packagePatch(current: PackageSelection, key: PackageKey, offers: SessionPackageOffer[]): PackageSelection {
+  const selected = current.package_ids.includes(key);
+  const target = offers.find(offer => offer.id === key);
+  if (!target || (!target.available && !selected)) return selectedPackages(current);
+  if (target.kind === 'base') {
+    return { package_ids: [...current.package_ids.filter(id => !offers.some(offer => offer.id === id && offer.kind === 'base')), key] };
+  }
+  if (!hasBasePackage(current, offers) && !selected) return selectedPackages(current);
+  return { package_ids: selected ? current.package_ids.filter(id => id !== key) : [...current.package_ids, key] };
 }
+
+export function packageTotal(selection: PackageSelection, offers: SessionPackageOffer[]) {
+  return offers.reduce((sum, offer) => sum + (selection.package_ids.includes(offer.id) ? Math.round(offer.price * 100) : 0), 0) / 100;
+}
+
+const moneyFormat = new Intl.NumberFormat('ro-RO', { maximumFractionDigits: 2 });
+export const formatMoney = (amount: number) => moneyFormat.format(amount);

@@ -48,7 +48,7 @@ export default function Navbar() {
 
     return (
         <>
-            <nav className={`fixed w-full z-50 transition-all duration-700 ease-[var(--ease-luxury)] ${navBg}`}>
+            <nav aria-label="Navigare principală" style={{ top: 'var(--team-bar-height, 0px)', transitionProperty: 'background-color, box-shadow, backdrop-filter' }} className={`fixed w-full z-50 transition-all duration-700 ease-[var(--ease-luxury)] ${navBg}`}>
                 <div className="max-w-7xl mx-auto px-6 lg:px-12">
                     <div className="flex items-center justify-between h-20">
                         <div className="w-[180px]">
@@ -121,7 +121,7 @@ export default function Navbar() {
             </nav>
 
             {/* Mobile Menu - Full Screen Overlay */}
-            <div className={`fixed inset-0 z-[60] md:hidden transition-all duration-700 ${
+            <div style={{ top: 'var(--team-bar-height, 0px)' }} className={`fixed inset-0 z-[60] md:hidden transition-all duration-700 ${
                 isMenuOpen ? 'pointer-events-auto' : 'pointer-events-none'
             }`}>
                 <div className={`absolute inset-0 bg-white transition-opacity duration-700 ${

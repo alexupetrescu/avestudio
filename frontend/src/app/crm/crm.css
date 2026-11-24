@@ -1,4 +1,4 @@
-.crm { --crm-ink: #172c29; --crm-green: #245e50; --crm-muted: #5b6c67; --crm-line: #dce5e0; width: 100%; min-height: 100dvh; background: #f4f7f5; color: var(--crm-ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.6; }
+.crm { --crm-ink: #172c29; --crm-green: #245e50; --crm-muted: #5b6c67; --crm-line: #dce5e0; width: 100%; min-height: calc(100dvh - var(--team-bar-height, 0px)); background: #f4f7f5; color: var(--crm-ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.6; }
 .crm *, .crm *::before, .crm *::after { box-sizing: border-box; }
 .crm h1, .crm h2, .crm h3, .crm p { margin: 0; }
 .crm h1 { font-family: var(--font-heading); font-size: clamp(2rem, 4vw, 3rem); font-weight: 500; line-height: 1.18; overflow-wrap: anywhere; }
@@ -15,7 +15,7 @@
 .crm-wordmark span { font-family: var(--font-body); font-size: .65rem; font-weight: 600; letter-spacing: .15em; line-height: 1.5; }
 .crm-header { min-height: 88px; padding: 1.2rem max(1.25rem, calc((100vw - 1200px) / 2)); display: flex; justify-content: space-between; align-items: center; gap: 1rem; border-bottom: 1px solid var(--crm-line); background: #fff; }
 .crm-header-account { display: flex; align-items: center; gap: 1.4rem; font-size: .875rem; }
-.crm-content { max-width: 1240px; margin: auto; padding: 3.5rem 1.25rem 5rem; min-height: calc(100dvh - 165px); }
+.crm-content { max-width: 1240px; margin: auto; padding: 3.5rem 1.25rem 5rem; min-height: calc(100dvh - 165px - var(--team-bar-height, 0px)); }
 .crm-footer { border-top: 1px solid var(--crm-line); padding: 1.3rem; text-align: center; color: var(--crm-muted); font-size: .8rem; }
 .crm-footer span { margin: 0 .5rem; }
 .crm-page-heading { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; margin-bottom: 2.75rem; }
@@ -213,3 +213,10 @@
 .crm-sort-buttons button:focus-visible { outline: 2px solid #487b6d; outline-offset: 2px; }
 .crm-entry-meta time { display: inline; font-size: inherit; }
 @media (max-width: 720px) { .crm-sort-buttons { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); } .crm-sort-buttons button { padding: .65rem .4rem; } }
+
+.crm-package-letter { width: auto; min-width: 36px; padding: .25rem .5rem; border-radius: 999px; font-size: .9rem; }
+.crm-package-image { width: 64px; height: 64px; object-fit: contain; flex-shrink: 0; }
+.crm-roster { overflow-x: auto; }
+.crm-order-table th small { overflow-wrap: anywhere; }
+
+.crm-mobile-label { overflow-wrap: anywhere; }
