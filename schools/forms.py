@@ -57,17 +57,57 @@ class QueuedPhotoForm(forms.Form):
         return image
 
 
+class PackageQuantityWidget(forms.Widget):
+    template_name = 'schools/widgets/package_quantities.html'
+
+    def __init__(self, offers=(), attrs=None):
+        super().__init__(attrs)
+        self.offers = offers
+
+    def get_context(self, name, value, attrs):
+        context = super().get_context(name, value, attrs)
+        quantities = value or {}
+        if isinstance(quantities, list):
+            quantities = dict.fromkeys(map(str, quantities), 1)
+        context['widget']['offers'] = [{
+            **offer, 'input_name': f"{name}_{offer['id']}",
+            'input_id': f"{context['widget']['attrs'].get('id', name)}_{index}",
+            'quantity': quantities.get(offer['id'], 0),
+        } for index, offer in enumerate(self.offers)]
+        return context
+
+    def value_from_datadict(self, data, files, name):
+        names = [(offer['id'], f"{name}_{offer['id']}") for offer in self.offers]
+        if any(input_name in data for _, input_name in names):
+            return {offer_id: data.get(input_name, '0') for offer_id, input_name in names}
+        # Accept selections from an already-open, older admin form.
+        return {str(value): 1 for value in (data.getlist(name) if hasattr(data, 'getlist') else data.get(name, []))}
+
+    def id_for_label(self, id_):
+        return ''
+
+
+class PackageQuantityField(forms.Field):
+    def to_python(self, value):
+        quantities = {}
+        for offer_id, raw in (value or {}).items():
+            quantity = forms.IntegerField(min_value=0, max_value=99, required=False).clean(raw) or 0
+            if quantity:
+                quantities[offer_id] = quantity
+        return quantities
+
+
 class ChildPackageForm(forms.ModelForm):
-    package_selection = forms.ModelMultipleChoiceField(queryset=None, required=False, label='Packages', widget=forms.CheckboxSelectMultiple)
+    package_selection = PackageQuantityField(required=False, label='Package quantities')
 
     class Meta:
         from .models import Child
         model = Child
-        exclude = ('package_choices',)
+        exclude = ('package_choices', 'package_a', 'package_b', 'package_c', 'package_d', 'package_e')
 
     def __init__(self, *args, school_class=None, **kwargs):
-        from .models import SessionPackage, SchoolClass
-        from .offers import default_package_ids, session_offers
+        from .models import SchoolClass
+        from .offers import catalog_for_class, child_package_quantities, default_package_ids
         super().__init__(*args, **kwargs)
         self.order_class = school_class or (self.instance.school_class if self.instance.school_class_id else None)
         if school_class is None and self.is_bound and self.data.get('school_class'):
@@ -75,29 +115,27 @@ class ChildPackageForm(forms.ModelForm):
                 self.order_class = SchoolClass.objects.select_related('school', 'session').get(pk=self.data['school_class'])
             except (SchoolClass.DoesNotExist, ValueError, forms.ValidationError):
                 pass
-        queryset = SessionPackage.objects.select_related('package', 'session')
-        if self.order_class and self.order_class.session_id:
-            queryset = queryset.filter(session_id=self.order_class.session_id)
-        self.fields['package_selection'].queryset = queryset
-        self.fields['package_selection'].label_from_instance = lambda offer: str(offer) + ('' if offer.available else ' [Unavailable for new orders]')
+        if self.order_class is not None and not self.order_class.school_id:
+            self.order_class = None
+        self.fields['package_selection'].widget = PackageQuantityWidget(catalog_for_class(self.order_class) if self.order_class else [])
         if not self.instance._state.adding:
-            self.initial['package_selection'] = [offer.pk for offer in self.instance.package_choices.all()]
-        elif self.order_class and session_offers(self.order_class):
-            self.initial['package_selection'] = default_package_ids(self.order_class)
+            self.initial['package_selection'] = child_package_quantities(self.instance)
+        elif self.order_class:
+            self.initial['package_selection'] = dict.fromkeys(default_package_ids(self.order_class), 1)
 
     def clean(self):
-        from .offers import session_offers, validate_package_ids
+        from .offers import validate_package_quantities
         cleaned = super().clean()
         group = cleaned.get('school_class') or self.order_class
-        if group and session_offers(group) and 'package_selection' in cleaned:
-            validate_package_ids(group, [str(offer.pk) for offer in cleaned['package_selection']], child=self.instance, require_base=False)
+        if group and 'package_selection' in cleaned:
+            validate_package_quantities(group, cleaned['package_selection'], child=self.instance if not self.instance._state.adding else None, require_base=False)
         return cleaned
 
     def _save_m2m(self):
-        from .offers import session_offers, set_child_packages
+        from .offers import set_child_packages
         super()._save_m2m()
-        if 'package_selection' in self.cleaned_data and session_offers(self.instance.school_class):
-            set_child_packages(self.instance, [str(offer.pk) for offer in self.cleaned_data['package_selection']])
+        if 'package_selection' in self.cleaned_data:
+            set_child_packages(self.instance, self.cleaned_data['package_selection'])
 
 
 class ChildPackageInlineFormSet(forms.models.BaseInlineFormSet):

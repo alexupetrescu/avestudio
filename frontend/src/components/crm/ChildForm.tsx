@@ -3,7 +3,8 @@
 import { useState, type FormEvent } from 'react';
 import { crmApi, errorText, type CrmChild } from '@/lib/crm-api';
 import type { SessionPackageOffer } from '@/lib/api';
-import { hasBasePackage, formatMoney, packagePatch, packageTotal, selectedPackages } from '@/lib/crm-packages';
+import PackageQuantity from '@/components/PackageQuantity';
+import { hasBasePackage, formatMoney, packagePatch, quantityPatch, packageQuantity, packageTotal, selectedPackages } from '@/lib/crm-packages';
 
 export default function ChildForm({ path, child, offers, onSaved, onCancel }: {
   path: string; child?: CrmChild; offers: SessionPackageOffer[]; onSaved: (child: CrmChild) => void; onCancel?: () => void;
@@ -29,9 +30,10 @@ export default function ChildForm({ path, child, offers, onSaved, onCancel }: {
       <label>Prenume<input name="first_name" autoComplete="off" defaultValue={child?.first_name} required maxLength={120} /></label>
     </div>
     <fieldset className="crm-package-options" disabled={busy}><legend>Pachetele copilului</legend>
-      {offers.map(item => <label key={item.id}><input type={item.kind === 'base' ? 'radio' : 'checkbox'} name={item.kind === 'base' ? 'base_package' : undefined} value={item.id} checked={packages.package_ids.includes(item.id)} disabled={(!item.available && !packages.package_ids.includes(item.id)) || (item.kind === 'extra' && !hasBasePackage(packages, offers) && !packages.package_ids.includes(item.id))} onChange={() => setPackages(current => packagePatch(current, item.id, offers))} />
-        <span><strong>{item.code}</strong> {item.name} · {formatMoney(item.price)} lei{!item.available && ' · indisponibil pentru comenzi noi'}</span></label>)}
-      <p className="crm-help">Alege un pachet de bază. Poți adăuga oricâte opționale.</p>
+      {offers.map(item => <div key={item.id} className="package-choice"><label><input type={item.kind === 'base' ? 'radio' : 'checkbox'} name={item.kind === 'base' ? 'base_package' : undefined} value={item.id} checked={packages.package_ids.includes(item.id)} disabled={(!item.available && !packages.package_ids.includes(item.id)) || (item.kind === 'extra' && !hasBasePackage(packages, offers) && !packages.package_ids.includes(item.id))} onChange={() => setPackages(current => packagePatch(current, item.id, offers))} />
+        <span><strong>{item.code}</strong> {item.name} · {formatMoney(item.price)} lei/buc.{!item.available && ' · indisponibil pentru comenzi noi'}</span></label>
+        <PackageQuantity quantity={packageQuantity(packages, item.id)} label={`Cantitate ${item.code}`} max={item.available ? 99 : packageQuantity(packages, item.id)} onChange={quantity => setPackages(current => quantityPatch(current, item.id, quantity, offers))} /></div>)}
+      <p className="crm-help">Alege un pachet de bază și opționalele dorite. Poți comanda mai multe exemplare: A ×2, C ×3.</p>
     </fieldset>
     <p className="crm-form-total">Total: <strong>{formatMoney(packageTotal(packages, offers))} lei</strong></p>
     {child ? <label>Observații <span className="crm-optional">(opțional)</span><textarea name="notes" defaultValue={child.notes} maxLength={255} rows={2} /></label>

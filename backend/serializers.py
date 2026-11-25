@@ -75,11 +75,12 @@ class ChildOrderSerializer(serializers.ModelSerializer):
     """Child row on the teacher order form."""
     total_lei = serializers.FloatField(read_only=True)
     package_ids = serializers.ListField(child=serializers.CharField(max_length=64), required=False)
+    package_quantities = serializers.JSONField(required=False)
 
     class Meta:
         model = Child
         fields = ['id', 'first_name', 'last_name', 'package_a', 'package_b', 'package_c', 'package_d',
-                  'package_e', 'package_ids', 'notes', 'total_lei']
+                  'package_e', 'package_ids', 'package_quantities', 'notes', 'total_lei']
         read_only_fields = ['id']
 
     def validate(self, attrs):
@@ -87,11 +88,21 @@ class ChildOrderSerializer(serializers.ModelSerializer):
         last = attrs.get('last_name', getattr(self.instance, 'last_name', '')).strip()
         if not first or not last:
             raise serializers.ValidationError('Completați numele și prenumele.')
-        from schools.offers import default_package_ids, validate_package_ids
+        from schools.offers import default_package_ids, validate_package_ids, validate_package_quantities
         from django.core.exceptions import ValidationError as ModelValidationError
         school_class = self.context.get('school_class') or (self.instance.school_class if self.instance else None)
-        if self.instance is None and school_class and not any(key in attrs for key in ['package_ids', *[f'package_{letter}' for letter in 'abcde']]):
+        if self.instance is None and school_class and not any(key in attrs for key in ['package_ids', 'package_quantities', *[f'package_{letter}' for letter in 'abcde']]):
             attrs['package_ids'] = default_package_ids(school_class)
+        if 'package_quantities' in attrs:
+            try:
+                validate_package_quantities(school_class, attrs['package_quantities'], child=self.instance)
+                if 'package_ids' in attrs:
+                    validate_package_ids(school_class, attrs['package_ids'], child=self.instance)
+                    if set(attrs['package_ids']) != set(attrs['package_quantities']):
+                        raise ModelValidationError('Selecția pachetelor nu corespunde cantităților.')
+            except ModelValidationError as error:
+                raise serializers.ValidationError(error.messages)
+            attrs['package_ids'] = list(attrs['package_quantities'])
         if 'package_ids' in attrs:
             try:
                 validate_package_ids(school_class, attrs['package_ids'], child=self.instance)
@@ -123,26 +134,34 @@ class ChildOrderSerializer(serializers.ModelSerializer):
         return attrs
 
 
+    def _set_packages(self, child, values):
+        from django.core.exceptions import ValidationError as ModelValidationError
+        from schools.offers import set_child_packages
+        try:
+            set_child_packages(child, values, require_base=True)
+        except ModelValidationError as error:
+            raise serializers.ValidationError(error.messages)
+
     def create(self, validated_data):
         from django.db import transaction
-        from schools.offers import set_child_packages
         ids = validated_data.pop('package_ids', None)
+        quantities = validated_data.pop('package_quantities', None)
         with transaction.atomic():
             child = super().create(validated_data)
             if ids is not None:
-                set_child_packages(child, ids, require_base=True)
+                self._set_packages(child, quantities if quantities is not None else ids)
         return child
 
     def update(self, instance, validated_data):
         from django.db import transaction
-        from schools.offers import set_child_packages
         ids = validated_data.pop('package_ids', None)
+        quantities = validated_data.pop('package_quantities', None)
         with transaction.atomic():
             # Re-read under a row lock so a names-only edit cannot restore stale package flags.
             instance = Child.objects.select_for_update().get(pk=instance.pk)
             child = super().update(instance, validated_data)
             if ids is not None:
-                set_child_packages(child, ids, require_base=True)
+                self._set_packages(child, quantities if quantities is not None else ids)
         return child
 
 

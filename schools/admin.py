@@ -5,7 +5,7 @@ import uuid
 
 from django.contrib import admin, messages
 from django.core.exceptions import PermissionDenied
-from django.db.models import Count, Prefetch, Q, prefetch_related_objects
+from django.db.models import Count, Prefetch, prefetch_related_objects
 from django.core.paginator import Paginator
 from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect
@@ -17,7 +17,7 @@ from django.utils.safestring import mark_safe
 from django.views.decorators.csrf import csrf_protect
 
 from . import face_engine, pricing
-from .offers import catalog_for_class, child_package_ids, session_offers
+from .offers import catalog_for_class, child_package_quantities
 from .face_tasks import add_match, start_face_job
 from .forms import ChildReferencePhotoForm, ExistingChildForm, NewSessionRosterForm, ChildPackageForm, ChildPackageInlineFormSet, SessionPackageFormSet
 from .sessions import album_enrollments, copy_roster
@@ -125,13 +125,12 @@ class ChildInline(admin.TabularInline):
     def get_queryset(self, request):
         return super().get_queryset(request).annotate(
             _photo_count=Count('photos', distinct=True),
-        ).prefetch_related('face_references', 'package_choices', 'school_class__session__package_offers__package__items')
+        ).prefetch_related('face_references', 'childpackagechoice_set', 'school_class__session__package_offers__package__items')
 
     def get_fields(self, request, obj=None):
         fields = list(super().get_fields(request, obj))
-        if obj is None or session_offers(obj):
-            fields = [field for field in fields if field not in [f'package_{key}' for key in pricing.LETTERS]]
-            fields.insert(2, 'package_selection')
+        fields = [field for field in fields if field not in [f'package_{key}' for key in pricing.LETTERS]]
+        fields.insert(2, 'package_selection')
         if not (self.has_change_permission(request, obj)
                 and request.user.has_perm('schools.add_facereference')):
             return [field for field in fields if field != 'reference_photo']
@@ -209,11 +208,7 @@ class SchoolAdmin(admin.ModelAdmin):
         return super().get_queryset(request).annotate(
             _classes=Count('classes', distinct=True),
             _children=Count('classes__children', distinct=True),
-            _base_orders=Count('classes__children__childpackagechoice', filter=Q(classes__children__childpackagechoice__offer__package__kind='base'), distinct=True),
-            _extra_orders=Count('classes__children__childpackagechoice', filter=Q(classes__children__childpackagechoice__offer__package__kind='extra'), distinct=True),
-            _legacy_base=Count('classes__children', filter=Q(classes__children__package_choices__isnull=True) & (Q(classes__children__package_a=True) | Q(classes__children__package_b=True)), distinct=True),
-            **{f'_legacy_{key}': Count('classes__children', filter=Q(classes__children__package_choices__isnull=True, **{f'classes__children__package_{key}': True}), distinct=True) for key in 'cde'},
-        )
+        ).prefetch_related('classes__session__package_offers__package__items', 'classes__children__childpackagechoice_set')
 
     def tier(self, obj):
         return 'Returning-school prices' if obj.is_returning_customer else 'New-school prices'
@@ -234,8 +229,14 @@ class SchoolAdmin(admin.ModelAdmin):
     child_count.short_description = 'Children'
 
     def orders_a(self, obj):
-        bases = obj._base_orders + obj._legacy_base
-        extras = obj._extra_orders + sum(getattr(obj, f'_legacy_{key}') for key in 'cde')
+        counts = {'base': 0, 'extra': 0}
+        for group in obj.classes.all():
+            offers = catalog_for_class(group)
+            for child in group.children.all():
+                quantities = child_package_quantities(child)
+                for offer in offers:
+                    counts[offer['kind']] += quantities.get(offer['id'], 0)
+        bases, extras = counts['base'], counts['extra']
         return f'Base {bases} · Extras {extras}'
     orders_a.short_description = 'Orders'
 
@@ -263,11 +264,9 @@ class SchoolClassAdmin(ClassUploadAdminMixin, admin.ModelAdmin):
     change_list_template = 'admin/schools/schoolclass/change_list.html'
 
     def get_queryset(self, request):
-        return super().get_queryset(request).select_related('school', 'session').prefetch_related('session__package_offers__package__items', 'children__package_choices').annotate(
+        return super().get_queryset(request).select_related('school', 'session').prefetch_related('session__package_offers__package__items', 'children__childpackagechoice_set').annotate(
             _children=Count('children', distinct=True),
             _photos=Count('photos', distinct=True),
-            **{f'_{k}': Count('children', filter=Q(**{f'children__package_{k}': True}), distinct=True)
-               for k in pricing.LETTERS},
         )
 
     # --- list columns -----------------------------------------------------
@@ -289,10 +288,8 @@ class SchoolClassAdmin(ClassUploadAdminMixin, admin.ModelAdmin):
     photo_count.short_description = 'Photos'
 
     def orders_summary(self, obj):
-        if not session_offers(obj):
-            return ' · '.join(f"{k.upper()} {getattr(obj, f'_{k}')}" for k in pricing.LETTERS)
-        selected = [set(child_package_ids(child)) for child in obj.children.all()]
-        return ' · '.join(f"{offer['code']} {sum(offer['id'] in ids for ids in selected)}" for offer in catalog_for_class(obj))
+        quantities = [child_package_quantities(child) for child in obj.children.all()]
+        return ' · '.join(f"{offer['code']} {sum(row.get(offer['id'], 0) for row in quantities)}" for offer in catalog_for_class(obj))
     orders_summary.short_description = 'Orders'
 
     def tools(self, obj):
@@ -630,16 +627,16 @@ class SchoolClassAdmin(ClassUploadAdminMixin, admin.ModelAdmin):
         response['Content-Disposition'] = f'attachment; filename="comenzi_{safe}.csv"'
         response.write('﻿')
         writer = csv.writer(response, delimiter=';')
-        prefetch_related_objects([school_class], 'session__package_offers__package__items', 'children__package_choices')
+        prefetch_related_objects([school_class], 'session__package_offers__package__items', 'children__childpackagechoice_set')
         offers = catalog_for_class(school_class)
         writer.writerow(['Nume', 'Prenume', *[f"{offer['code']} {offer['name']} ({offer['price']} lei)" for offer in offers], 'Total lei', 'PIN album', 'Link album', 'Observații'])
         totals = {offer['id']: 0 for offer in offers}
         total_lei = 0
         for child in school_class.children.all():
-            selected = set(child_package_ids(child))
-            writer.writerow([child.last_name, child.first_name, *['X' if offer['id'] in selected else '' for offer in offers], child.total_lei, child.pin, child.album_url, child.notes])
+            quantities = child_package_quantities(child)
+            writer.writerow([child.last_name, child.first_name, *[quantities.get(offer['id'], '') for offer in offers], child.total_lei, child.pin, child.album_url, child.notes])
             for offer in offers:
-                totals[offer['id']] += offer['id'] in selected
+                totals[offer['id']] += quantities.get(offer['id'], 0)
             total_lei += child.total_lei
         writer.writerow([])
         writer.writerow(['TOTAL', '', *[totals[offer['id']] for offer in offers], total_lei, '', '', ''])
@@ -667,18 +664,12 @@ class ChildAdmin(admin.ModelAdmin):
     change_form_template = 'admin/schools/child/change_form.html'
     fieldsets = (
         ('Child', {'fields': ('school_class', 'last_name', 'first_name', 'notes', 'profile')}),
-        ('Order', {'fields': (('package_a', 'package_b', 'package_c', 'package_d', 'package_e'),),
-                   'description': 'A (Standard) and B (Extra) are alternatives: tick only one of them.'}),
+        ('Order', {'fields': ('package_selection',),
+                   'description': 'Enter the number of copies of each package. A and B are alternative base packages.'}),
         ('Album access', {'fields': ('album_panel', 'pin', 'qr_code', 'match_key')}),
         ('Photo sessions', {'fields': ('session_history',)}),
         ('Entry order', {'fields': ('entry_index', 'created_at')}),
     )
-
-    def get_fieldsets(self, request, obj=None):
-        fieldsets = super().get_fieldsets(request, obj)
-        if obj is None or session_offers(obj.school_class):
-            return [(title, {**options, 'fields': ('package_selection',), 'description': 'Choose one base package and any extras from this photo session.'}) if title == 'Order' else (title, options) for title, options in fieldsets]
-        return fieldsets
 
     def can_upload_reference(self, request, obj=None):
         return (
@@ -724,7 +715,7 @@ class ChildAdmin(admin.ModelAdmin):
         return TemplateResponse(request, 'admin/schools/child/reference_photo.html', context)
 
     def get_queryset(self, request):
-        return super().get_queryset(request).prefetch_related('package_choices', 'school_class__session__package_offers__package__items').annotate(_photo_count=Count('photos', distinct=True))
+        return super().get_queryset(request).prefetch_related('childpackagechoice_set', 'school_class__session__package_offers__package__items').annotate(_photo_count=Count('photos', distinct=True))
 
     def packages_display(self, obj):
         return obj.packages

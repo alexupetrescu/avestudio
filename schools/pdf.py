@@ -52,21 +52,21 @@ def ensure_fonts():
 
 
 def class_list_context(school_class) -> dict:
-    from .offers import catalog_for_class, child_package_ids, offer_period
-    prefetch_related_objects([school_class], 'session__package_offers__package__items', 'children__package_choices')
+    from .offers import catalog_for_class, child_package_quantities, offer_period
+    prefetch_related_objects([school_class], 'session__package_offers__package__items', 'children__childpackagechoice_set')
     offers = catalog_for_class(school_class)
     totals = {offer['id']: 0 for offer in offers}
     total_lei = Decimal('0.00')
     rows = []
     children = list(school_class.children.all())
     for index, child in enumerate(children, start=1):
-        selected = set(child_package_ids(child))
+        quantities = child_package_quantities(child)
         for offer in offers:
-            totals[offer['id']] += offer['id'] in selected
-        total = sum((offer['price'] for offer in offers if offer['id'] in selected), Decimal('0.00'))
+            totals[offer['id']] += quantities.get(offer['id'], 0)
+        total = sum((offer['price'] * quantities.get(offer['id'], 0) for offer in offers), Decimal('0.00'))
         total_lei += total
-        rows.append({'nr': index, 'child': child, 'marks': [offer['id'] in selected for offer in offers],
-                     'selected_codes': ', '.join(offer['code'] for offer in offers if offer['id'] in selected), 'total': total})
+        rows.append({'nr': index, 'child': child, 'marks': [quantities.get(offer['id'], 0) for offer in offers],
+                     'selected_codes': child.packages, 'total': total})
     return {
         'school_class': school_class, 'school': school_class.school, 'rows': rows,
         'letters': [offer['code'] for offer in offers], 'totals': [totals[offer['id']] for offer in offers],

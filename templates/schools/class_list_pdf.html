@@ -86,7 +86,7 @@
                 <td class="c nr">{{ row.nr }}</td>
                 <td>&nbsp;{{ row.child.last_name }}</td>
                 <td>&nbsp;{{ row.child.first_name }}</td>
-                {% for on in row.marks %}{% if on %}<td class="c on"><span class="mark">✓</span></td>{% else %}<td class="c"></td>{% endif %}{% endfor %}
+                {% for quantity in row.marks %}{% if quantity %}<td class="c on"><span class="mark">{{ quantity }}</span></td>{% else %}<td class="c"></td>{% endif %}{% endfor %}
                 <td class="r">{{ row.total|floatformat:"-2" }} lei&nbsp;</td>
                 <td class="notes">&nbsp;{{ row.child.notes }}</td>
             </tr>

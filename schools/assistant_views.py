@@ -155,7 +155,7 @@ def child_data(child):
 
 def children_queryset():
     return Child.objects.select_related('school_class__school', 'school_class__session').annotate(photo_count=Count('photos', distinct=True)).prefetch_related(
-        'school_class__session__package_offers__package__items', 'package_choices__package',
+        'school_class__session__package_offers__package__items', 'package_choices__package', 'childpackagechoice_set',
         Prefetch('face_references', queryset=FaceReference.objects.order_by('-created_at', '-pk')),
     ).order_by('entry_index')
 
@@ -193,7 +193,7 @@ def save_child(request, school_class, instance=None):
     # Reject arrays, nulls and objects rather than coercing them to a person's name.
     if any(not isinstance(data.get(key, ''), str) for key in ('first_name', 'last_name', 'notes')):
         raise ValidationError('Numele, prenumele și observațiile trebuie să fie text.')
-    if instance is None and 'package_ids' not in data and not any(f'package_{letter}' in data for letter in 'ab'):
+    if instance is None and 'package_ids' not in data and 'package_quantities' not in data and not any(f'package_{letter}' in data for letter in 'ab'):
         data = {**data, 'package_a': True} if any(f'package_{letter}' in data for letter in 'cde') else {**data, 'package_ids': default_package_ids(school_class)}
     serializer = CrmChildOrderSerializer(instance, data=data, partial=instance is not None, context={'school_class': school_class})
     if not serializer.is_valid():

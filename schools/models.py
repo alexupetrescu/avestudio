@@ -15,7 +15,7 @@ from decimal import Decimal
 import qrcode
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.core.validators import MinValueValidator, RegexValidator
+from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.core.files import File
 from django.db import models, transaction
 from django.utils import timezone
@@ -312,6 +312,7 @@ class Child(models.Model):
     package_c = models.BooleanField('C · Breloc', default=False)
     package_d = models.BooleanField('D · Magnet', default=False)
     package_e = models.BooleanField('E · Puzzle', default=False)
+    legacy_package_quantities = models.JSONField(default=dict, editable=False)
     notes = models.CharField(max_length=255, blank=True)
     pin = models.CharField(max_length=4, default=generate_pin, help_text='PIN for the child album')
     qr_code = models.ImageField(upload_to='schools/qr/', blank=True, null=True)
@@ -345,16 +346,21 @@ class Child(models.Model):
         return child_package_ids(self)
 
     @property
+    def package_quantities(self):
+        from .offers import child_package_quantities
+        return child_package_quantities(self)
+
+    @property
     def total_lei(self):
-        from .offers import child_package_ids, catalog_for_class
-        selected = set(child_package_ids(self))
-        return sum((offer['price'] for offer in catalog_for_class(self.school_class) if offer['id'] in selected), Decimal('0.00'))
+        from .offers import catalog_for_class
+        quantities = self.package_quantities
+        return sum((offer['price'] * quantities.get(offer['id'], 0) for offer in catalog_for_class(self.school_class)), Decimal('0.00'))
 
     @property
     def packages(self) -> str:
-        from .offers import child_package_ids, catalog_for_class
-        selected = set(child_package_ids(self))
-        return ', '.join(offer['code'] for offer in catalog_for_class(self.school_class) if offer['id'] in selected) or '-'
+        from .offers import catalog_for_class
+        quantities = self.package_quantities
+        return ', '.join(offer['code'] + (f" ×{quantities[offer['id']]}" if quantities[offer['id']] > 1 else '') for offer in catalog_for_class(self.school_class) if offer['id'] in quantities) or '-'
 
     def clean(self):
         super().clean()
@@ -410,10 +416,14 @@ class Child(models.Model):
 class ChildPackageChoice(models.Model):
     child = models.ForeignKey(Child, on_delete=models.CASCADE)
     offer = models.ForeignKey(SessionPackage, on_delete=models.PROTECT)
+    quantity = models.PositiveSmallIntegerField(default=1, validators=[MinValueValidator(1), MaxValueValidator(99)])
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        constraints = [models.UniqueConstraint(fields=['child', 'offer'], name='unique_child_package_choice')]
+        constraints = [
+            models.UniqueConstraint(fields=['child', 'offer'], name='unique_child_package_choice'),
+            models.CheckConstraint(condition=models.Q(quantity__gte=1, quantity__lte=99), name='child_package_quantity_range'),
+        ]
 
 
 def _class_id_of(instance):

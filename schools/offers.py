@@ -82,11 +82,15 @@ def offer_period(school_class):
 
 
 def child_package_ids(child):
+    return list(child_package_quantities(child))
+
+
+def child_package_quantities(child):
     if session_offers(child.school_class):
         if child._state.adding:
-            return []
-        return [str(offer.pk) for offer in child.package_choices.all()]
-    return [f'legacy:{key}' for key in pricing.LETTERS if getattr(child, f'package_{key}')]
+            return {}
+        return {str(choice.offer_id): choice.quantity for choice in child.childpackagechoice_set.all()}
+    return {f'legacy:{key}': child.legacy_package_quantities.get(key, 1) for key in pricing.LETTERS if getattr(child, f'package_{key}')}
 
 
 def validate_package_ids(school_class, values, child=None, require_base=True):
@@ -112,19 +116,43 @@ def validate_package_ids(school_class, values, child=None, require_base=True):
     return chosen
 
 
+def validate_package_quantities(school_class, quantities, child=None, require_base=True):
+    if not isinstance(quantities, dict) or len(quantities) > 256 or any(type(quantity) is not int or not 1 <= quantity <= 99 for quantity in quantities.values()):
+        raise ValidationError('Cantitatea fiecărui pachet trebuie să fie un număr întreg între 1 și 99.')
+    chosen = validate_package_ids(school_class, list(quantities), child=child, require_base=require_base)
+    previous = child_package_quantities(child) if child is not None else {}
+    if any(not offer['available'] and quantities[offer['id']] > previous.get(offer['id'], 0) for offer in chosen):
+        raise ValidationError('Nu puteți mări cantitatea unui pachet care nu mai este disponibil.')
+    return chosen
+
+
 def set_child_packages(child, values, require_base=False):
-    from .models import Child
+    from .models import Child, ChildPackageChoice
     with transaction.atomic():
         # Lock only the child row; its nullable session relation must not be locked.
         locked = Child.objects.select_for_update().get(pk=child.pk)
-        chosen = validate_package_ids(locked.school_class, values, child=locked, require_base=require_base)
+        if isinstance(values, dict):
+            quantities = values
+        else:
+            validate_package_ids(locked.school_class, values, child=locked, require_base=require_base)
+            previous = child_package_quantities(locked)
+            quantities = {value: previous.get(value, 1) for value in values}
+        chosen = validate_package_quantities(locked.school_class, quantities, child=locked, require_base=require_base)
         configured = bool(session_offers(locked.school_class))
-        child.package_choices.set([offer['id'] for offer in chosen] if configured else [])
-        selected_legacy = {offer['legacy_key'] for offer in chosen if offer['legacy_key']}
-        flags = {f'package_{key}': key in selected_legacy for key in pricing.LETTERS}
-        Child.objects.filter(pk=child.pk).update(**flags)
+        choices = ChildPackageChoice.objects.filter(child=locked)
+        choices.exclude(offer_id__in=list(quantities) if configured else []).delete()
+        if configured:
+            for offer in chosen:
+                ChildPackageChoice.objects.update_or_create(child=locked, offer_id=offer['id'], defaults={'quantity': quantities[offer['id']]})
+        legacy = {offer['legacy_key']: quantities[offer['id']] for offer in chosen if offer['legacy_key']}
+        flags = {f'package_{key}': key in legacy for key in pricing.LETTERS}
+        Child.objects.filter(pk=child.pk).update(**flags, legacy_package_quantities=legacy)
+        child.legacy_package_quantities = legacy
         for key, value in flags.items():
             setattr(child, key, value)
+        cache = getattr(child, '_prefetched_objects_cache', {})
+        for relation in ('package_choices', 'childpackagechoice_set'):
+            cache.pop(relation, None)
     return child
 
 
@@ -133,20 +161,24 @@ def sync_legacy_choices(child, moved=False, legacy_changed=True):
     if not session_offers(child.school_class):
         if moved:
             child.package_choices.clear()
+        legacy = {key: child.legacy_package_quantities.get(key, 1) for key in pricing.LETTERS if getattr(child, f'package_{key}')}
+        if legacy != child.legacy_package_quantities:
+            type(child).objects.filter(pk=child.pk).update(legacy_package_quantities=legacy)
+            child.legacy_package_quantities = legacy
         return
     by_key = {offer['legacy_key']: offer for offer in catalog if offer['legacy_key']}
-    current = {str(offer.pk) for offer in child.package_choices.all()}
+    current = child_package_quantities(child)
     if moved and not legacy_changed:
-        values = [offer['id'] for offer in catalog if offer['id'] in current]
+        values = {offer['id']: current[offer['id']] for offer in catalog if offer['id'] in current}
         if values and not any(offer['kind'] == 'base' and offer['id'] in values for offer in catalog):
-            values = []
+            values = {}
     else:
         selected = [key for key in pricing.LETTERS if getattr(child, f'package_{key}')]
         if any(key not in by_key for key in selected):
             raise ValidationError('Pachetele ședinței s-au schimbat. Reîncărcați lista pentru oferta curentă.')
-        values = [by_key[key]['id'] for key in selected]
+        values = {by_key[key]['id']: child.legacy_package_quantities.get(key, 1) for key in selected}
         has_legacy_base = any(by_key[key]['kind'] == 'base' for key in selected)
-        values += [offer['id'] for offer in catalog if not offer['legacy_key'] and offer['id'] in current and not (has_legacy_base and offer['kind'] == 'base')]
+        values.update({offer['id']: current[offer['id']] for offer in catalog if not offer['legacy_key'] and offer['id'] in current and not (has_legacy_base and offer['kind'] == 'base')})
     set_child_packages(child, values)
 
 

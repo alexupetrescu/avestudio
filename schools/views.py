@@ -41,7 +41,7 @@ def _get_class(request, class_id) -> SchoolClass | None:
     pin = _pin_from(request)
     if not pin:
         return None
-    return SchoolClass.objects.select_related('school', 'session').prefetch_related('session__package_offers__package__items', 'children__package_choices').filter(id=class_id, pin=pin).first()
+    return SchoolClass.objects.select_related('school', 'session').prefetch_related('session__package_offers__package__items', 'children__childpackagechoice_set').filter(id=class_id, pin=pin).first()
 
 
 def _invalid_pin():

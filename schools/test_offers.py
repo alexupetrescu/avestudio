@@ -159,7 +159,7 @@ class SessionOfferMigrationTests(TransactionTestCase):
         executor = MigrationExecutor(connection)
         restore = executor.loader.graph.leaf_nodes()
         old = ('schools', '0007_child_entry_index')
-        target = ('schools', '0009_seed_current_session_offers')
+        target = ('schools', '0010_child_package_quantities')
         try:
             executor.migrate([old])
             historical = executor.loader.project_state([old]).apps

@@ -572,6 +572,11 @@
 .teacher-order-table th { min-width: 60px; }
 .teacher-order-table td { height: 60px; }
 .teacher-package-toggle { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; cursor: pointer; }
+.package-choice { display: inline-flex; align-items: center; flex-wrap: wrap; gap: .5rem; }
+.package-quantity { display: inline-flex; align-items: center; justify-content: center; gap: .25rem; font-size: .875rem; }
+.package-quantity input { box-sizing: border-box; width: 4.25rem; min-height: 44px; padding: .4rem .3rem; border: 1px solid var(--ave-gold, #b39a72); border-radius: .45rem; background: #fff; color: #222; text-align: center; font: inherit; }
+.package-quantity input:disabled { opacity: .6; }
+.teacher-order-table .package-quantity { display: flex; }
 .teacher-remove { width: 44px; min-height: 44px; border-radius: 50%; color: var(--ave-muted); cursor: pointer; }
 .teacher-remove:hover { background: var(--ave-gold-wash); color: var(--ave-ink); }
 .xmas button:focus-visible, .xmas a:focus-visible { outline: 2px solid var(--ave-gold-text); outline-offset: 3px; }

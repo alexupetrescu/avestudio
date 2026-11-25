@@ -3,7 +3,7 @@
 import { useRef, useState } from 'react';
 import { childPath, crmApi, errorText, type CrmChild } from '@/lib/crm-api';
 import type { SessionPackageOffer } from '@/lib/api';
-import { packagePatch, packageTotal, selectedPackages, type PackageKey, type PackageSelection } from '@/lib/crm-packages';
+import { packagePatch, quantityPatch, samePackages, packageTotal, selectedPackages, type PackageKey, type PackageSelection } from '@/lib/crm-packages';
 import { useCrmPendingWork } from './CrmProvider';
 
 type PendingOrder = { confirmed: CrmChild; desired: CrmChild; version: number; running: boolean };
@@ -45,12 +45,12 @@ export default function useCrmOrders(classId: string, offers: SessionPackageOffe
     }
   }
 
-  function toggle(child: CrmChild, key: PackageKey) {
+  function change(child: CrmChild, key: PackageKey, quantity?: number) {
     if (!offers) return;
     const existing = pending.current.get(child.id);
     const current = existing?.running ? existing.desired : child;
-    const selection = { ...current, ...packagePatch(current, key, offers) };
-    if (current.package_ids.length === selection.package_ids.length && current.package_ids.every(id => selection.package_ids.includes(id))) return;
+    const selection = { ...current, ...(quantity === undefined ? packagePatch(current, key, offers) : quantityPatch(current, key, quantity, offers)) };
+    if (samePackages(current, selection)) return;
     const desired = { ...selection, total_lei: packageTotal(selection, offers) };
     const order = existing || { confirmed: child, desired, version: 0, running: false };
     order.desired = desired; order.version += 1;
@@ -66,5 +66,5 @@ export default function useCrmOrders(classId: string, offers: SessionPackageOffe
     apply(id, selectedPackages(order.desired), order.desired.total_lei);
     void flush(id, order);
   }
-  return { toggle, retry, saving, errors };
+  return { toggle: (child: CrmChild, key: PackageKey) => change(child, key), setQuantity: (child: CrmChild, key: PackageKey, quantity: number) => change(child, key, quantity), retry, saving, errors };
 }

@@ -142,6 +142,7 @@ export interface ChildOrder {
     first_name: string;
     last_name: string;
     package_ids: string[];
+    package_quantities: Record<string, number>;
     package_a: boolean;
     package_b: boolean;
     package_c: boolean;

@@ -1,0 +1,12 @@
+<div class="package-quantities"{% if widget.attrs.id %} id="{{ widget.attrs.id }}"{% endif %}>
+  {% for offer in widget.offers %}
+    <div style="margin-bottom: 6px; white-space: nowrap;">
+      <label for="{{ offer.input_id }}" style="display: inline; float: none; width: auto;">
+        <strong>{{ offer.code }}</strong> · {{ offer.name }} · {{ offer.price|floatformat:"-2" }} lei
+        {% if not offer.available %}(unavailable for new orders){% endif %}
+      </label>
+      <input type="number" name="{{ offer.input_name }}" id="{{ offer.input_id }}" value="{{ offer.quantity }}" min="0" max="{% if offer.available %}99{% else %}{{ offer.quantity }}{% endif %}" step="1" style="width: 65px;"{% if widget.attrs.disabled %} disabled{% endif %}>
+    </div>
+  {% empty %}<p>Select a class and save to load its packages.</p>{% endfor %}
+  <small>0 = none · Enter the number of copies, e.g. A ×2 or C ×3.</small>
+</div>

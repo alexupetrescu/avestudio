@@ -14,6 +14,10 @@ The backend needs the additive migrations **`schools.0006_assistant_crm`** and
 review and apply it with the deployment controller's migration option. No
 existing children, albums, photos, packages or PINs are changed by the migration.
 
+Package quantities also require **`schools.0010_child_package_quantities`**.
+Existing selections become one copy. The migration adds quantity storage without
+changing child details, photos, PINs or entry order.
+
 For local development, run:
 
 ```powershell
@@ -79,6 +83,12 @@ their sign-in and session access. Reset passwords through Django's user admin or
   is selected. New CRM children default to A; empty base selections are rejected.
   Existing rows without an order show a prompt rather than being assigned a
   package automatically. Changing just their name or notes preserves the order.
+- Each selected package has a quantity input (1–99 copies), including the base:
+  for example A ×2 and C ×3 for the same child. The teacher list, CRM roster and
+  child editor, and Django class/child editors share these quantities. Prices are
+  per copy; child totals, class/school package counts, CSV and PDF exports count
+  all copies. In Django, enter 0 to remove a selection. A/B remain alternative
+  base types, with multiple copies of the chosen type allowed.
 - Package changes save independently per child. Rapid changes are queued, with
   the latest complete selection saved after an in-flight request; other rows
   remain usable. A failed save restores the last confirmed selection and offers
@@ -186,3 +196,10 @@ times and entry indexes remain intact. Unconfigured legacy classes retain the ol
 A–E offer until their session is configured. The old boolean fields remain a
 compatibility bridge for existing clients; current teacher and CRM forms use
 `package_ids` and are not limited to five choices.
+
+Current forms also send `package_quantities`, a complete mapping of selected
+offer IDs to positive integer counts. When both fields are sent their selections
+must agree. Older requests using only `package_ids` retain quantities for offers
+that stay selected and use one copy for newly selected offers. The legacy A–E
+boolean flags remain compatible; quantities for unconfigured classes have
+separate storage.

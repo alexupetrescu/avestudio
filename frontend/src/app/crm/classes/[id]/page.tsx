@@ -4,12 +4,13 @@ import Link from 'next/link';
 import { Fragment, use, useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import ChildForm from '@/components/crm/ChildForm';
+import PackageQuantity from '@/components/PackageQuantity';
 import QuickPhotoUpload from '@/components/crm/QuickPhotoUpload';
 import { type PhotoPickerHandle } from '@/components/crm/PhotoUploader';
 import CrmSortSelect, { useCrmSort } from '@/components/crm/CrmSortSelect';
 import useCrmOrders from '@/components/crm/useCrmOrders';
 import { childPath, classPath, crmApi, errorText, type CrmChild, type CrmClass } from '@/lib/crm-api';
-import { formatMoney, hasBasePackage } from '@/lib/crm-packages';
+import { formatMoney, hasBasePackage, packageQuantity } from '@/lib/crm-packages';
 import { addedAtLabel, compareCrmItems, matchesCrmSearch } from '@/lib/crm-list';
 
 export default function CrmClassPage({ params }: { params: Promise<{ id: string }> }) {
@@ -68,7 +69,7 @@ export default function CrmClassPage({ params }: { params: Promise<{ id: string 
           <span className="crm-package-letter">{item.code}</span>{item.image && <img className="crm-package-image" src={item.image} alt="" />}<div><h2>{item.name}</h2><p>{item.description}</p>{item.digital_included && <span className="crm-digital">+ format digital inclus</span>}{!item.available && <p>Indisponibil pentru comenzi noi</p>}</div>
           <div className="crm-price">{item.list_price !== null && item.list_price > item.price && <del>{formatMoney(item.list_price)} lei</del>}<strong>{formatMoney(item.price)} lei</strong></div>
         </div>)}</div>
-        <p className="crm-help">Alege un singur pachet de bază. Opționalele se pot adăuga în plus, oricâte.</p>
+        <p className="crm-help">Alege un singur tip de pachet de bază și opționalele dorite. Poți comanda mai multe exemplare: A ×2, C ×3.</p>
         <div className="crm-addon-prices">{offers.filter(item => item.kind === 'extra').map(item => <div className="crm-price-card" key={item.id}><span className="crm-package-letter">{item.code}</span><span>{item.name}{!item.available && ' · indisponibil'}</span><strong>{formatMoney(item.price)} lei</strong></div>)}</div>
       </section></details>
 
@@ -96,12 +97,13 @@ export default function CrmClassPage({ params }: { params: Promise<{ id: string 
             </Link>
             {orders.errors[child.id] && <div className="crm-order-error" role="alert"><p>{orders.errors[child.id]}</p><button type="button" className="crm-button crm-small" onClick={() => orders.retry(child.id)}>Reîncearcă salvarea</button></div>}
           </td>{offers.map(item => <td className="crm-package-cell" key={item.id}><label className="crm-package-toggle"><span className="crm-mobile-label">{item.code}<small>{item.name}</small></span>
-            <input type={item.kind === 'base' ? 'radio' : 'checkbox'} name={item.kind === 'base' ? `base-${child.id}` : undefined} className="crm-order-check" checked={child.package_ids.includes(item.id)} disabled={(!item.available && !child.package_ids.includes(item.id)) || (item.kind === 'extra' && !hasBasePackage(child, offers))} onChange={() => orders.toggle(child, item.id)} aria-label={`${item.code} ${item.name} pentru ${child.last_name} ${child.first_name}`} /></label></td>)}
+            <input type={item.kind === 'base' ? 'radio' : 'checkbox'} name={item.kind === 'base' ? `base-${child.id}` : undefined} className="crm-order-check" checked={child.package_ids.includes(item.id)} disabled={(!item.available && !child.package_ids.includes(item.id)) || (item.kind === 'extra' && !hasBasePackage(child, offers))} onChange={() => orders.toggle(child, item.id)} aria-label={`${item.code} ${item.name} pentru ${child.last_name} ${child.first_name}`} /></label>
+            <PackageQuantity quantity={packageQuantity(child, item.id)} label={`Cantitate ${item.code} pentru ${child.last_name} ${child.first_name}`} max={item.available ? 99 : packageQuantity(child, item.id)} onChange={quantity => orders.setQuantity(child, item.id, quantity)} /></td>)}
           <td className="crm-child-total"><span className="crm-mobile-label">Total</span><strong>{formatMoney(child.total_lei)} lei</strong><span className="crm-saving" role="status">{orders.saving[child.id] ? 'Se salvează…' : orders.errors[child.id] ? 'Nesalvat' : 'Salvat'}</span></td>
           <td className="crm-photo-action"><div className="crm-photo-buttons"><button type="button" className="crm-button crm-small" disabled={uploadPending} aria-expanded={quickChild === child.id} aria-controls={quickChild === child.id ? `quick-photo-${child.id}` : undefined} onClick={() => openPhoto(child.id)}>Adaugă foto</button>
             <button type="button" className="crm-button crm-small crm-camera-button" disabled={uploadPending} aria-label={`Deschide camera pentru ${child.last_name} ${child.first_name}`} title="Deschide camera" onClick={() => openPhoto(child.id, true)}><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M8 5l1.5-2h5L16 5h4v15H4V5z"/><circle cx="12" cy="12" r="4"/></svg></button></div></td></tr>
           {quickChild === child.id && <tr className="crm-quick-photo-row"><td colSpan={offers.length + 4}><QuickPhotoUpload classId={id} child={child} pickerRef={photoPicker} onPendingChange={setUploadPending} onClose={() => setQuickChild(null)} onUploaded={() => { void refreshPhoto(child.id); }} /></td></tr>}
-        </Fragment>)}</tbody><tfoot><tr><th scope="row" colSpan={2}>{data.children.length} copii</th>{offers.map(item => <td key={item.id}><span className="crm-mobile-label">{item.code}</span>{data.children.filter(child => child.package_ids.includes(item.id)).length}</td>)}<td className="crm-class-total"><span className="crm-mobile-label">Total clasă</span>{formatMoney(total)} lei</td><td className="crm-summary-spacer" /></tr></tfoot></table></div>}
+        </Fragment>)}</tbody><tfoot><tr><th scope="row" colSpan={2}>{data.children.length} copii</th>{offers.map(item => <td key={item.id}><span className="crm-mobile-label">{item.code}</span>{data.children.reduce((sum, child) => sum + packageQuantity(child, item.id), 0)}</td>)}<td className="crm-class-total"><span className="crm-mobile-label">Total clasă</span>{formatMoney(total)} lei</td><td className="crm-summary-spacer" /></tr></tfoot></table></div>}
     </>}
   </>;
 }

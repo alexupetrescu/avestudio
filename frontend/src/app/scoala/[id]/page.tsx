@@ -2,12 +2,13 @@
 
 import { use, useCallback, useMemo, useState } from 'react';
 import PinGate from '@/components/PinGate';
+import PackageQuantity from '@/components/PackageQuantity';
 import {
     addChild, classListPdfUrl, deleteChild, fetchSchoolClass, updateChild, verifyClassPin,
     type ChildOrder, type SchoolClassOrder,
 } from '@/lib/api';
 
-import { formatMoney, hasBasePackage, packagePatch, packageTotal, selectedPackages, type PackageSelection } from '@/lib/crm-packages';
+import { formatMoney, hasBasePackage, packagePatch, quantityPatch, packageQuantity, samePackages, packageTotal, selectedPackages, type PackageSelection } from '@/lib/crm-packages';
 
 export default function TeacherOrderPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
@@ -46,7 +47,7 @@ export default function TeacherOrderPage({ params }: { params: Promise<{ id: str
         let lei = 0;
         data.children.forEach((c) => {
             PACKAGES.forEach((p) => {
-                if (c.package_ids.includes(p.id)) counts[p.id] += 1;
+                counts[p.id] += packageQuantity(c, p.id);
             });
             lei += Math.round(c.total_lei * 100);
         });
@@ -74,9 +75,9 @@ export default function TeacherOrderPage({ params }: { params: Promise<{ id: str
         }
     };
 
-    const toggle = async (child: ChildOrder, key: string) => {
-        const patch = packagePatch(child, key, PACKAGES);
-        if (child.package_ids.length === patch.package_ids.length && child.package_ids.every(id => patch.package_ids.includes(id))) return;
+    const changePackages = async (child: ChildOrder, key: string, quantity?: number) => {
+        const patch = quantity === undefined ? packagePatch(child, key, PACKAGES) : quantityPatch(child, key, quantity, PACKAGES);
+        if (samePackages(child, patch)) return;
         setError('');
         setBusy(child.id);
         replaceChild({ ...child, ...patch, total_lei: packageTotal(patch, PACKAGES) });
@@ -110,7 +111,7 @@ export default function TeacherOrderPage({ params }: { params: Promise<{ id: str
             verify={(p) => verifyClassPin(id, p)}
             onUnlocked={onUnlocked}
             theme="xmas"
-            eyebrow="Lista de comenzi{data?.session_label ? ` · ${data.session_label}` : ''}"
+            eyebrow={`Lista de comenzi${data?.session_label ? ` · ${data.session_label}` : ''}`}
             title="Pagina clasei"
             hint="Introduceți PIN-ul primit de la fotograf pentru a completa lista copiilor și pachetele dorite."
         >
@@ -136,7 +137,7 @@ export default function TeacherOrderPage({ params }: { params: Promise<{ id: str
                                     </div>
                                 )}
                                 <p className="text-sm max-w-2xl" style={{ color: 'var(--ave-muted)' }}>
-                                    Adăugați fiecare copil (nume și prenume) și bifați pachetele dorite de părinți. Modificările se salvează automat.
+                                    Adăugați fiecare copil (nume și prenume), bifați pachetele dorite și completați cantitatea pentru fiecare. Modificările se salvează automat.
                                     {!data.shoot_display && data.period && <> Perioadă pentru fotografiere: <strong style={{ color: 'var(--xmas-green)' }}>{data.period}</strong>.</>}
                                 </p>
                             </>
@@ -174,7 +175,7 @@ export default function TeacherOrderPage({ params }: { params: Promise<{ id: str
                                     ))}
                                 </div>
                                 <p className="text-xs" style={{ color: 'var(--ave-muted)' }}>
-                                    Fiecare copil primește <strong>un singur pachet de bază</strong>. Opționalele se pot adăuga în plus, oricâte.
+                                    Alegeți <strong>un singur tip de pachet de bază</strong> și opționalele dorite. Puteți comanda mai multe exemplare din fiecare pachet: A ×2, C ×3.
                                 </p>
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                     {ADDONS.map((p) => (
@@ -213,7 +214,7 @@ export default function TeacherOrderPage({ params }: { params: Promise<{ id: str
                                 </div>
                                 <div className="flex flex-wrap gap-x-6 gap-y-3 mt-5">
                                     {PACKAGES.map((p) => (
-                                        <label key={p.id} className="inline-flex items-center gap-2.5 text-sm cursor-pointer select-none min-h-11">
+                                        <div key={p.id} className="package-choice"><label className="inline-flex items-center gap-2.5 text-sm cursor-pointer select-none min-h-11">
                                             <input
                                                 type={p.kind === 'base' ? 'radio' : 'checkbox'}
                                                 className="xmas-check"
@@ -223,9 +224,9 @@ export default function TeacherOrderPage({ params }: { params: Promise<{ id: str
                                                 onChange={() => setNewPackages(current => packagePatch(current, p.id, PACKAGES))}
                                             />
                                             <span>
-                                                <strong>{p.code}</strong> {p.name} · {formatMoney(p.price)} lei
+                                                <strong>{p.code}</strong> {p.name} · {formatMoney(p.price)} lei/buc.
                                             </span>
-                                        </label>
+                                        </label><PackageQuantity quantity={packageQuantity(newPackages, p.id)} label={`Cantitate ${p.code}`} disabled={busy === 'add'} onChange={quantity => setNewPackages(current => quantityPatch(current, p.id, quantity, PACKAGES))} /></div>
                                     ))}
                                 </div>
                             </form>
@@ -293,10 +294,11 @@ export default function TeacherOrderPage({ params }: { params: Promise<{ id: str
                                                                     name={p.kind === 'base' ? `base-${c.id}` : undefined}
                                                                     checked={c.package_ids.includes(p.id)}
                                                                     disabled={busy === c.id || (!p.available && !c.package_ids.includes(p.id)) || (p.kind === 'extra' && !hasBasePackage(c, PACKAGES))}
-                                                                    onChange={() => toggle(c, p.id)}
+                                                                    onChange={() => changePackages(c, p.id)}
                                                                     aria-label={`${p.code} pentru ${c.last_name} ${c.first_name}`}
                                                                 />
                                                             </label>
+                                                            <PackageQuantity quantity={packageQuantity(c, p.id)} label={`Cantitate ${p.code} pentru ${c.last_name} ${c.first_name}`} disabled={busy === c.id} max={p.available ? 99 : packageQuantity(c, p.id)} onChange={quantity => changePackages(c, p.id, quantity)} />
                                                         </td>
                                                     ))}
                                                     <td className="text-right px-4 py-3 font-semibold whitespace-nowrap" style={{ color: 'var(--xmas-burgundy)' }}>
